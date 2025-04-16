@@ -1,0 +1,48 @@
+
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.hideScrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 8px;
+    background: transparent; /* Background of the track container */
+}
+
+/* Track */
+.hideScrollbar::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 10px;
+}
+
+/* Thumb */
+.hideScrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+/* Hover effect */
+.hideScrollbar::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #8e2de2, #4a00e0);
+}
+.subimages-swiper .swiper-button-next,
+        .subimages-swiper .swiper-button-prev {
+          color: #4f46e5;
+          background: rgba(255, 255, 255, 0.8);
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          --swiper-navigation-size: 12px;
+          padding: 8px;
+        }
+        
+        .subimages-swiper .swiper-pagination-bullet {
+          width: 6px;
+          height: 6px;
+        }
+        
+        .subimages-swiper {
+          padding-bottom: 25px;
+        }
