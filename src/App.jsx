@@ -26,6 +26,8 @@ import ViewProduct from "./components/ViewProduct";
 import EditProduct from "./components/EditProduct";
 import ProductAllView from "./components/ProductViewAll";
 import ProductCategoryView from './components/ProductCategoryView'
+import ProductDetail from "./components/Product";
+import ProductCheckout from "./components/ProductCheckout";
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
@@ -58,7 +60,8 @@ function AppRoutes() {
     location.pathname === "/dashboard/add-product" ||
     location.pathname === "/dashboard/edit-product" ||
     location.pathname === "/productviewall" ||
-    location.pathname === "/category/:categoryName"
+    location.pathname === "/category/:categoryName" ||
+    location.pathname === "/product/:productId"
   return (
     <>
       <div className="min-h-screen pb-16 bg-[#f5f6fa]">
@@ -89,7 +92,9 @@ function AppRoutes() {
           <Route path="/dashboard/edit-product/:id" element={<EditProduct />} />
           <Route path="/productviewall" element={<ProductAllView />} />
           <Route path="/category/:categoryName" element={<ProductCategoryView />} />
-          productCategoryView
+          <Route path="/product/:productId" element={<ProductDetail />} />
+          <Route path="/product/ProductCheckout" element={<ProductCheckout />} />
+
           <Route
             path="/cart"
             element={

@@ -6,7 +6,7 @@ import { FcGoogle } from 'react-icons/fc';
 import apple from '../assets/apple.jpeg';
 import { useAuth } from './AuthContext';
 import { MdLogin } from "react-icons/md";
-import { collection, getDocs ,getDoc} from 'firebase/firestore';
+import { collection, getDocs, getDoc } from 'firebase/firestore';
 import { db } from '../Firebase';
 import { query, orderBy, limit } from 'firebase/firestore';
 import 'swiper/css';
@@ -14,9 +14,11 @@ import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Pagination, Navigation } from 'swiper/modules';
-import { doc,  updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { VscAccount } from "react-icons/vsc";
 import allproduct from '../assets/allproduct.jpeg'
+import { useNavigate } from 'react-router-dom';
+
 const Home = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -28,7 +30,16 @@ const Home = () => {
   const [products, setProducts] = useState([]);
   const [banners, setBanners] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
- 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [wishlist, setWishlist] = useState([]);
+  const navigate = useNavigate();
+  const [userLocation, setUserLocation] = useState({
+    address: 'Round North, Kodaly, Kerala', // Default address
+    deliveryTime: '9 mins'
+  });
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
   // Modern cool color scheme
   const colors = {
     primary: "#3B82F6",     // Blue
@@ -39,6 +50,35 @@ const Home = () => {
     white: "#FFFFFF",
     success: "#10B981"      // Green
   };
+
+  const navigateToProduct = (productId, event) => {
+    // Prevent event from triggering when clicking on buttons inside the card
+    if (event.target.closest('button')) return;
+    navigate(`/product/${productId}`);
+  };
+
+  // Define filtered products with search functionality
+  const getFilteredProducts = () => {
+    // First apply category filter
+    let result = selectedCategory === 'All' || selectedCategory === 'All Products' 
+      ? products 
+      : products.filter(product => product.category === selectedCategory);
+    
+    // Then apply search query filter if one exists
+    if (searchQuery && searchQuery.trim().length > 0) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(product => 
+        (product.name && product.name.toLowerCase().includes(query)) ||
+        (product.category && product.category.toLowerCase().includes(query)) ||
+        (product.description && product.description?.toLowerCase().includes(query))
+      );
+    }
+    
+    return result;
+  };
+
+  // Use the filtered products
+  const filteredProducts = getFilteredProducts();
 
   // Fetch products from Firestore
   useEffect(() => {
@@ -105,11 +145,6 @@ const Home = () => {
     return acc;
   }, {});
 
-  // Get filtered products based on selected category
-  const filteredProducts = selectedCategory === 'All' 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
-
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
@@ -126,7 +161,6 @@ const Home = () => {
   };
   
   // Cart functions
- 
   useEffect(() => {
     if (currentUser?.cartItems) {
       setCartItems(currentUser.cartItems);
@@ -140,54 +174,82 @@ const Home = () => {
     }
   }, [currentUser]);
   
-// Update these functions to accept product parameter
-const addToCart = async (product) => {
-  if (!currentUser) return;
-  
-  try {
-    const updatedItems = [...cartItems];
-    const existingItemIndex = updatedItems.findIndex(item => item.id === product.id);
+  // Update quantity function
+  const updateQuantity = async (productId, newQuantity) => {
+    if (!currentUser) return;
     
-    if (existingItemIndex >= 0) {
-      updatedItems[existingItemIndex].quantity += 1;
-    } else {
-      updatedItems.push({
-        ...product,
-        quantity: 1,
-        addedAt: new Date().toISOString(),
+    try {
+      const updatedItems = cartItems.map(item => {
+        if (item.id === productId) {
+          return { ...item, quantity: newQuantity };
+        }
+        return item;
       });
+      
+      if (currentUser?.uid) {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          cartItems: updatedItems
+        });
+      }
+      
+      setCartItems(updatedItems);
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
+  // Add to cart function
+  const addToCart = async (product) => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
     }
     
-    await updateDoc(doc(db, 'users', currentUser.uid), {
-      cartItems: updatedItems
-    });
-    
-    setCartItems(updatedItems);
-  } catch (error) {
-    console.error("Error adding to cart:", error);
-  }
-};
-
-const removeFromCart = async (productId) => {
-  if (!currentUser) return;
-  
-  try {
-    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-    if (userDoc.exists()) {
-      const cartItems = userDoc.data().cartItems || [];
-      const updatedItems = cartItems.filter(item => item.id !== productId);
+    try {
+      const updatedItems = [...cartItems];
+      const existingItemIndex = updatedItems.findIndex(item => item.id === product.id);
+      
+      if (existingItemIndex >= 0) {
+        updatedItems[existingItemIndex].quantity += 1;
+      } else {
+        updatedItems.push({
+          ...product,
+          quantity: 1,
+          addedAt: new Date().toISOString(),
+        });
+      }
       
       await updateDoc(doc(db, 'users', currentUser.uid), {
         cartItems: updatedItems
       });
-
-      // Update local state
+      
       setCartItems(updatedItems);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
     }
-  } catch (error) {
-    console.error("Error removing from cart:", error);
-  }
-};
+  };
+
+  const removeFromCart = async (productId) => {
+    if (!currentUser) return;
+    
+    try {
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      if (userDoc.exists()) {
+        const cartItems = userDoc.data().cartItems || [];
+        const updatedItems = cartItems.filter(item => item.id !== productId);
+        
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          cartItems: updatedItems
+        });
+
+        // Update local state
+        setCartItems(updatedItems);
+      }
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+    }
+  };
+ 
   const removeItem = async (id) => {
     try {
       const updatedItems = cartItems.filter(item => item.id !== id);
@@ -203,10 +265,12 @@ const removeFromCart = async (productId) => {
       console.error("Error removing item:", error);
     }
   };
-  const [loading, setLoading] = useState(false);
-  const [wishlist, setWishlist] = useState([]);
+
   const toggleWishlist = async (product) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
     
     try {
       setLoading(true);
@@ -219,10 +283,16 @@ const removeFromCart = async (productId) => {
           await updateDoc(doc(db, 'users', currentUser.uid), {
             wishlist: arrayRemove(product)
           });
+          
+          // Update local state
+          setWishlist(prev => prev.filter(item => item.id !== product.id));
         } else {
           await updateDoc(doc(db, 'users', currentUser.uid), {
             wishlist: arrayUnion(product)
           });
+          
+          // Update local state
+          setWishlist(prev => [...prev, product]);
         }
       }
     } catch (error) {
@@ -231,6 +301,63 @@ const removeFromCart = async (productId) => {
       setLoading(false);
     }
   };
+
+  // Improved location function
+  const fetchCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            
+            // Set a simple location without relying on Google API
+            setUserLocation({
+              address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+              deliveryTime: '9 mins'
+            });
+            
+            // Save location to user's profile if logged in
+            if (currentUser?.uid) {
+              await updateDoc(doc(db, 'users', currentUser.uid), {
+                location: {
+                  address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                  coordinates: {
+                    lat: latitude,
+                    lng: longitude
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error setting location:', error);
+            alert("Could not detect your precise location. Using default address.");
+          } finally {
+            setIsLoadingLocation(false);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert("Location permission denied. Please allow location access to use this feature.");
+          setIsLoadingLocation(false);
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+      setIsLoadingLocation(false);
+    }
+  };
+
+  // Call this in useEffect when user logs in
+  useEffect(() => {
+    if (currentUser?.location?.address) {
+      setUserLocation({
+        address: currentUser.location.address,
+        deliveryTime: '9 mins'
+      });
+    }
+  }, [currentUser]);
 
   // Render stars based on rating
   const renderRating = (rating) => {
@@ -472,12 +599,6 @@ const removeFromCart = async (productId) => {
     );
   };
 
- 
- 
-
-
-
-
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
       {/* Gradient top bar */}
@@ -497,30 +618,37 @@ const removeFromCart = async (productId) => {
           </div>
 
           {/* Delivery Info */}
+          {/* Desktop View */}
           <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
             <div className="mr-3">
-              <div className="text-blue-600 font-bold">Delivery in 9 mins</div>
-              <div className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-blue-600 transition-colors">
-                <span>Round North, Kodaly, Kerala</span>
+              <div className="text-blue-600 font-bold">
+                Delivery in {userLocation.deliveryTime}
+              </div>
+              <div className="flex items-center text-sm text-gray-600">
+                <span>{userLocation.address}</span>
                 <ChevronDown size={16} className="ml-1" />
               </div>
             </div>
             <div className="h-8 w-px bg-gray-300 mx-2"></div>
-            <div className="text-indigo-500 font-medium flex items-center cursor-pointer hover:text-indigo-600">
-              <span>Change</span>
-            </div>
+            <button
+              onClick={fetchCurrentLocation}
+              disabled={isLoadingLocation}
+              className="text-indigo-500 font-medium flex items-center hover:text-indigo-600"
+            >
+              {isLoadingLocation ? "Loading..." : "Change"}
+            </button>
           </div>
 
           {/* Search Bar */}
-          <div className="w-1/3">
-            <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <Search size={20} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="bg-transparent outline-none w-full text-gray-700"
-              />
-            </div>
+          <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <Search size={20} className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search for products..."
+              className="bg-transparent outline-none w-full text-gray-700"
+              value={searchQuery || ""}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
           {/* Login and Cart */}
@@ -614,7 +742,6 @@ const removeFromCart = async (productId) => {
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
               onClick={() => !currentUser && setShowLoginModal(true)}
             >
-              
               {currentUser && currentUser.photoURL ? (
                 <img
                   src={currentUser.photoURL}
@@ -622,7 +749,6 @@ const removeFromCart = async (productId) => {
                   className="w-10 h-10 rounded-full"
                   onClick={() => setShowUserDropdown(!showUserDropdown)}
                 />
-                
               ) : (
                 <CgProfile className="text-xl text-[#1a7e74]" />
               )}
@@ -683,30 +809,36 @@ const removeFromCart = async (productId) => {
         <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
           <div className="flex flex-col flex-1">
             <div className="text-white font-bold flex items-center">
-              <span className="mr-2">Delivery in 9 mins</span>
+              <span className="mr-2">
+                Delivery in {userLocation.deliveryTime}
+              </span>
               <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
                 FAST
               </span>
             </div>
             <div className="flex items-center text-sm md:text-white text-black">
-              <span>Round North, Kodaly, Kerala</span>
+              <span>{userLocation.address}</span>
               <ChevronDown size={14} className="ml-1" />
             </div>
           </div>
-          <div className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm">
-            Change
-          </div>
+          <button
+            onClick={fetchCurrentLocation}
+            disabled={isLoadingLocation}
+            className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm"
+          >
+            {isLoadingLocation ? "Loading..." : "Change"}
+          </button>
         </div>
 
         {/* Search Bar */}
-        <div className="relative mb-4">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
+        <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+          <Search size={20} className="text-gray-400" />
           <input
             type="text"
-            placeholder="Search for products..."
-            className="bg-white w-full pl-10 pr-4 py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+            placeholder="Search for products or categories..."
+            className="bg-transparent outline-none w-full text-gray-700"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
@@ -743,11 +875,11 @@ const removeFromCart = async (productId) => {
       <div className="max-w-7xl mx-auto px-4 mt-6">
         <div className="rounded-2xl overflow-hidden">
           <Swiper
-            modules={[Autoplay, Pagination, ]}
+            modules={[Autoplay, Pagination]}
             autoplay={{ delay: 3000, disableOnInteraction: false }}
             pagination={{ clickable: true }}
             // navigation={true}
-            loop={true}
+            loop={banners.length > 1}
             className="w-full h-[200px]  md:h-[500px]"
           >
             {banners.map((banner) => (
@@ -786,9 +918,10 @@ const removeFromCart = async (productId) => {
               {products.slice(0, 5).map((product) => (
                 <div
                   key={product.id}
-                  className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                  className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer"
                   onMouseEnter={() => setHoveredProduct(product.id)}
                   onMouseLeave={() => setHoveredProduct(null)}
+                  onClick={(e) => navigateToProduct(product.id, e)}
                 >
                   {/* Product Image with Discount Tag */}
                   <div className="relative">
@@ -912,9 +1045,10 @@ const removeFromCart = async (productId) => {
                   {categoryProducts.slice(0, 5).map((product) => (
                     <div
                       key={product.id}
-                      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer"
                       onMouseEnter={() => setHoveredProduct(product.id)}
                       onMouseLeave={() => setHoveredProduct(null)}
+                      onClick={(e) => navigateToProduct(product.id, e)}
                     >
                       {/* Product Image with Discount Tag */}
                       <div className="relative">
@@ -1023,9 +1157,10 @@ const removeFromCart = async (productId) => {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer"
                 onMouseEnter={() => setHoveredProduct(product.id)}
                 onMouseLeave={() => setHoveredProduct(null)}
+                onClick={(e) => navigateToProduct(product.id, e)}
               >
                 {/* Product Image with Discount Tag */}
                 <div className="relative">
