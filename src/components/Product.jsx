@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { doc, getDoc, getDocs, collection } from "firebase/firestore";
 import { db } from "../Firebase";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import {
   Search,
   ChevronDown,
@@ -21,6 +26,7 @@ import { useAuth } from "./AuthContext";
 import apple from "../assets/apple.jpeg";
 import { updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { Link } from "react-router-dom";
+import { optimizeProductData } from "../utils/imageCompression";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -36,6 +42,13 @@ const ProductDetail = () => {
   const [wishlist, setWishlist] = useState([]);
   const navigate = useNavigate();
   const [allProducts, setAllProducts] = useState([]);
+  const [selectedImage, setSelectedImage] = useState(null);
+const [subImages, setSubImages] = useState([]);
+const [userLocation, setUserLocation] = useState({
+  address: 'Round North, Kodaly, Kerala', // Default address
+  deliveryTime: '9 mins'
+});
+const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   // Fetch product details when component mounts
   useEffect(() => {
@@ -65,6 +78,15 @@ const ProductDetail = () => {
       fetchProduct();
     }
   }, [productId]);
+
+  // Set selected image and sub-images when product is loaded
+  useEffect(() => {
+    if (product) {
+      setSelectedImage(product.imageBase64);
+      // Assuming product.subImages is an array of additional images
+      setSubImages(product.subImages || []);
+    }
+  }, [product]);
 
   // Load cart items
   useEffect(() => {
@@ -123,13 +145,25 @@ const ProductDetail = () => {
       );
 
       if (existingItemIndex >= 0) {
-        updatedItems[existingItemIndex].quantity += quantity;
+        // If item exists, remove it from cart
+        updatedItems.splice(existingItemIndex, 1);
       } else {
-        updatedItems.push({
-          ...product,
+        // Create a new product object with only necessary data
+        const productToAdd = {
+          id: product.id,
+          name: product.name,
+          originalPrice: product.originalPrice,
+          salePrice: product.salePrice,
+          offer: product.offer,
+          category: product.category,
+          imageBase64: product.imageBase64,
           quantity: quantity,
           addedAt: new Date().toISOString(),
-        });
+        };
+
+        // Optimize the product data by compressing images
+        const optimizedProduct = await optimizeProductData(productToAdd);
+        updatedItems.push(optimizedProduct);
       }
 
       await updateDoc(doc(db, "users", currentUser.uid), {
@@ -138,10 +172,28 @@ const ProductDetail = () => {
 
       setCartItems(updatedItems);
     } catch (error) {
-      console.error("Error adding to cart:", error);
+      console.error("Error updating cart:", error);
+    }
+  };
+  const removeFromCart = async (productId) => {
+    if (!currentUser) return;
+
+    try {
+      const updatedItems = cartItems.filter((item) => item.id !== productId);
+
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        cartItems: updatedItems,
+      });
+
+      setCartItems(updatedItems);
+    } catch (error) {
+      console.error("Error removing from cart:", error);
     }
   };
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [productId]);
   // Toggle wishlist
   const toggleWishlist = async () => {
     if (!currentUser) {
@@ -150,23 +202,38 @@ const ProductDetail = () => {
     }
 
     try {
-      const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-      if (userDoc.exists()) {
-        const wishlist = userDoc.data().wishlist || [];
-        const isInWishlist = wishlist.some((item) => item.id === product.id);
+      setLoading(true);
+      const isInWishlist = wishlist.some((item) => item.id === product.id);
 
-        if (isInWishlist) {
-          await updateDoc(doc(db, "users", currentUser.uid), {
-            wishlist: arrayRemove(product),
-          });
-        } else {
-          await updateDoc(doc(db, "users", currentUser.uid), {
-            wishlist: arrayUnion(product),
-          });
-        }
+      if (isInWishlist) {
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          wishlist: arrayRemove(product),
+        });
+        setWishlist((prev) => prev.filter((item) => item.id !== product.id));
+      } else {
+        // Create a simplified product object with only necessary data
+        const productToAdd = {
+          id: product.id,
+          name: product.name,
+          originalPrice: product.originalPrice,
+          salePrice: product.salePrice,
+          offer: product.offer,
+          category: product.category,
+          imageBase64: product.imageBase64,
+        };
+
+        // Optimize the product data by compressing images
+        const optimizedProduct = await optimizeProductData(productToAdd);
+
+        await updateDoc(doc(db, "users", currentUser.uid), {
+          wishlist: arrayUnion(optimizedProduct),
+        });
+        setWishlist((prev) => [...prev, optimizedProduct]);
       }
     } catch (error) {
       console.error("Error toggling wishlist:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -202,6 +269,70 @@ const ProductDetail = () => {
     }
   };
 
+  const fetchCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            
+            // Set a simple location without relying on Google API
+            setUserLocation({
+              address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+              deliveryTime: '9 mins'
+            });
+            
+            // Save location to user's profile if logged in
+            if (currentUser?.uid) {
+              await updateDoc(doc(db, 'users', currentUser.uid), {
+                location: {
+                  address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                  coordinates: {
+                    lat: latitude,
+                    lng: longitude
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error setting location:', error);
+            alert("Could not detect your precise location. Using default address.");
+          } finally {
+            setIsLoadingLocation(false);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert("Location permission denied. Please allow location access to use this feature.");
+          setIsLoadingLocation(false);
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+      setIsLoadingLocation(false);
+    }
+  };
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      if (currentUser?.uid) {
+        setIsLoadingLocation(true);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists() && userDoc.data().location) {
+            setUserLocation(userDoc.data().location);
+          }
+        } catch (error) {
+          console.error('Error fetching user location:', error);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      }
+    };
+
+    fetchUserLocation();
+  }, [currentUser]);
   // Logout handler
   const handleLogout = async () => {
     await logout();
@@ -368,7 +499,7 @@ const ProductDetail = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
+      <div className="fixed inset-0 bg-transparent bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
         <div className="w-full md:w-1/4 h-full md:h-screen bg-white md:shadow-lg transform transition-transform duration-300 flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800">
@@ -468,7 +599,9 @@ const ProductDetail = () => {
                     ₹{calculateTotal() + 40}
                   </span>
                 </div>
-                <button className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
+                <button 
+                onClick={() => navigate('/order-confirm')}
+                className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
                   Proceed to Checkout
                 </button>
               </div>
@@ -537,22 +670,33 @@ const ProductDetail = () => {
           </div>
 
           {/* Delivery Info */}
-          <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
-            <div className="mr-3">
-              <div className="text-blue-600 font-bold">Delivery in 9 mins</div>
-              <div className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-blue-600 transition-colors">
-                <span>Round North, Kodaly, Kerala</span>
-                <ChevronDown size={16} className="ml-1" />
-              </div>
+        {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
+          <div className="flex flex-col flex-1">
+            <div className="text-black font-bold flex items-center">
+              <span className="mr-2">
+                Delivery in {userLocation.deliveryTime}
+              </span>
+              <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
+                FAST
+              </span>
             </div>
-            <div className="h-8 w-px bg-gray-300 mx-2"></div>
-            <div className="text-indigo-500 font-medium flex items-center cursor-pointer hover:text-indigo-600">
-              <span>Change</span>
+            <div className="flex items-center text-sm md:text-black text-black">
+              <span>{userLocation.address}</span>
+              <ChevronDown size={14} className="ml-1" />
             </div>
           </div>
+          <button
+            onClick={fetchCurrentLocation}
+            disabled={isLoadingLocation}
+            className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm"
+          >
+            {isLoadingLocation ? "Loading..." : "Change"}
+          </button>
+        </div> */}
+
 
           {/* Search Bar */}
-          <div className="w-1/3">
+          {/* <div className="w-1/3">
             <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
               <Search size={20} className="text-gray-400" />
               <input
@@ -561,7 +705,7 @@ const ProductDetail = () => {
                 className="bg-transparent outline-none w-full text-gray-700"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* Login and Cart */}
           <div className="flex items-center space-x-6">
@@ -662,7 +806,7 @@ const ProductDetail = () => {
       {/* Product Detail Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Breadcrumb */}
-        <div className="flex items-center mb-6">
+        <div className="flex flex-wrap items-center text-sm mb-4">
           <Link to="/" className="text-gray-500 hover:text-blue-600">
             Home
           </Link>
@@ -674,7 +818,9 @@ const ProductDetail = () => {
             {product.category}
           </Link>
           <span className="mx-2 text-gray-400">/</span>
-          <span className="text-gray-800">{product.name}</span>
+          <span className="text-gray-800 font-medium truncate max-w-[150px]">
+            {product.name}
+          </span>
         </div>
 
         {/* Back Button (Mobile) */}
@@ -682,36 +828,63 @@ const ProductDetail = () => {
           onClick={() => navigate(-1)}
           className="flex items-center mb-4 text-gray-600 hover:text-blue-600 md:hidden"
         >
-          <ArrowLeft size={16} className="mr-1" />
-          Back
+          <ArrowLeft size={16} className="mr-1" /> Back
         </button>
 
-        {/* Product Details */}
+        {/* Product Details Section */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="md:flex h-[600px]">
-            {/* Product Image */}
-            <div className="md:w-1/3 p-6 flex items-center justify-center bg-gray-50">
-              <img
-                src={product.imageBase64 || apple}
-                alt={product.name}
-                className="w-full md:max-w-xs object-contain"
-              />
+          <div className="flex flex-col md:flex-row">
+            {/* Image Section */}
+            <div className="md:w-1/3 w-full p-4 md:p-6 bg-gray-50">
+              <div className="aspect-square rounded-lg overflow-hidden bg-white flex items-center justify-center mb-4">
+                <img
+                  src={selectedImage || product.imageBase64 || apple}
+                  alt={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+              {product.subImagesBase64?.length > 0 && (
+                <div className="grid grid-cols-5 gap-2">
+                  <div
+                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === product.imageBase64 ? 'border-blue-500' : 'border-gray-200'} hover:border-blue-500 transition-colors`}
+                    onClick={() => setSelectedImage(product.imageBase64)}
+                  >
+                    <img
+                      src={product.imageBase64}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  {product.subImagesBase64.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === img ? 'border-blue-500' : 'border-gray-200'} hover:border-blue-500 transition-colors`}
+                      onClick={() => setSelectedImage(img)}
+                    >
+                      <img
+                        src={img}
+                        alt={`${product.name} - ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Product Info */}
-            <div  className="md:w-2/3 p-6 max-h-screen overflow-y-auto" 
-  style={{ 
-    msOverflowStyle: 'none',  /* IE and Edge */
-    scrollbarWidth: 'none',   /* Firefox */
-    WebkitOverflowScrolling: 'touch'
-  }}>
-            {/* Add this style block to hide WebKit scrollbars */}
-  <style jsx>{`
-    div::-webkit-scrollbar {
-      display: none;
-    }
-  `}</style>
-              {/* Title and Price */}
+            {/* Info Section */}
+            <div
+              className="md:w-2/3 w-full p-4 md:p-6 md:max-h-[70vh] md:overflow-y-auto"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              <style jsx>{`
+                @media (min-width: 768px) {
+                  div::-webkit-scrollbar {
+                    display: none;
+                  }
+                }
+              `}</style>
+              {/* Title, Price */}
               <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">
@@ -773,17 +946,59 @@ const ProductDetail = () => {
               {/* Actions */}
               <div className="flex flex-col md:flex-row gap-4">
                 <button
-                  onClick={addToCart}
-                  className="w-full md:w-auto flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 px-6 flex items-center justify-center"
+                  onClick={() => {
+                    const isInCart = cartItems.some(
+                      (item) => item.id === product.id
+                    );
+                    isInCart ? removeFromCart(product.id) : addToCart(product);
+                  }}
+                  className={`w-full md:w-auto flex-1 rounded-lg py-3 px-6 flex items-center justify-center ${
+                    cartItems.some((item) => item.id === product.id)
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
                 >
-                  <ShoppingCart size={18} className="mr-2" />
-                  Add to Cart
+                  {cartItems.some((item) => item.id === product.id) ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Added to Cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={16} className="mr-2" /> Add to Cart
+                    </>
+                  )}
                 </button>
+
                 <button
-                  onClick={toggleWishlist}
-                  className="w-full md:w-auto flex-1 border border-gray-300 hover:border-red-500 hover:text-red-500 rounded-lg py-3 px-6 flex items-center justify-center"
+                  onClick={() => toggleWishlist(product)}
+                  disabled={loading}
+                  className={`w-full md:w-auto flex-1 border border-gray-300 hover:border-red-500 hover:text-red-500 rounded-lg py-3 px-6 flex items-center justify-center ${
+                    wishlist.some((item) => item.id === product.id)
+                      ? "bg-red-100 text-red-500"
+                      : "bg-white text-gray-600 hover:text-red-500"
+                  }`}
                 >
-                  <Heart size={18} className="mr-2" />
+                  <Heart
+                    size={16}
+                    fill={
+                      wishlist.some((item) => item.id === product.id)
+                        ? "currentColor"
+                        : "none"
+                    }
+                  />
                   Add to Wishlist
                 </button>
               </div>
@@ -972,59 +1187,56 @@ const ProductDetail = () => {
                   </button>
                 </div>
               </div>
-
-              
             </div>
-
           </div>
           <div className="p-10">
             {/* Related Products */}
             {relatedProducts.length > 0 && (
-                <div className="mt-12 border-t border-gray-100 pt-6">
-                  <h3 className="text-lg font-semibold mb-4 text-gray-800">
-                    You May Also Like
-                  </h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {relatedProducts.slice(0, 4).map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
-                        onClick={() => navigate(`/product/${item.id}`)}
-                      >
-                        <div className="aspect-square bg-white rounded-lg flex items-center justify-center p-2 mb-3">
-                          <img
-                            src={item.imageBase64 || apple}
-                            alt={item.name}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800 text-sm mb-1">
-                            {item.name}
-                          </h4>
-                          <p className="text-xs text-gray-500">
-                            {item.weight || "500g"}
-                          </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="font-semibold text-gray-900">
-                              ₹{item.salePrice}
-                            </span>
-                            <button
-                              className="bg-blue-50 text-blue-600 p-1 rounded-full hover:bg-blue-100"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                addToCart(item);
-                              }}
-                            >
-                              <Plus size={16} />
-                            </button>
-                          </div>
+              <div className="mt-12 border-t border-gray-100 pt-6">
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                  You May Also Like
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {relatedProducts.slice(0, 4).map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-gray-50 rounded-lg p-3 cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => navigate(`/product/${item.id}`)}
+                    >
+                      <div className="aspect-square bg-white rounded-lg flex items-center justify-center p-2 mb-3">
+                        <img
+                          src={item.imageBase64 || apple}
+                          alt={item.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-800 text-sm mb-1">
+                          {item.name}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          {item.weight || "500g"}
+                        </p>
+                        <div className="flex items-center justify-between mt-2">
+                          <span className="font-semibold text-gray-900">
+                            ₹{item.salePrice}
+                          </span>
+                          <button
+                            className="bg-blue-50 text-blue-600 p-1 rounded-full hover:bg-blue-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              addToCart(item);
+                            }}
+                          >
+                            <Plus size={16} />
+                          </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
           </div>
         </div>
       </div>

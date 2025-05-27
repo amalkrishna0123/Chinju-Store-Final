@@ -81,20 +81,35 @@ const Cart = ({ isOpen, onClose }) => {
     
     setCheckoutLoading(true);
     try {
+      // Get user's shipping details
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      const userShippingDetails = userDoc.data()?.shippingDetails;
+
+      if (!userShippingDetails) {
+        throw new Error('Please add shipping details before checkout');
+      }
+
       // Create order
       const orderData = {
         id: `ORD-${Date.now()}`,
+        userId: currentUser.uid,
         date: new Date().toISOString(),
         items: cartItems,
         total: calculateTotal() + 40, // Including delivery
-        status: 'Processing'
+        status: 'Processing',
+        shippingDetails: userShippingDetails,
+        isRead: false
       };
 
-      // Add to orders and clear cart
-      await updateDoc(doc(db, 'users', currentUser.uid), {
-        orders: arrayUnion(orderData),
-        cartItems: []
-      });
+      // Add to orders collection and clear cart
+      await Promise.all([
+        // Add to orders collection
+        addDoc(collection(db, 'orders'), orderData),
+        // Clear user's cart
+        updateDoc(doc(db, 'users', currentUser.uid), {
+          cartItems: []
+        })
+      ]);
 
       setCartItems([]);
       onClose();

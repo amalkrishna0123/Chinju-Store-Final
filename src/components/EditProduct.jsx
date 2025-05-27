@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { db } from '../Firebase';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Save, X, Upload, AlertCircle, Image } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css';
@@ -29,11 +29,14 @@ const EditProduct = () => {
     shelfLife: '',
     category: '',
   });
+  
   const [categories, setCategories] = useState([]);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState(null);
+  const [saving, setSaving] = useState(false);
   
   useEffect(() => {
     const fetchCategories = async () => {
@@ -46,6 +49,7 @@ const EditProduct = () => {
         setCategories(categoryList);
       } catch (err) {
         console.error("Error fetching categories:", err);
+        setError("Failed to load categories. Please try again.");
       }
     };
 
@@ -110,6 +114,10 @@ const EditProduct = () => {
         setProduct(prev => ({ ...prev, salePrice: discounted.toFixed(2) }));
       }
     }
+    
+    // Clear any previous error/success messages when user makes changes
+    if (error) setError('');
+    if (success) setSuccess('');
   };
 
   const handleImageChange = (e) => {
@@ -152,294 +160,464 @@ const EditProduct = () => {
 
     if (!product.name || !product.imageBase64 || !product.originalPrice) {
       setError('Please fill all required fields.');
+      window.scrollTo(0, 0);
       return;
     }
 
     try {
+      setSaving(true);
       const docRef = doc(db, 'products', id);
       await updateDoc(docRef, product);
-      navigate('/dashboard/view-product');
+      setSuccess('Product updated successfully!');
+      
+      // Show success message briefly before navigating
+      setTimeout(() => {
+        navigate('/dashboard/view-product');
+      }, 1500);
+      
     } catch (err) {
       setError('Failed to update product: ' + err.message);
+      window.scrollTo(0, 0);
+    } finally {
+      setSaving(false);
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-green-50 flex items-center justify-center">
-        <div className="text-lg text-gray-600">Loading product...</div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500 mb-4"></div>
+          <div className="text-lg text-gray-600">Loading product...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-green-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Top Bar */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center">
-          <Link
-            to="/dashboard/view-product"
-            className="flex items-center text-gray-600 hover:text-gray-900"
+      <div className="bg-white shadow-sm sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center">
+            <Link
+              to="/dashboard/view-product"
+              className="flex items-center text-gray-600 hover:text-gray-900 mr-6"
+            >
+              <ArrowLeft size={20} className="mr-2" />
+              Back to Products
+            </Link>
+            <h1 className="text-xl font-bold text-gray-800">Edit Product</h1>
+          </div>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className={`flex items-center px-4 py-2 rounded-md text-white transition-colors ${
+              saving 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            <ArrowLeft size={20} className="mr-2" />
-            Back to Product List
-          </Link>
+            <Save size={18} className="mr-2" />
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto bg-white mt-6 rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-          Edit Product
-        </h2>
-
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        {/* Messages */}
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-md flex items-start">
+            <AlertCircle size={20} className="text-red-500 mr-3 mt-0.5" />
+            <div>
+              <h3 className="text-red-800 font-medium">Error</h3>
+              <p className="text-red-700 text-sm mt-1">{error}</p>
+            </div>
+          </div>
+        )}
+        
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-md flex items-start">
+            <AlertCircle size={20} className="text-green-500 mr-3 mt-0.5" />
+            <div>
+              <h3 className="text-green-800 font-medium">Success</h3>
+              <p className="text-green-700 text-sm mt-1">{success}</p>
+            </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-medium">Product Name *</label>
-              <input
-                type="text"
-                name="name"
-                value={product.name}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-                required
-              />
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Main Card */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-800">Basic Information</h2>
             </div>
-            <div>
-              <label className="block font-medium">Brand</label>
-              <input
-                type="text"
-                name="brand"
-                value={product.brand}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-          </div>
+            <div className="p-6 space-y-6">
+              {/* Product Name & Brand */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Product Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={product.name}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Brand
+                  </label>
+                  <input
+                    type="text"
+                    name="brand"
+                    value={product.brand}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+              </div>
 
-          {/* Category Selection */}
-          <div>
-            <label htmlFor="category" className="block font-medium mb-1">
-              Category *
-            </label>
-            <select
-              id="category"
-              name="category"
-              required
-              value={product.category || ""}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">Select Category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              {/* Category */}
+              <div>
+                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="category"
+                  name="category"
+                  required
+                  value={product.category || ""}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.name}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Main Product Image */}
-          <div>
-            <label className="block font-medium">Main Product Image *</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="mt-1"
-            />
-            {preview && (
-              <div className="mt-3">
-                <img
-                  src={preview}
-                  alt="Preview"
-                  className="h-40 object-cover rounded-md"
-                  onClick={() => setPreviewImage(preview)}
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={product.description}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  rows={4}
+                  placeholder="Enter product description..."
                 />
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Sub Images */}
-          <div>
-            <label className="block font-medium">Sub Images</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleSubImagesChange}
-              multiple
-              className="mt-1"
-            />
+          {/* Images Card */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-800">Product Images</h2>
+            </div>
+            <div className="p-6 space-y-6">
+              {/* Main Product Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Main Product Image <span className="text-red-500">*</span>
+                </label>
+                
+                <div className="flex flex-col md:flex-row md:items-center md:space-x-6">
+                  {preview ? (
+                    <div className="relative mb-4 md:mb-0">
+                      <div className="h-48 w-48 rounded-lg overflow-hidden shadow-sm border border-gray-200">
+                        <img
+                          src={preview}
+                          alt="Preview"
+                          className="h-full w-full object-cover cursor-pointer"
+                          onClick={() => setPreviewImage(preview)}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        className="absolute top-2 right-2 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
+                        onClick={() => {
+                          setPreview(null);
+                          setProduct(prev => ({ ...prev, imageBase64: '' }));
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="h-48 w-48 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center mb-4 md:mb-0">
+                      <div className="text-center">
+                        <Image size={36} className="mx-auto text-gray-400" />
+                        <p className="mt-2 text-sm text-gray-500">No image selected</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label 
+                      htmlFor="main-image" 
+                      className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                    >
+                      <Upload size={16} className="mr-2" />
+                      {preview ? 'Change Image' : 'Upload Image'}
+                    </label>
+                    <input
+                      id="main-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="sr-only"
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      Recommended size: 800x800 pixels
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            {product.subImagesBase64.length > 0 && (
-              <div className="mt-3">
-                <p className="text-sm text-gray-600 mb-2">
-                  Current Sub Images:
-                </p>
-                <div className="w-full relative subimages-container">
-                  <Swiper
-                    spaceBetween={10}
-                    slidesPerView={3}
-                    modules={[Navigation]}
-                    navigation={true}
-                    className="subimages-swiper"
+              {/* Sub Images */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Additional Images
+                </label>
+                
+                <div>
+                  <label 
+                    htmlFor="sub-images" 
+                    className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer inline-block"
                   >
-                    {product.subImagesBase64.map((subImg, idx) => (
-                      <SwiperSlide key={idx}>
-                        <div className="relative h-20 w-20 rounded overflow-hidden">
-                          <img
-                            src={subImg}
-                            alt={`Sub image ${idx + 1}`}
-                            className="h-full w-full object-cover cursor-pointer"
-                            onClick={() => setPreviewImage(subImg)}
-                          />
+                    <Upload size={16} className="mr-2" />
+                    Add More Images
+                  </label>
+                  <input
+                    id="sub-images"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSubImagesChange}
+                    multiple
+                    className="sr-only"
+                  />
+                </div>
+
+                {product.subImagesBase64.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-600 mb-3">
+                      Additional Images ({product.subImagesBase64.length}):
+                    </p>
+                    <div className="flex flex-wrap gap-4">
+                      {product.subImagesBase64.map((subImg, idx) => (
+                        <div key={idx} className="relative">
+                          <div className="h-24 w-24 rounded-lg overflow-hidden shadow-sm border border-gray-200">
+                            <img
+                              src={subImg}
+                              alt={`Sub image ${idx + 1}`}
+                              className="h-full w-full object-cover cursor-pointer"
+                              onClick={() => setPreviewImage(subImg)}
+                            />
+                          </div>
                           <button
                             type="button"
                             onClick={() => removeSubImage(idx)}
-                            className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs"
+                            className="absolute top-1 right-1 bg-white rounded-full p-1 shadow-md hover:bg-gray-100"
                           >
-                            ×
+                            <X size={14} />
                           </button>
                         </div>
-                      </SwiperSlide>
-                    ))}
-                  </Swiper>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing Card */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-800">Pricing</h2>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Original Price (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                    <input
+                      type="number"
+                      name="originalPrice"
+                      value={product.originalPrice}
+                      onChange={handleInputChange}
+                      className="w-full pl-7 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      required
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Discount (%)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      name="offer"
+                      value={product.offer}
+                      onChange={handleInputChange}
+                      className="w-full pr-9 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">%</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sale Price (₹)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 sm:text-sm">₹</span>
+                    </div>
+                    <input
+                      type="number"
+                      name="salePrice"
+                      value={product.salePrice}
+                      readOnly
+                      className="w-full pl-7 p-2 border border-gray-200 rounded-md bg-gray-50 text-gray-700"
+                    />
+                  </div>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Pricing Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block font-medium">Original Price *</label>
-              <input
-                type="number"
-                name="originalPrice"
-                value={product.originalPrice}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-medium">Offer (%)</label>
-              <input
-                type="number"
-                name="offer"
-                value={product.offer}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block font-medium">Sale Price</label>
-              <input
-                type="number"
-                name="salePrice"
-                value={product.salePrice}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-                readOnly
-              />
             </div>
           </div>
 
-          {/* Date Information */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block font-medium">Packed Date</label>
-              <input
-                type="date"
-                name="packedDate"
-                value={product.packedDate}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-              />
+          {/* Details Card */}
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-medium text-gray-800">Additional Details</h2>
             </div>
-            <div>
-              <label className="block font-medium">Expiry Date</label>
-              <input
-                type="date"
-                name="expiryDate"
-                value={product.expiryDate}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-              />
-            </div>
-            <div>
-              <label className="block font-medium">Shelf Life (days)</label>
-              <input
-                type="number"
-                name="shelfLife"
-                value={product.shelfLife}
-                onChange={handleInputChange}
-                className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-              />
+            <div className="p-6 space-y-6">
+              {/* Date Information */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Packed Date
+                  </label>
+                  <input
+                    type="date"
+                    name="packedDate"
+                    value={product.packedDate}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Expiry Date
+                  </label>
+                  <input
+                    type="date"
+                    name="expiryDate"
+                    value={product.expiryDate}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Shelf Life (days)
+                  </label>
+                  <input
+                    type="number"
+                    name="shelfLife"
+                    value={product.shelfLife}
+                    onChange={handleInputChange}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              {/* Product Attributes */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Product Attributes
+                </label>
+                <div className="flex flex-wrap gap-x-6 gap-y-4">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="organic"
+                      name="organic"
+                      checked={product.organic}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="organic"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
+                      Organic
+                    </label>
+                  </div>
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="imported"
+                      name="imported"
+                      checked={product.imported}
+                      onChange={handleInputChange}
+                      className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    />
+                    <label
+                      htmlFor="imported"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
+                      Imported
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Checkbox Options */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="imported"
-                name="imported"
-                checked={product.imported}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="imported"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Imported
-              </label>
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="organic"
-                name="organic"
-                checked={product.organic}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="organic"
-                className="ml-2 block text-sm text-gray-900"
-              >
-                Organic
-              </label>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block font-medium">Description</label>
-            <textarea
-              name="description"
-              value={product.description}
-              onChange={handleInputChange}
-              className="w-full mt-1 p-2 border border-gray-300 rounded-md"
-              rows={4}
-            />
-          </div>
-
-          <div className="pt-4">
+          {/* Action Buttons */}
+          <div className="flex items-center justify-end space-x-4 pt-4">
+            <Link 
+              to="/dashboard/view-product"
+              className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </Link>
             <button
               type="submit"
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              disabled={saving}
+              className={`px-6 py-2 rounded-md text-white transition-colors ${
+                saving 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-green-600 hover:bg-green-700'
+              }`}
             >
-              Save Changes
+              {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

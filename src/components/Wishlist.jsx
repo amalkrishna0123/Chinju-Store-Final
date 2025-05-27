@@ -9,6 +9,8 @@ import { IoIosArrowRoundForward } from "react-icons/io";
 import { FcGoogle } from 'react-icons/fc';
 import { VscAccount } from "react-icons/vsc";
 import apple from '../assets/apple.jpeg';
+import {  useLocation } from 'react-router-dom';
+import { MdLogin } from "react-icons/md";
 
 const Wishlist = () => {
   const { currentUser, userId, signInWithGoogle, logout } = useAuth();
@@ -18,7 +20,11 @@ const Wishlist = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showCart, setShowCart] = useState(false);
-
+  const [userLocation, setUserLocation] = useState({
+    address: 'Select your location',
+    deliveryTime: '-- mins'
+  });
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   useEffect(() => {
     const fetchUserData = async () => {
       if (!userId) {
@@ -341,23 +347,34 @@ const Wishlist = () => {
             </Link>
           </div>
 
-          {/* Delivery Info */}
-          <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
-            <div className="mr-3">
-              <div className="text-blue-600 font-bold">Delivery in 9 mins</div>
-              <div className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-blue-600 transition-colors">
-                <span>Round North, Kodaly, Kerala</span>
-                <ChevronDown size={16} className="ml-1" />
-              </div>
+{/* Delivery Info */}
+{/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
+          <div className="flex flex-col flex-1">
+            <div className="text-black font-bold flex items-center">
+              <span className="mr-2">
+                Delivery in {userLocation.deliveryTime}
+              </span>
+              <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
+                FAST
+              </span>
             </div>
-            <div className="h-8 w-px bg-gray-300 mx-2"></div>
-            <div className="text-indigo-500 font-medium flex items-center cursor-pointer hover:text-indigo-600">
-              <span>Change</span>
+            <div className="flex items-center text-sm md:text-black text-black">
+              <span>{userLocation.address}</span>
+              <ChevronDown size={14} className="ml-1" />
             </div>
           </div>
+          <button
+            onClick={fetchCurrentLocation}
+            disabled={isLoadingLocation}
+            className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm"
+          >
+            {isLoadingLocation ? "Loading..." : "Change"}
+          </button>
+        </div> */}
+
 
           {/* Search Bar */}
-          <div className="w-1/3">
+          {/* <div className="w-1/3">
             <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
               <Search size={20} className="text-gray-400" />
               <input
@@ -366,7 +383,7 @@ const Wishlist = () => {
                 className="bg-transparent outline-none w-full text-gray-700"
               />
             </div>
-          </div>
+          </div> */}
 
           {/* User and Cart */}
           <div className="flex items-center space-x-6">
@@ -387,7 +404,7 @@ const Wishlist = () => {
               </div>
             )}
 
-            <div
+            {/* <div
               className="flex items-center space-x-2 cursor-pointer group"
               onClick={handleCartClick}
             >
@@ -405,7 +422,21 @@ const Wishlist = () => {
                   Cart
                 </span>
               </div>
-            </div>
+            </div> */}
+            {/* <div className="flex items-center space-x-2 cursor-pointer group">
+              <a
+                href="/login"
+                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-all"
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative">
+                  <MdLogin className="text-xl text-[#1a7e74]" />
+                </div>
+
+                <span className="text-sm font-medium group-hover:text-blue-600 transition-colors">
+                  Login
+                </span>
+              </a>
+            </div> */}
           </div>
         </div>
       </div>
@@ -608,3 +639,50 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
+
+
+  const fetchCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            
+            // Set a simple location without relying on Google API
+            setUserLocation({
+              address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+              deliveryTime: '9 mins'
+            });
+            
+            // Save location to user's profile if logged in
+            if (currentUser?.uid) {
+              await updateDoc(doc(db, 'users', currentUser.uid), {
+                location: {
+                  address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                  coordinates: {
+                    lat: latitude,
+                    lng: longitude
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error setting location:', error);
+            alert("Could not detect your precise location. Using default address.");
+          } finally {
+            setIsLoadingLocation(false);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert("Location permission denied. Please allow location access to use this feature.");
+          setIsLoadingLocation(false);
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+      setIsLoadingLocation(false);
+    }
+  };

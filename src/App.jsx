@@ -28,7 +28,16 @@ import ProductAllView from "./components/ProductViewAll";
 import ProductCategoryView from './components/ProductCategoryView'
 import ProductDetail from "./components/Product";
 import ProductCheckout from "./components/ProductCheckout";
+import OrderConfirm from './components/OrderConfirm';
+import OrderDetails from './components/OrderDetails';
+import Users from './components/Usersdash';
+import Delivery from './components/DeliveryBoys'
+import AddDeliveryBoy from './components/AddDeliveryBoy';
+import EditDeliveryBoy from './components/EditDeliveryBoy';
+import DeliveryDashboard from './components/DeliveryBoyDash'
+import Payment from './components/Payment';
 // Protected Route Component
+
 const ProtectedRoute = ({ children }) => {
   const { currentUser, loading } = useAuth();
   const location = useLocation();
@@ -94,7 +103,14 @@ function AppRoutes() {
           <Route path="/category/:categoryName" element={<ProductCategoryView />} />
           <Route path="/product/:productId" element={<ProductDetail />} />
           <Route path="/product/ProductCheckout" element={<ProductCheckout />} />
-
+          <Route path="/order-confirm" element={<OrderConfirm />} />
+          <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+          <Route path="/dashboard/orderdetails" element={<OrderDetails />} />
+          <Route path="/dashboard/users" element={<Users />} />
+          <Route path="/dashboard/delivery-boys" element={<Delivery />} />
+          <Route path="/dashboard/add-delivery-boy" element={<AddDeliveryBoy />} />
+          <Route path="/dashboard/edit-delivery-boy/:id" element={<EditDeliveryBoy />} />
+          <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
           <Route
             path="/cart"
             element={

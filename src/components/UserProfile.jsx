@@ -6,9 +6,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { MdLogin } from "react-icons/md";
 import { FcGoogle } from "react-icons/fc";
 import { IoIosArrowRoundForward } from "react-icons/io";
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../Firebase'; 
 import apple from '../assets/apple.jpeg';
+import { query, where, orderBy } from 'firebase/firestore';
+import AddressManager from './AddressManager';
 
 const UserProfile = () => {
   const { currentUser, logout, signInWithGoogle } = useAuth();
@@ -25,62 +27,257 @@ const UserProfile = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [activePage, setActivePage] = useState('orders');
+  const [activePage, setActivePage] = useState('profile');
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+  const [ordersError, setOrdersError] = useState(null);
+  
+  // Load cart and wishlist when user changes
+  useEffect(() => {
+    if (currentUser?.cartItems) {
+      setCartItems(currentUser.cartItems);
+    } else {
+      setCartItems([]);
+    }
+    if (currentUser?.wishlist) {
+      setWishlistItems(currentUser.wishlist);
+    } else {
+      setWishlistItems([]);
+    }
+  }, [currentUser]);
+
+  // Cart functions - Updated to match ProductViewAll.jsx
+  const addToCart = async (product) => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
+    }
+    
+    try {
+      const updatedItems = [...cartItems];
+      const existingItemIndex = updatedItems.findIndex(item => item.id === product.id);
+      
+      if (existingItemIndex >= 0) {
+        updatedItems[existingItemIndex].quantity += 1;
+      } else {
+        updatedItems.push({
+          ...product,
+          quantity: 1,
+          addedAt: new Date().toISOString(),
+        });
+      }
+      
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        cartItems: updatedItems
+      });
+      
+      setCartItems(updatedItems);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+    }
+  };
+
+  const removeFromCart = async (productId) => {
+    if (!currentUser) return;
+    
+    try {
+      const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+      if (userDoc.exists()) {
+        const cartItems = userDoc.data().cartItems || [];
+        const updatedItems = cartItems.filter(item => item.id !== productId);
+        
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          cartItems: updatedItems
+        });
+
+        setCartItems(updatedItems);
+      }
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+    }
+  };
+
+  const updateQuantity = async (id, quantity) => {
+    if (!currentUser?.uid) return;
+    
+    try {
+      const updatedItems = cartItems.map(item => 
+        item.id === id ? { ...item, quantity } : item
+      );
+      
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        cartItems: updatedItems
+      });
+      
+      setCartItems(updatedItems);
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
+  const removeItem = async (id) => {
+    try {
+      const updatedItems = cartItems.filter(item => item.id !== id);
+      
+      if (currentUser?.uid) {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          cartItems: updatedItems
+        });
+      }
+      
+      setCartItems(updatedItems);
+    } catch (error) {
+      console.error("Error removing item:", error);
+    }
+  };
+
+  // Fetch wishlist items when component mounts or user changes
+  useEffect(() => {
+    const fetchWishlist = async () => {
+      if (!currentUser?.uid) return;
+      setLoading(true);
+      try {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          setWishlistItems(userDoc.data().wishlist || []);
+        }
+      } catch (error) {
+        console.error('Error fetching wishlist:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWishlist();
+  }, [currentUser]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!currentUser?.uid) {
+        setOrders([]);
+        setOrdersLoading(false);
+        return;
+      }
+  
+      try {
+        setOrdersLoading(true);
+        setOrdersError(null);
+        
+        const ordersRef = collection(db, 'orders');
+        let ordersData = [];
+        
+        try {
+          // Try the compound query first (requires index)
+          const q = query(
+            ordersRef,
+            where('userId', '==', currentUser.uid),
+            orderBy('createdAt', 'desc')
+          );
+          
+          const querySnapshot = await getDocs(q);
+          ordersData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || new Date().toLocaleDateString()
+          }));
+        } catch (indexError) {
+          console.log("Index not yet ready, falling back to basic query");
+          
+          // Fallback to a simpler query without ordering
+          const basicQuery = query(
+            ordersRef,
+            where('userId', '==', currentUser.uid)
+          );
+          
+          const querySnapshot = await getDocs(basicQuery);
+          ordersData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || new Date().toLocaleDateString()
+          }));
+          
+          // Sort the results in memory
+          ordersData.sort((a, b) => {
+            const dateA = new Date(a.createdAt);
+            const dateB = new Date(b.createdAt);
+            return dateB - dateA;
+          });
+        }
+  
+        setOrders(ordersData);
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+        setOrdersError('Failed to load orders. Please try again.');
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+  
+    fetchOrders();
+  }, [currentUser]);
+
+  const handleRemoveFromWishlist = async (itemId) => {
+    try {
+      const itemToRemove = wishlistItems.find(item => item.id === itemId);
+      if (!itemToRemove) return;
+      
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        wishlist: arrayRemove(itemToRemove)
+      });
+      
+      setWishlistItems(prev => prev.filter(item => item.id !== itemId));
+    } catch (error) {
+      console.error('Remove from wishlist error:', error);
+    }
+  };
+
+  const handleMoveToCart = async (item) => {
+    try {
+      const existingItem = cartItems.find(cartItem => cartItem.id === item.id);
+      
+      if (existingItem) {
+        const updatedCartItems = cartItems.map(cartItem => 
+          cartItem.id === item.id 
+            ? { ...cartItem, quantity: cartItem.quantity + 1 } 
+            : cartItem
+        );
+        
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          cartItems: updatedCartItems
+        });
+        
+        setCartItems(updatedCartItems);
+      } else {
+        const newCartItem = {
+          ...item,
+          quantity: 1,
+          addedAt: new Date().toISOString()
+        };
+        
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          cartItems: arrayUnion(newCartItem)
+        });
+        
+        setCartItems(prev => [...prev, newCartItem]);
+      }
+      
+      // Remove from wishlist
+      await handleRemoveFromWishlist(item.id);
+      
+    } catch (error) {
+      console.error('Move to cart error:', error);
+    }
+  };
 
   const menuItems = [
+    { id: 'profile', label: 'Profile', icon: <User size={20} /> },
     { id: 'orders', label: 'Orders', icon: <ShoppingBag size={20} /> },
     { id: 'support', label: 'Customer Support', icon: <HeadphonesIcon size={20} /> },
     { id: 'wishlist', label: 'Wishlist', icon: <Heart size={20} /> },
     { id: 'addresses', label: 'Addresses', icon: <MapPin size={20} /> },
-    { id: 'profile', label: 'Profile', icon: <User size={20} /> },
   ];
-  // Modern cool color scheme
-  const colors = {
-    primary: "#3B82F6",     // Blue
-    secondary: "#6366F1",   // Indigo
-    accent: "#8B5CF6",      // Purple
-    light: "#F3F4F6",
-    dark: "#1F2937",
-    white: "#FFFFFF",
-    success: "#10B981"      // Green
-  };
-
-  // Fetch products from Firestore
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, 'products'));
-        const productList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setProducts(productList);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  // Fetch categories from Firestore
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, 'categories'));
-        const fetched = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        // Add "All" category at the beginning
-        setCategories([{ id: 'all', name: 'All Products', imageBase64: '' }, ...fetched]);
-      } catch (err) {
-        console.error('Error fetching categories:', err);
-      }
-    };
-
-    fetchCategories();
-  }, []);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -95,59 +292,7 @@ const UserProfile = () => {
     await logout();
     setShowUserDropdown(false);
     setCartItems([]);
-  };
-  
-  // Cart functions
-  const addToCart = (product) => {
-    if (!currentUser) {
-      setShowLoginModal(true);
-      return;
-    }
-    
-    setCartItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
-      
-      if (existingItem) {
-        return prevItems.map(item => 
-          item.id === product.id 
-            ? { ...item, quantity: item.quantity + 1 } 
-            : item
-        );
-      } else {
-        return [...prevItems, { ...product, quantity: 1 }];
-      }
-    });
-  };
-  
-  const updateQuantity = (id, quantity) => {
-    setCartItems(prevItems => 
-      prevItems.map(item => 
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
-  };
-  
-  const removeItem = (id) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== id));
-  };
-
-  // Render stars based on rating
-  const renderRating = (rating) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
-    
-    for (let i = 0; i < 5; i++) {
-      if (i < fullStars) {
-        stars.push(<span key={i} className="text-yellow-400">★</span>);
-      } else if (i === fullStars && hasHalfStar) {
-        stars.push(<span key={i} className="text-yellow-400">★</span>);
-      } else {
-        stars.push(<span key={i} className="text-gray-300">★</span>);
-      }
-    }
-    
-    return <div className="flex text-xs">{stars}</div>;
+    setWishlistItems([]);
   };
   
   // Handle cart click
@@ -159,114 +304,16 @@ const UserProfile = () => {
     }
   };
 
-  // User Profile Component for header
-  const UserProfileHeader = () => (
-    <div className="relative">
-      <div 
-        onClick={() => setShowUserDropdown(!showUserDropdown)}
-        className="flex items-center space-x-2 cursor-pointer group"
-      >
-        {currentUser?.photoURL ? (
-          <img 
-            src={currentUser.photoURL} 
-            alt="Profile" 
-            className="w-10 h-10 rounded-full border-2 border-gray-200"
-          />
-        ) : (
-          <CgProfile className="text-2xl text-gray-700 group-hover:text-blue-600 transition-colors" />
-        )}
-        
-        <div className="flex flex-col">
-          <span className="text-xs text-gray-500">Hello,</span>
-          <span className="text-sm font-medium group-hover:text-blue-600 transition-colors">
-            {currentUser?.displayName || "My Account"}
-          </span>
-        </div>
-        <ChevronDown size={16} className="text-gray-500" />
-      </div>
-      
-      {showUserDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
-          <div className="px-4 py-2 border-b border-gray-100">
-            <p className="text-sm font-semibold">{currentUser?.displayName}</p>
-            <p className="text-xs text-gray-500 truncate">{currentUser?.email}</p>
-          </div>
-          <a href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-            My Profile
-          </a>
-          <a href="/orders" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-            My Orders
-          </a>
-          <a href="/wishlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-            Wishlist
-          </a>
-          <button 
-            onClick={handleLogout}
-            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-          >
-            Logout
-          </button>
-        </div>
-      )}
-    </div>
-  );
-
-  // Login Modal Component
-  const LoginModal = () => {
-    if (!showLoginModal) return null;
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg w-full max-w-md shadow-xl p-6 transform transition-all">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-gray-800">Sign in to Zepto</h2>
-            <button 
-              onClick={() => setShowLoginModal(false)}
-              className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2"
-            >
-              <X size={18} />
-            </button>
-          </div>
-          
-          <div className="flex flex-col items-center">
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4">
-              <span className="text-2xl">👤</span>
-            </div>
-            
-            <p className="text-center text-gray-600 mb-6">
-              Sign in to access your cart, save favorites, and check out faster!
-            </p>
-            
-            <button 
-              onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-3 px-4 text-gray-700 hover:bg-gray-50 transition duration-200 mb-4"
-            >
-              <FcGoogle size={24} />
-              <span>Continue with Google</span>
-            </button>
-            
-            <button 
-              onClick={() => setShowLoginModal(false)}
-              className="w-full text-gray-600 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition duration-200"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Cart Component
+  // Cart Component - Updated to match ProductViewAll.jsx
   const Cart = () => {
     if (!showCart) return null;
     
     const calculateTotal = () => {
-      return cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+      return cartItems.reduce((total, item) => total + (item.salePrice * item.quantity), 0);
     };
     
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
+      <div className="fixed inset-0 bg-transparent bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
         <div className="w-full md:w-1/4 h-full md:h-screen bg-white md:shadow-lg transform transition-transform duration-300 flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800">
@@ -300,16 +347,12 @@ const UserProfile = () => {
               <div className="flex-1 overflow-y-auto p-4">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex items-center py-4 border-b border-gray-100">
-                    <img 
-                      src={item.imageBase64 || apple} 
-                      alt={item.name} 
-                      className="w-16 h-16 object-cover rounded-lg" 
-                    />
+                    <img src={item.imageBase64 || apple} alt={item.name} className="w-16 h-16 object-cover rounded-lg" />
                     <div className="ml-4 flex-1">
                       <h4 className="text-sm font-medium text-gray-800">{item.name}</h4>
                       <p className="text-xs text-gray-500">{item.weight}</p>
                       <div className="flex items-center mt-2">
-                        <span className="font-semibold text-gray-900">₹{item.price}</span>
+                        <span className="font-semibold text-gray-900">₹{item.salePrice || item.originalPrice}</span>
                         {item.originalPrice && (
                           <span className="text-gray-400 text-xs line-through ml-2">
                             ₹{item.originalPrice}
@@ -371,7 +414,113 @@ const UserProfile = () => {
       </div>
     );
   };
+
+  // Login Modal Component - Updated to match ProductViewAll.jsx
+  const LoginModal = () => {
+    if (!showLoginModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-transparent z-50 flex items-center justify-center p-4">
+        <div className="bg-[#39B2A7] bg-opacity-50 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border-t-4 border-[#2e978e]">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-white">
+              Sign in to Zepto
+            </h2>
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="text-white hover:text-gray-700 bg-gray-100 rounded-full p-2 w-8 h-8 flex items-center justify-center transition-colors"
+            >
+              ✖
+            </button>
+          </div>
+
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-[#65D2CD] flex items-center justify-center mb-4">
+              <User size={24} className="text-white" />
+            </div>
+
+            <p className="text-center text-white mb-6">
+              Sign in to access your cart, save favorites, and check out faster!
+            </p>
+
+            <button
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-2 border hover:text-black border-white rounded-lg py-3.5 px-4 text-white hover:bg-[#fff] transition duration-200 mb-4 shadow-sm"
+            >
+              <FcGoogle size={24} />
+              <span className="font-medium">Continue with Google</span>
+            </button>
+
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="w-full text-[#fff] border border-[#fff] py-3 rounded-lg hover:bg-[#fff] hover:text-black hover:bg-opacity-10 hover:border-[#fff] transition duration-200 font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const [profileData, setProfileData] = useState({
+    firstName: '',
+    lastName: '',
+    gender: 'Female',
+    mobile: '',
+    address: '',
+    place: '',
+    pincode: '',
+    landmark: ''
+  });
+  const [isEditing, setIsEditing] = useState(false);
   
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!currentUser?.uid) return;
+      try {
+        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setProfileData({
+            firstName: data.firstName || '',
+            lastName: data.lastName || '',
+            gender: data.gender || 'Female',
+            mobile: data.mobile || '',
+            address: data.address || '',
+            place: data.place || '',
+            pincode: data.pincode || '',
+            landmark: data.landmark || ''
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+      }
+    };
+    fetchProfileData();
+  }, [currentUser]);
+
+  const handleProfileUpdate = async () => {
+    if (!currentUser?.uid) return;
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), {
+        ...profileData,
+        updatedAt: new Date()
+      });
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProfileData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   // For the main profile page
   if (location.pathname === '/profile') {
     return (
@@ -389,56 +538,11 @@ const UserProfile = () => {
                 <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                   SUPER SAVER
                 </span>
-              </div>
-            </div>
-
-            {/* Delivery Info */}
-            <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
-              <div className="mr-3">
-                <div className="text-blue-600 font-bold">
-                  Delivery in 9 mins
-                </div>
-                <div className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-blue-600 transition-colors">
-                  <span>Round North, Kodaly, Kerala</span>
-                  <ChevronDown size={16} className="ml-1" />
-                </div>
-              </div>
-              <div className="h-8 w-px bg-gray-300 mx-2"></div>
-              <div className="text-indigo-500 font-medium flex items-center cursor-pointer hover:text-indigo-600">
-                <span>Change</span>
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="w-1/3">
-              <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-                <Search size={20} className="text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search for products..."
-                  className="bg-transparent outline-none w-full text-gray-700"
-                />
-              </div>
+              </div> 
             </div>
 
             {/* Login and Cart */}
             <div className="flex items-center space-x-6">
-              {/* {currentUser ? (
-                <UserProfileHeader />
-              ) : (
-                <div
-                  className="flex items-center space-x-2 cursor-pointer group"
-                  onClick={() => setShowLoginModal(true)}
-                >
-                  <CgProfile className="text-2xl text-gray-700 group-hover:text-blue-600 transition-colors" />
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">Sign in</span>
-                    <span className="text-sm font-medium group-hover:text-blue-600 transition-colors">
-                      My Account
-                    </span>
-                  </div>
-                </div>
-              )} */}
               <div
                 className="flex items-center space-x-2 cursor-pointer group"
                 onClick={handleCartClick}
@@ -458,130 +562,9 @@ const UserProfile = () => {
                   </span>
                 </div>
               </div>
-              {/* <div className="flex items-center space-x-2 cursor-pointer group">
-                <Link
-                  to="/login"
-                  className="flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-all"
-                >
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative">
-                    <MdLogin className="text-xl text-[#1a7e74]" />
-                  </div>
-
-                  <span className="text-sm font-medium group-hover:text-blue-600 transition-colors">
-                    Login
-                  </span>
-                </Link>
-              </div> */}
             </div>
           </div>
         </div>
-
-        {/* Mobile Header */}
-        {/* <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4"> */}
-        {/* Logo Section */}
-        {/* <div className="flex justify-between items-center mb-4">
-            <div className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md">
-              zepto
-            </div>
-            <div className="flex space-x-3">
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
-                onClick={() => !currentUser && setShowLoginModal(true)}
-              >
-                {currentUser && currentUser.photoURL ? (
-                  <img
-                    src={currentUser.photoURL}
-                    alt="Profile"
-                    className="w-10 h-10 rounded-full"
-                    onClick={() => setShowUserDropdown(!showUserDropdown)}
-                  />
-                ) : (
-                  <CgProfile className="text-xl text-[#1a7e74]" />
-                )}
-              </div>
-              <div
-                className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative"
-                onClick={handleCartClick}
-              >
-                <ShoppingCart className="text-xl text-[#1a7e74]" />
-                {cartItems.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartItems.length}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div> */}
-
-        {/* Mobile User Dropdown */}
-        {/* {showUserDropdown && currentUser && (
-            <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
-              <div className="px-4 py-2 border-b border-gray-100">
-                <p className="text-sm font-semibold">
-                  {currentUser?.displayName}
-                </p>
-                <p className="text-xs text-gray-500 truncate">
-                  {currentUser?.email}
-                </p>
-              </div>
-              <a
-                href="/profile"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                My Profile
-              </a>
-              <a
-                href="/orders"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                My Orders
-              </a>
-              <a
-                href="/wishlist"
-                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                Wishlist
-              </a>
-              <button
-                onClick={handleLogout}
-                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-              >
-                Logout
-              </button>
-            </div>
-          )} */}
-
-        {/* Delivery Info */}
-        {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
-            <div className="flex flex-col flex-1">
-              <div className="text-white font-bold flex items-center">
-                <span className="mr-2">Delivery in 9 mins</span>
-                <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
-                  FAST
-                </span>
-              </div>
-              <div className="flex items-center text-sm md:text-white text-black">
-                <span>Round North, Kodaly, Kerala</span>
-                <ChevronDown size={14} className="ml-1" />
-              </div>
-            </div>
-            <div className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm">
-              Change
-            </div>
-          </div> */}
-
-        {/* Search Bar */}
-        {/* <div className="relative mb-4">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={18} className="text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder="Search for products..."
-              className="bg-white w-full pl-10 pr-4 py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
-            />
-          </div> */}
-        {/* </div> */}
 
         {/* Render Modals */}
         <LoginModal />
@@ -624,28 +607,6 @@ const UserProfile = () => {
               </p>
             </div>
 
-            {/* Zepto Cash */}
-            <div className="mt-6 border-t pt-4">
-              <div className="flex items-center justify-between mb-3 cursor-pointer group">
-                <span className="text-sm font-medium">
-                  Zepto Cash & Gift Card
-                </span>
-                <ChevronDown
-                  size={18}
-                  className="text-gray-500 group-hover:text-purple-600"
-                />
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-gray-600">
-                  Available Balance:
-                </span>
-                <span className="font-medium">₹0</span>
-              </div>
-              <button className="w-full bg-black text-white py-2.5 rounded font-medium hover:bg-gray-800 transition-colors">
-                Add Balance
-              </button>
-            </div>
-
             {/* Navigation */}
             <nav className="mt-6">
               {menuItems.map((item) => (
@@ -679,19 +640,80 @@ const UserProfile = () => {
           {/* Content */}
           <div className="flex-1 mt-6 md:mt-0">
             {activePage === "orders" && (
-              <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-                <img
-                  src="/api/placeholder/96/96"
-                  alt="No orders"
-                  className="w-24 h-24 mx-auto mb-4"
-                />
-                <h3 className="text-xl font-medium mb-4">No orders yet</h3>
-                <Link
-                  to="/"
-                  className="px-8 py-3 border border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium"
-                >
-                  Browse products
-                </Link>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-2xl font-semibold mb-6">My Orders</h2>
+                <p className="text-gray-600 mb-6">Track and view your order history</p>
+
+                {ordersLoading ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                  </div>
+                ) : ordersError ? (
+                  <div className="text-center text-red-600 py-8">{ordersError}</div>
+                ) : orders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No orders</h3>
+                    <p className="mt-1 text-sm text-gray-500">Start shopping to see your orders here.</p>
+                    <Link
+                      to="/"
+                      className="mt-4 inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Browse Products
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {orders.map((order) => (
+                      <div key={order.id} className="bg-white rounded-lg shadow overflow-hidden border border-gray-100">
+                        <div className="p-6">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h2 className="text-lg font-medium text-gray-900">Order #{order.id}</h2>
+                              <p className="text-sm text-gray-500">{order.createdAt}</p>
+                            </div>
+                            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {order.status}
+                            </div>
+                          </div>
+
+                          <div className="border-t border-gray-200 pt-4">
+                            {order.items.map((item, index) => (
+                              <div key={index} className="flex items-center py-2">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                                  <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                                </div>
+                                <p className="text-sm font-medium text-gray-900">₹{item.salePrice * item.quantity}</p>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="border-t border-gray-200 pt-4 mt-4">
+                            <div className="flex justify-between">
+                              <p className="text-sm font-medium text-gray-900">Total Amount</p>
+                              <p className="text-sm font-medium text-gray-900">₹{order.total}</p>
+                            </div>
+                          </div>
+
+                          {order.shippingDetails && (
+                            <div className="border-t border-gray-200 pt-4 mt-4">
+                              <h3 className="text-sm font-medium text-gray-900 mb-2">Shipping Details</h3>
+                              <p className="text-sm text-gray-500">{order.shippingDetails.fullName}</p>
+                              <p className="text-sm text-gray-500">{order.shippingDetails.address}</p>
+                              <p className="text-sm text-gray-500">{order.shippingDetails.city}, {order.shippingDetails.pincode}</p>
+                              <p className="text-sm text-gray-500">{order.shippingDetails.phone}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -700,15 +722,213 @@ const UserProfile = () => {
                 Customer Support Page
               </div>
             )}
+
             {activePage === "wishlist" && (
-              <div className="bg-white p-8 rounded shadow">Wishlist Page</div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-2xl font-semibold mb-6">My Wishlist</h2>
+                
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : wishlistItems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Heart size={48} className="mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500 mb-4">Your wishlist is empty</p>
+                    <Link
+                      to="/"
+                      className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Continue Shopping
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {wishlistItems.map((item) => (
+                      <div key={item.id} className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                        <div className="aspect-w-1 aspect-h-1">
+                          <img
+                            src={item.imageBase64}
+                            alt={item.name}
+                            className="w-full h-52 object-contain"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">{item.name}</h3>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-bold text-gray-900">₹{item.salePrice}</span>
+                              {item.originalPrice && (
+                                <span className="text-sm text-gray-500 line-through">₹{item.originalPrice}</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleMoveToCart(item)}
+                              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <ShoppingCart size={16} />
+                              Add to Cart
+                            </button>
+                            <button
+                              onClick={() => handleRemoveFromWishlist(item.id)}
+                              className="p-2 text-gray-500 hover:text-red-500 border border-gray-200 rounded-lg transition-colors"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
+
             {activePage === "addresses" && (
-              <div className="bg-white p-8 rounded shadow">Addresses Page</div>
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <AddressManager />
+              </div>
             )}
-            {activePage === "profile" && (
-              <div className="bg-white p-8 rounded shadow">
-                User Profile Page
+
+            {activePage === 'profile' && (
+              <div className="p-6 bg-white rounded-lg shadow">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-semibold">Personal Information</h2>
+                  <button
+                    onClick={() => isEditing ? handleProfileUpdate() : setIsEditing(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  >
+                    {isEditing ? 'Save' : 'Edit'}
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={profileData.firstName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={profileData.lastName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="Male"
+                          checked={profileData.gender === 'Male'}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          className="mr-2"
+                        />
+                        Male
+                      </label>
+                      <label className="flex items-center">
+                        <input
+                          type="radio"
+                          name="gender"
+                          value="Female"
+                          checked={profileData.gender === 'Female'}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          className="mr-2"
+                        />
+                        Female
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+                    <input
+                      type="email"
+                      value={currentUser?.email || ''}
+                      disabled
+                      className="w-full p-2 border rounded bg-gray-100"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Mobile Number</label>
+                    <input
+                      type="tel"
+                      name="mobile"
+                      value={profileData.mobile}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                    <textarea
+                      name="address"
+                      value={profileData.address}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      rows="3"
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Place</label>
+                    <input
+                      type="text"
+                      name="place"
+                      value={profileData.place}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pincode</label>
+                    <input
+                      type="text"
+                      name="pincode"
+                      value={profileData.pincode}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Landmark</label>
+                    <input
+                      type="text"
+                      name="landmark"
+                      value={profileData.landmark}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -716,6 +936,8 @@ const UserProfile = () => {
       </div>
     );
   }
+
+
   
   // For the header dropdown
   return (

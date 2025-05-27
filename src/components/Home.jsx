@@ -56,7 +56,9 @@ const Home = () => {
     if (event.target.closest('button')) return;
     navigate(`/product/${productId}`);
   };
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   // Define filtered products with search functionality
   const getFilteredProducts = () => {
     // First apply category filter
@@ -351,12 +353,23 @@ const Home = () => {
 
   // Call this in useEffect when user logs in
   useEffect(() => {
-    if (currentUser?.location?.address) {
-      setUserLocation({
-        address: currentUser.location.address,
-        deliveryTime: '9 mins'
-      });
-    }
+    const fetchUserLocation = async () => {
+      if (currentUser?.uid) {
+        setIsLoadingLocation(true);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists() && userDoc.data().location) {
+            setUserLocation(userDoc.data().location);
+          }
+        } catch (error) {
+          console.error('Error fetching user location:', error);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      }
+    };
+
+    fetchUserLocation();
   }, [currentUser]);
 
   // Render stars based on rating
@@ -588,7 +601,10 @@ const Home = () => {
                   <span className="text-lg font-semibold">Total</span>
                   <span className="text-lg font-bold">₹{calculateTotal() + 40}</span>
                 </div>
-                <button className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
+                <button 
+                  onClick={() => navigate('/order-confirm')}
+                  className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200"
+                >
                   Proceed to Checkout
                 </button>
               </div>
@@ -711,11 +727,15 @@ const Home = () => {
         <div className="max-w-7xl mx-auto flex-shrink-0 overflow-x-auto hideScrollbar">
           <div className="flex items-center justify-between px-4 py-3 overflow-x-auto hideScrollbar gap-10">
             {categories.map((category) => (
-              <div
-                key={category.id}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => setSelectedCategory(category.name)}
-              >
+            <div
+            key={category.id}
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg cursor-pointer transition-colors ${
+              selectedCategory === category.name
+                ? ' text-yellow-500'
+                : 'hover:text-blue-500'
+            }`}
+            onClick={() => setSelectedCategory(category.name)}
+          >
                 {category.imageBase64 && (
                   <img
                     src={category.imageBase64}
@@ -831,7 +851,7 @@ const Home = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+        <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
           <Search size={20} className="text-gray-400" />
           <input
             type="text"
@@ -847,10 +867,10 @@ const Home = () => {
           {categories.map((category) => (
             <div
               key={category.id}
-              className="flex flex-col items-center flex-shrink-0 text-white text-opacity-90 hover:text-opacity-100"
+              className={`flex flex-col items-center flex-shrink-0 ${selectedCategory === category.name ? 'text-yellow-400' : 'text-white text-opacity-90 hover:text-opacity-100'}`}
               onClick={() => setSelectedCategory(category.name)}
             >
-              <div className="mb-2 w-14 h-14 rounded-full flex items-center justify-center shadow-md bg-white">
+              <div className={`mb-2 w-14 h-14 rounded-full flex items-center justify-center shadow-md ${selectedCategory === category.name ? 'bg-yellow-50 border-2 border-yellow-400' : 'bg-white'}`}>
                 {category.imageBase64 && (
                   <img
                     src={category.imageBase64}
@@ -928,7 +948,7 @@ const Home = () => {
                     <img
                       src={product.imageBase64 || apple}
                       alt={product.name}
-                      className="w-full h-40 md:h-44 object-cover"
+                      className="w-full h-40 md:h-44 object-contain"
                     />
                     {product.offer > 0 && (
                       <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
@@ -1055,7 +1075,7 @@ const Home = () => {
                         <img
                           src={product.imageBase64 || apple}
                           alt={product.name}
-                          className="w-full h-40 md:h-44 object-cover"
+                          className="w-full h-40 md:h-44 object-contain"
                         />
                         {product.offer > 0 && (
                           <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
@@ -1063,13 +1083,29 @@ const Home = () => {
                           </div>
                         )}
 
-                        {hoveredProduct === product.id && (
-                          <div className="absolute top-3 right-3 md:flex items-center justify-center hidden">
-                            <button className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:text-red-500 transition-colors">
-                              <Heart size={16} />
-                            </button>
-                          </div>
-                        )}
+{hoveredProduct === product.id && (
+                      <div className="absolute top-3 right-3 md:flex items-center justify-center hidden">
+                        {/* Replace this section */}
+                        <button
+                          onClick={() => toggleWishlist(product)}
+                          disabled={loading}
+                          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                            wishlist.some((item) => item.id === product.id)
+                              ? "bg-red-100 text-red-500"
+                              : "bg-white text-gray-600 hover:text-red-500"
+                          }`}
+                        >
+                          <Heart
+                            size={16}
+                            fill={
+                              wishlist.some((item) => item.id === product.id)
+                                ? "currentColor"
+                                : "none"
+                            }
+                          />
+                        </button>
+                      </div>
+                    )}
                       </div>
 
                       {/* Product Details */}
@@ -1167,7 +1203,7 @@ const Home = () => {
                   <img
                     src={product.imageBase64 || apple}
                     alt={product.name}
-                    className="w-full h-40 md:h-44 object-cover"
+                    className="w-full h-40 md:h-44 object-contain"
                   />
                   {product.offer && (
                     <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
@@ -1175,12 +1211,28 @@ const Home = () => {
                     </div>
                   )}
                   {hoveredProduct === product.id && (
-                    <div className="absolute top-3 right-3 md:flex items-center justify-center hidden">
-                      <button className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:text-red-500 transition-colors">
-                        <Heart size={16} />
-                      </button>
-                    </div>
-                  )}
+                      <div className="absolute top-3 right-3 md:flex items-center justify-center hidden">
+                        {/* Replace this section */}
+                        <button
+                          onClick={() => toggleWishlist(product)}
+                          disabled={loading}
+                          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                            wishlist.some((item) => item.id === product.id)
+                              ? "bg-red-100 text-red-500"
+                              : "bg-white text-gray-600 hover:text-red-500"
+                          }`}
+                        >
+                          <Heart
+                            size={16}
+                            fill={
+                              wishlist.some((item) => item.id === product.id)
+                                ? "currentColor"
+                                : "none"
+                            }
+                          />
+                        </button>
+                      </div>
+                    )}
                 </div>
 
                 {/* Product Details */}

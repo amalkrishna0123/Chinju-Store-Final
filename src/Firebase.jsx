@@ -34,3 +34,4 @@ setPersistence(auth, browserLocalPersistence)
 
 export { auth, realtimeDb, db };
 export default app;
+

@@ -10,6 +10,7 @@ import { IoIosArrowRoundForward } from "react-icons/io";
 import { FcGoogle } from 'react-icons/fc';
 import { VscAccount } from "react-icons/vsc";
 import allproduct from '../assets/allproduct.jpeg'
+import { useNavigate } from 'react-router-dom';
 
 const ProductViewAll = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -20,9 +21,16 @@ const ProductViewAll = () => {
   const [categories, setCategories] = useState([]);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [products, setProducts] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [selectedCategory, setSelectedCategory] = useState('All Products');
   const [loading, setLoading] = useState(false);
   const [wishlist, setWishlist] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const [userLocation, setUserLocation] = useState({
+    address: 'Round North, Kodaly, Kerala', // Default address
+    deliveryTime: '9 mins'
+  });
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   // Fetch products from Firestore
   useEffect(() => {
@@ -42,6 +50,26 @@ const ProductViewAll = () => {
     fetchProducts();
   }, []);
 
+
+  // Define filtered products with search functionality
+  const getFilteredProducts = () => {
+    let result = selectedCategory === 'All Products' 
+      ? products 
+      : products.filter(product => product.category === selectedCategory);
+    
+    if (searchQuery && searchQuery.trim().length > 0) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(product => 
+        (product.name && product.name.toLowerCase().includes(query)) ||
+        (product.category && product.category.toLowerCase().includes(query)) ||
+        (product.description && product.description?.toLowerCase().includes(query))
+      );
+    }
+    
+    return result;
+  };
+  
+ 
   // Fetch categories from Firestore
   useEffect(() => {
     const fetchCategories = async () => {
@@ -60,11 +88,6 @@ const ProductViewAll = () => {
 
     fetchCategories();
   }, []);
-
-  // Get filtered products based on selected category
-  const filteredProducts = selectedCategory === 'All' 
-    ? products 
-    : products.filter(product => product.category === selectedCategory);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -126,7 +149,10 @@ const ProductViewAll = () => {
       console.error("Error adding to cart:", error);
     }
   };
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+  
   const removeFromCart = async (productId) => {
     if (!currentUser) return;
     
@@ -242,7 +268,71 @@ const ProductViewAll = () => {
       setShowCart(true);
     }
   };
+  const fetchCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            
+            // Set a simple location without relying on Google API
+            setUserLocation({
+              address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+              deliveryTime: '9 mins'
+            });
+            
+            // Save location to user's profile if logged in
+            if (currentUser?.uid) {
+              await updateDoc(doc(db, 'users', currentUser.uid), {
+                location: {
+                  address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                  coordinates: {
+                    lat: latitude,
+                    lng: longitude
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error setting location:', error);
+            alert("Could not detect your precise location. Using default address.");
+          } finally {
+            setIsLoadingLocation(false);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert("Location permission denied. Please allow location access to use this feature.");
+          setIsLoadingLocation(false);
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+      setIsLoadingLocation(false);
+    }
+  };
 
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      if (currentUser?.uid) {
+        setIsLoadingLocation(true);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists() && userDoc.data().location) {
+            setUserLocation(userDoc.data().location);
+          }
+        } catch (error) {
+          console.error('Error fetching user location:', error);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      }
+    };
+
+    fetchUserLocation();
+  }, [currentUser]);
   // User Profile Component - Updated to match Home.jsx
   const UserProfile = () => (
     <div className="relative">
@@ -443,7 +533,9 @@ const ProductViewAll = () => {
                   <span className="text-lg font-semibold">Total</span>
                   <span className="text-lg font-bold">₹{calculateTotal() + 40}</span>
                 </div>
-                <button className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
+                <button 
+                onClick={() => navigate('/order-confirm')}
+                className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
                   Proceed to Checkout
                 </button>
               </div>
@@ -454,6 +546,9 @@ const ProductViewAll = () => {
     );
   };
 
+  // Get filtered products - Now used for display
+  const displayProducts = getFilteredProducts();
+  const filteredProducts = getFilteredProducts();
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1"></div>
@@ -471,31 +566,16 @@ const ProductViewAll = () => {
             </div>
           </div>
 
-          {/* Delivery Info */}
-          <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
-            <div className="mr-3">
-              <div className="text-blue-600 font-bold">Delivery in 9 mins</div>
-              <div className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-blue-600 transition-colors">
-                <span>Round North, Kodaly, Kerala</span>
-                <ChevronDown size={16} className="ml-1" />
-              </div>
-            </div>
-            <div className="h-8 w-px bg-gray-300 mx-2"></div>
-            <div className="text-indigo-500 font-medium flex items-center cursor-pointer hover:text-indigo-600">
-              <span>Change</span>
-            </div>
-          </div>
-
           {/* Search Bar */}
-          <div className="w-1/3">
-            <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <Search size={20} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="bg-transparent outline-none w-full text-gray-700"
-              />
-            </div>
+          <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all w-1/3">
+            <Search size={20} className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search for products..."
+              className="bg-transparent outline-none w-full text-gray-700"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
           {/* User and Cart */}
@@ -638,55 +718,22 @@ const ProductViewAll = () => {
               </div>
       
               {/* Search Bar */}
-              <div className="relative mb-4">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={18} className="text-gray-400" />
-                </div>
+              <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+                <Search size={20} className="text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search for products..."
-                  className="bg-white w-full pl-10 pr-4 py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+                  className="bg-transparent outline-none w-full text-gray-700"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-      
-              {/* Categories - Horizontal Scroll */}
-              {/* <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
-                {categories.map((category) => (
-                  <div
-                    key={category.id}
-                    className={`flex flex-col items-center flex-shrink-0 ${
-                      selectedCategory === category.name
-                        ? "text-white"
-                        : "text-white text-opacity-90 hover:text-opacity-100"
-                    }`}
-                    onClick={() => setSelectedCategory(category.name)}
-                  >
-                    <div
-                      className={`mb-2 w-14 h-14 rounded-full flex items-center justify-center shadow-md bg-white ${
-                        selectedCategory === category.name
-                          ? "border-2 border-white"
-                          : ""
-                      }`}
-                    >
-                      {category.imageBase64 && (
-                        <img
-                          src={category.imageBase64}
-                          alt={category.name}
-                          className="w-full h-full object-cover rounded-full"
-                        />
-                      )}
-                    </div>
-                    <span className="text-xs font-medium whitespace-nowrap text-center">
-                      {category.name}
-                    </span>
-                  </div>
-                ))}
-              </div> */}
             </div>
       
             {/* Render Modals */}
             <LoginModal />
             <Cart />
+
 
       {/* Category Filter */}
       <div className="max-w-7xl mx-auto px-4 mt-6">

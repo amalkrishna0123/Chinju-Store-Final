@@ -22,8 +22,10 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
+  getDoc
 } from "firebase/firestore";
 import { db } from "../Firebase";
+import { optimizeProductData } from "../utils/imageCompression";
 
 import "swiper/css";
 import "swiper/css/pagination";
@@ -31,7 +33,7 @@ import "swiper/css/navigation";
 import { useParams } from "react-router-dom";
 import { IoIosArrowRoundForward } from "react-icons/io";
 import allproduct from '../assets/allproduct.jpeg'
-
+import { useNavigate } from 'react-router-dom';
 const ProductCategoryView = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -43,10 +45,18 @@ const ProductCategoryView = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { categoryName } = useParams();
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  
   const [selectedCategory, setSelectedCategory] = useState(
     decodeURIComponent(categoryName)
   );
   const [wishlist, setWishlist] = useState([]);
+  const [userLocation, setUserLocation] = useState({
+    address: 'Round North, Kodaly, Kerala', // Default address
+    deliveryTime: '9 mins'
+  });
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   // Modern cool color scheme
   const colors = {
@@ -58,7 +68,9 @@ const ProductCategoryView = () => {
     white: "#FFFFFF",
     success: "#10B981", // Green
   };
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [selectedCategory]);
   // Fetch products from Firestore
   useEffect(() => {
     const fetchProducts = async () => {
@@ -79,7 +91,26 @@ const ProductCategoryView = () => {
 
     fetchProducts();
   }, []);
-
+  
+  // Function to get filtered products based on category and search query
+  const getFilteredProducts = () => {
+    let result = selectedCategory === 'All Products' 
+      ? products 
+      : products.filter(product => product.category === selectedCategory);
+    
+    if (searchQuery && searchQuery.trim().length > 0) {
+      const query = searchQuery.toLowerCase().trim();
+      result = result.filter(product => 
+        (product.name && product.name.toLowerCase().includes(query)) ||
+        (product.category && product.category.toLowerCase().includes(query)) ||
+        (product.description && product.description?.toLowerCase().includes(query))
+      );
+    }
+    
+    return result;
+  };
+  
+  
   // Fetch categories from Firestore
   useEffect(() => {
     const fetchCategories = async () => {
@@ -116,15 +147,6 @@ const ProductCategoryView = () => {
     }
   }, [currentUser]);
 
-  // Filter products based on selected category
-  const filteredProducts = products.filter((product) => {
-    if (selectedCategory === "All Products") {
-      return true; // Show all products
-    }
-    // Filter products by category
-    return product.category === selectedCategory;
-  });
-
   const handleGoogleSignIn = async () => {
     try {
       await signInWithGoogle();
@@ -157,11 +179,22 @@ const ProductCategoryView = () => {
       if (existingItemIndex >= 0) {
         updatedItems[existingItemIndex].quantity += 1;
       } else {
-        updatedItems.push({
-          ...product,
+        // Create a new product object with only necessary data
+        const productToAdd = {
+          id: product.id,
+          name: product.name,
+          originalPrice: product.originalPrice,
+          salePrice: product.salePrice,
+          offer: product.offer,
+          category: product.category,
+          imageBase64: product.imageBase64,
           quantity: 1,
           addedAt: new Date().toISOString(),
-        });
+        };
+        
+        // Optimize the product data by compressing images
+        const optimizedProduct = await optimizeProductData(productToAdd);
+        updatedItems.push(optimizedProduct);
       }
 
       await updateDoc(doc(db, "users", currentUser.uid), {
@@ -241,10 +274,24 @@ const ProductCategoryView = () => {
         });
         setWishlist((prev) => prev.filter((item) => item.id !== product.id));
       } else {
+        // Create a simplified product object with only necessary data
+        const productToAdd = {
+          id: product.id,
+          name: product.name,
+          originalPrice: product.originalPrice,
+          salePrice: product.salePrice,
+          offer: product.offer,
+          category: product.category,
+          imageBase64: product.imageBase64,
+        };
+        
+        // Optimize the product data by compressing images
+        const optimizedProduct = await optimizeProductData(productToAdd);
+        
         await updateDoc(doc(db, "users", currentUser.uid), {
-          wishlist: arrayUnion(product),
+          wishlist: arrayUnion(optimizedProduct),
         });
-        setWishlist((prev) => [...prev, product]);
+        setWishlist((prev) => [...prev, optimizedProduct]);
       }
     } catch (error) {
       console.error("Error toggling wishlist:", error);
@@ -292,7 +339,70 @@ const ProductCategoryView = () => {
       setShowCart(true);
     }
   };
+  const fetchCurrentLocation = () => {
+    setIsLoadingLocation(true);
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            const { latitude, longitude } = position.coords;
+            
+            // Set a simple location without relying on Google API
+            setUserLocation({
+              address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+              deliveryTime: '9 mins'
+            });
+            
+            // Save location to user's profile if logged in
+            if (currentUser?.uid) {
+              await updateDoc(doc(db, 'users', currentUser.uid), {
+                location: {
+                  address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                  coordinates: {
+                    lat: latitude,
+                    lng: longitude
+                  }
+                }
+              });
+            }
+          } catch (error) {
+            console.error('Error setting location:', error);
+            alert("Could not detect your precise location. Using default address.");
+          } finally {
+            setIsLoadingLocation(false);
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert("Location permission denied. Please allow location access to use this feature.");
+          setIsLoadingLocation(false);
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+      setIsLoadingLocation(false);
+    }
+  };
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      if (currentUser?.uid) {
+        setIsLoadingLocation(true);
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists() && userDoc.data().location) {
+            setUserLocation(userDoc.data().location);
+          }
+        } catch (error) {
+          console.error('Error fetching user location:', error);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      }
+    };
 
+    fetchUserLocation();
+  }, [currentUser]);
   // User Profile Component
   const UserProfile = () => (
     <div className="relative">
@@ -416,7 +526,7 @@ const ProductCategoryView = () => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
+      <div className="fixed inset-0 bg-transparent bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
         <div className="w-full md:w-1/4 h-full md:h-screen bg-white md:shadow-lg transform transition-transform duration-300 flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-gray-100">
             <h2 className="text-lg font-semibold text-gray-800">
@@ -528,7 +638,9 @@ const ProductCategoryView = () => {
                     ₹{calculateTotal() + 40}
                   </span>
                 </div>
-                <button className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
+                <button 
+                onClick={() => navigate('/order-confirm')}
+                className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
                   Proceed to Checkout
                 </button>
               </div>
@@ -538,6 +650,9 @@ const ProductCategoryView = () => {
       </div>
     );
   };
+
+  // Get filtered products using the search function
+  const filteredProducts = getFilteredProducts();
 
   return (
     <div className="bg-gray-50 min-h-screen pb-16">
@@ -561,30 +676,42 @@ const ProductCategoryView = () => {
           </div>
 
           {/* Delivery Info */}
-          <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
-            <div className="mr-3">
-              <div className="text-blue-600 font-bold">Delivery in 9 mins</div>
-              <div className="flex items-center text-sm text-gray-600 cursor-pointer hover:text-blue-600 transition-colors">
-                <span>Round North, Kodaly, Kerala</span>
-                <ChevronDown size={16} className="ml-1" />
-              </div>
+        
+          {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
+          <div className="flex flex-col flex-1">
+            <div className="text-black font-bold flex items-center">
+              <span className="mr-2">
+                Delivery in {userLocation.deliveryTime}
+              </span>
+              <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
+                FAST
+              </span>
             </div>
-            <div className="h-8 w-px bg-gray-300 mx-2"></div>
-            <div className="text-indigo-500 font-medium flex items-center cursor-pointer hover:text-indigo-600">
-              <span>Change</span>
+            <div className="flex items-center text-sm md:text-black text-black">
+              <span>{userLocation.address}</span>
+              <ChevronDown size={14} className="ml-1" />
             </div>
           </div>
+          <button
+            onClick={fetchCurrentLocation}
+            disabled={isLoadingLocation}
+            className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm"
+          >
+            {isLoadingLocation ? "Loading..." : "Change"}
+          </button>
+        </div> */}
+
 
           {/* Search Bar */}
-          <div className="w-1/3">
-            <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <Search size={20} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="bg-transparent outline-none w-full text-gray-700"
-              />
-            </div>
+          <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <Search size={20} className="text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search for products..."
+              className="bg-transparent outline-none w-full text-gray-700"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
           {/* Login and Cart */}
@@ -720,7 +847,7 @@ const ProductCategoryView = () => {
         )}
 
         {/* Delivery Info */}
-        <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
+        {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
           <div className="flex flex-col flex-1">
             <div className="text-white font-bold flex items-center">
               <span className="mr-2">Delivery in 9 mins</span>
@@ -736,19 +863,29 @@ const ProductCategoryView = () => {
           <div className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm">
             Change
           </div>
-        </div>
+        </div> */}
 
         {/* Search Bar */}
-        <div className="relative mb-4">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search size={18} className="text-gray-400" />
-          </div>
-          <input
-            type="text"
-            placeholder="Search for products..."
-            className="bg-white w-full pl-10 pr-4 py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
-          />
-        </div>
+        <div className="relative w-full mb-4">
+  <div className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200">
+    <Search size={18} className="text-gray-400 mr-2" />
+    <input
+      type="text"
+      placeholder="Search for fruits, vegetables, groceries..."
+      className="flex-1 outline-none text-gray-700 text-sm"
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+    />
+    {searchQuery && (
+      <button
+        onClick={() => setSearchQuery('')}
+        className="text-gray-400"
+      >
+        <X size={16} />
+      </button>
+    )}
+  </div>
+</div>
 
         {/* Categories - Horizontal Scroll */}
         <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
