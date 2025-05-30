@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../Firebase/'; // Make sure you have firebase configured
-import { Check, X, Truck, Package, Clock } from 'lucide-react';
+import { Check, X, Truck, Package, Clock, Menu, User, LogOut } from 'lucide-react';
 
 const DeliveryDashboard = () => {
   const [orders, setOrders] = useState([]);
@@ -9,6 +9,7 @@ const DeliveryDashboard = () => {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const deliveryName = localStorage.getItem('deliveryName');
 
   const cancelReasons = [
@@ -152,154 +153,235 @@ const DeliveryDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Delivery Dashboard</h1>
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-600">Welcome,</span>
-            <span className="font-medium">{deliveryName}</span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Header */}
+      <div className="lg:hidden bg-white shadow-sm border-b px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Truck className="h-6 w-6 text-blue-600" />
+            <h1 className="text-lg font-bold text-gray-900">Delivery Dashboard</h1>
+          </div>
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
+        
+        {/* Mobile Menu */}
+        {showMobileMenu && (
+          <div className="mt-3 border-t pt-3">
+            <div className="flex items-center space-x-3 mb-3">
+              <User className="h-5 w-5 text-gray-400" />
+              <span className="text-sm text-gray-600">Welcome, {deliveryName}</span>
+            </div>
             <button
               onClick={() => {
                 localStorage.removeItem('deliveryName');
                 window.location.href = '/login';
               }}
-              className="ml-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center"
+              className="flex items-center space-x-2 w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 rounded-md"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 6.707 6.293a1 1 0 00-1.414 1.414L8.586 11l-3.293 3.293a1 1 0 101.414 1.414L10 12.414l3.293 3.293a1 1 0 001.414-1.414L11.414 11l3.293-3.293z" clipRule="evenodd" />
-              </svg>
-              Logout
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
             </button>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          </div>
-         ) : orders.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg shadow p-6">
-            <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No New Orders</h3>
-            <p className="text-gray-500">There are currently no orders available for delivery.</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6">
-            {orders.map(order => (
-              <div key={order.id} className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-lg font-semibold">Order #{order.id.slice(0, 8)}</h2>
-                    <p className="text-gray-600">{order.shippingDetails?.fullName}</p>
-                    <p className="text-gray-600">{order.shippingDetails?.address}</p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                    {order.status}
-                  </span>
-                </div>
-
-                <div className="mb-4">
-                  <h3 className="font-medium mb-2">Items:</h3>
-                  <ul className="space-y-1">
-                    {order.items?.map((item, index) => (
-                      <li key={index} className="flex justify-between">
-                        <span>{item.name}</span>
-                        <span>{item.quantity} x ₹{item.salePrice}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">Total: ₹{order.total}</p>
-                    <p className="text-sm text-gray-500">Ordered at: {new Date(order.createdAt?.toDate()).toLocaleString()}</p>
-                  </div>
-
-                  {!order.deliveryBoy && order.status === 'Accept' ? (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleAcceptOrder(order.id)}
-                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                      >
-                        <Check size={16} className="mr-1" /> Accept
-                      </button>
-                      <button
-                        onClick={() => handleRejectOrder(order.id)}
-                        className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                      >
-                        <X size={16} className="mr-1" /> Reject
-                      </button>
-                    </div>
-                  ) : order.deliveryBoy === deliveryName ? (
-                    <div className="flex items-center space-x-2">
-                      <select
-                        value={order.deliveryStatus || 'pending'}
-                        onChange={(e) => handleDeliveryStatusChange(order.id, e.target.value)}
-                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        disabled={order.deliveryStatus === 'cancelled'}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="departed">Departed</option>
-                        <option value="delivered">Delivered</option>
-                        <option value="cancelled">Cancelled</option>
-                      </select>
-                      {order.deliveryStatus !== 'cancelled' && (
-                        <button
-                          onClick={() => {
-                            setSelectedOrderId(order.id);
-                            setShowCancelModal(true);
-                          }}
-                          className="px-3 py-2 text-sm text-red-600 hover:text-red-800"
-                        >
-                          Cancel Delivery
-                        </button>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ))}
           </div>
         )}
       </div>
 
+      {/* Desktop Header */}
+      <div className="hidden lg:block bg-white shadow-sm border-b px-6 py-4">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-3">
+            <Truck className="h-8 w-8 text-blue-600" />
+            <h1 className="text-2xl font-bold text-gray-900">Delivery Dashboard</h1>
+          </div>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <User className="h-5 w-5" />
+              <span>Welcome, <span className="font-medium text-gray-900">{deliveryName}</span></span>
+            </div>
+            <button
+              onClick={() => {
+                localStorage.removeItem('deliveryName');
+                window.location.href = '/login';
+              }}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="px-4 py-6 lg:px-6">
+        <div className="max-w-7xl mx-auto">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No orders available</h3>
+              <p className="text-gray-500">Check back later for new delivery assignments.</p>
+            </div>
+          ) : (
+            <div className="space-y-4 lg:space-y-6">
+              {orders.map(order => (
+                <div key={order.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  {/* Order Header */}
+                  <div className="px-4 py-4 lg:px-6 lg:py-5 border-b border-gray-200">
+                    <div className="flex flex-col space-y-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h2 className="text-lg font-semibold text-gray-900 truncate">
+                            Order #{order.id.slice(0, 8)}
+                          </h2>
+                          <Clock className="h-4 w-4 text-gray-400 hidden sm:block" />
+                        </div>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <p className="font-medium">{order.shippingDetails?.fullName}</p>
+                          <p className="line-clamp-2">{order.shippingDetails?.address}</p>
+                          <p className="text-xs">
+                            Ordered: {new Date(order.createdAt?.toDate()).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between sm:justify-end space-x-3">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                          {order.status}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Items */}
+                  <div className="px-4 py-4 lg:px-6 border-b border-gray-200">
+                    <h3 className="font-medium text-gray-900 mb-3">Order Items</h3>
+                    <div className="space-y-2">
+                      {order.items?.map((item, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm">
+                          <span className="text-gray-700 flex-1 min-w-0 pr-4">
+                            <span className="truncate block">{item.name}</span>
+                          </span>
+                          <span className="text-gray-900 font-medium whitespace-nowrap">
+                            {item.quantity} × ₹{item.salePrice}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-gray-900">Total Amount</span>
+                        <span className="text-lg font-bold text-gray-900">₹{order.total}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Order Actions */}
+                  <div className="px-4 py-4 lg:px-6 bg-gray-50">
+                    {!order.deliveryBoy && order.status === 'Accept' ? (
+                      <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3">
+                        <button
+                          onClick={() => handleAcceptOrder(order.id)}
+                          className="flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex-1 sm:flex-none"
+                        >
+                          <Check size={16} className="mr-2" /> 
+                          Accept Order
+                        </button>
+                        <button
+                          onClick={() => handleRejectOrder(order.id)}
+                          className="flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex-1 sm:flex-none"
+                        >
+                          <X size={16} className="mr-2" /> 
+                          Reject Order
+                        </button>
+                      </div>
+                    ) : order.deliveryBoy === deliveryName ? (
+                      <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                        <div className="flex flex-col space-y-2 sm:flex-row sm:items-center sm:space-y-0 sm:space-x-3">
+                          <label className="text-sm font-medium text-gray-700 sm:whitespace-nowrap">
+                            Delivery Status:
+                          </label>
+                          <select
+                            value={order.deliveryStatus || 'pending'}
+                            onChange={(e) => handleDeliveryStatusChange(order.id, e.target.value)}
+                            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm min-w-0 flex-1 sm:flex-none sm:min-w-[140px]"
+                            disabled={order.deliveryStatus === 'cancelled'}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="departed">Departed</option>
+                            <option value="delivered">Delivered</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                        </div>
+                        {order.deliveryStatus !== 'cancelled' && (
+                          <button
+                            onClick={() => {
+                              setSelectedOrderId(order.id);
+                              setShowCancelModal(true);
+                            }}
+                            className="px-4 py-2 text-sm text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            Cancel Delivery
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500">
+                        This order is assigned to another delivery person.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Cancel Delivery Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-lg font-semibold mb-4">Cancel Delivery</h3>
-            <select
-              value={cancelReason}
-              onChange={(e) => setCancelReason(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Select a reason</option>
-              {cancelReasons.map((reason, index) => (
-                <option key={index} value={reason}>{reason}</option>
-              ))}
-            </select>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => {
-                  setShowCancelModal(false);
-                  setSelectedOrderId(null);
-                  setCancelReason('');
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full mx-4 max-h-screen overflow-y-auto">
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Cancel Delivery</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Please select a reason for cancelling this delivery:
+              </p>
+              <select
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-6 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleCancelDelivery}
-                disabled={!cancelReason}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                Confirm
-              </button>
+                <option value="">Select a reason</option>
+                {cancelReasons.map((reason, index) => (
+                  <option key={index} value={reason}>{reason}</option>
+                ))}
+              </select>
+              <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:space-x-3 sm:justify-end">
+                <button
+                  onClick={() => {
+                    setShowCancelModal(false);
+                    setSelectedOrderId(null);
+                    setCancelReason('');
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCancelDelivery}
+                  disabled={!cancelReason}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Confirm Cancellation
+                </button>
+              </div>
             </div>
           </div>
         </div>

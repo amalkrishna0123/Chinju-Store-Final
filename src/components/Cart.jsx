@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, X, Minus, Plus, Trash } from 'lucide-react';
 import { useAuth } from './AuthContext';
-import { doc, getDoc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, addDoc, collection } from 'firebase/firestore';
 import { db } from '../Firebase';
 
 const Cart = ({ isOpen, onClose }) => {
