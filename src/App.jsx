@@ -5,6 +5,7 @@ import {
   useLocation,
   Navigate,
 } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import BottomNav from "./components/BottomNav";
 import Home from "./components/Home";
 import Login from "./components/Login";
@@ -36,6 +37,7 @@ import AddDeliveryBoy from './components/AddDeliveryBoy';
 import EditDeliveryBoy from './components/EditDeliveryBoy';
 import DeliveryDashboard from './components/DeliveryBoyDash'
 import Payment from './components/Payment';
+import LottieAnimation from "./components/cart animations/LottieAnimation";
 // Protected Route Component
 
 const ProtectedRoute = ({ children }) => {
@@ -151,10 +153,24 @@ function AppRoutes() {
 }
 
 function App() {
+  const [showAnimation, setShowAnimation] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowAnimation(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        {showAnimation ? (
+          <LottieAnimation />
+        ) : (
+          <AppRoutes />
+        )}
       </AuthProvider>
     </Router>
   );
