@@ -32,6 +32,7 @@ import { AiOutlineInstagram } from "react-icons/ai";
 import { PiFacebookLogoBold } from "react-icons/pi";
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
+import ff from "../assets/ff.png"
 
 const Home = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -722,7 +723,7 @@ const Home = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-5">
+    <div className="bg-gray-50 min-h-screen">
       {/* Gradient top bar */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1"></div>
 
@@ -1034,7 +1035,7 @@ const Home = () => {
                   />
                 )}
               </div>
-              <span className="text-[10px] font-semibold text-center max-w-[4.5rem] break-words leading-tight">
+              <span className="text-[10px] text-[#e9fffa] font-bold text-center break-words leading-tight">
                 {category.name}
               </span>
             </div>
@@ -1510,23 +1511,53 @@ const Home = () => {
       </div>
 
       {/* Footer */}
-      <div className="mt-5 mb-3 px-5 flex flex-col gap-3">
-        <div className="font-bold text-[#2DAA9E] text-xl">Chinju Store</div>
-        <div>
-          <ul className="flex items-center gap-5 text-[#2daa9e90]">
-            <li className="text-xl">
-              <AiOutlineInstagram />
-            </li>
-            <li className="text-xl">
-              <PiFacebookLogoBold />
-            </li>
-            <li className="text-xl">
-              <IoLogoWhatsapp />
-            </li>
-          </ul>
+      <div className="bg-gray-100 mt-5  text-gray-700 relative">
+        <div className="absolute bg-[#219085] top-0 bottom-0 left-0 right-0"></div>
+        <div className="absolute top-0 bottom-0 left-0 right-0">
+          <img src={ff} alt="" className="w-full h-full object-cover opacity-20"/>
         </div>
-        <div className="text-sm text-[#abaaaa]">
-          copyright © 2025 Chinju Store. All rights reserved
+        <div className="backdrop-blur-[1px] h-full relative">
+          <div className="max-w-6xl mx-auto py-8 px-5 flex flex-col md:flex-row justify-between gap-6">
+            {/* Logo and Social */}
+            <div className="flex flex-col gap-4">
+              <div className="text-2xl font-semibold text-[#ffffff]">
+                Chinju Store
+              </div>
+              <div className="flex items-center gap-4 text-[#ffffff] text-xl">
+                <a
+                  href="#"
+                  className="hover:text-[#219085] transition-colors duration-200"
+                >
+                  <AiOutlineInstagram />
+                </a>
+                <a
+                  href="#"
+                  className="hover:text-[#219085] transition-colors duration-200"
+                >
+                  <PiFacebookLogoBold />
+                </a>
+                <a
+                  href="#"
+                  className="hover:text-[#219085] transition-colors duration-200"
+                >
+                  <IoLogoWhatsapp />
+                </a>
+              </div>
+            </div>
+
+            {/* Info or Links Section (optional for future expansion) */}
+            <div className="text-sm text-[#eee]">
+              <p>Customer Support</p>
+              <p>Privacy Policy</p>
+              <p>Terms & Conditions</p>
+            </div>
+
+            {/* Copyright */}
+            <div className="text-sm text-[#eee] md:text-right">
+              <p>© 2025 Chinju Store</p>
+              <p>All rights reserved</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
