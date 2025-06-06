@@ -57,6 +57,7 @@ const Home = () => {
   });
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const words = ["products", "categories", "services", "items"];
+  const [groupedCategories, setGroupedCategories] = useState([]);
 
   // Modern cool color scheme
   const colors = {
@@ -141,10 +142,26 @@ const Home = () => {
           ...doc.data(),
         }));
         // Add "All" category at the beginning
-        setCategories([
-          { id: "all", name: "All Products", imageBase64: allproduct },
-          ...fetched,
-        ]);
+       // Separate main and sub categories
+const main = fetched.filter((cat) => cat.type === "main");
+const sub = fetched.filter((cat) => cat.type === "sub");
+
+// Group subcategories under main categories
+const grouped = main.map((mainCat) => ({
+  id: mainCat.id,
+  name: mainCat.name,
+  subcategories: sub.filter((subCat) => subCat.parentId === mainCat.id),
+}));
+
+// Optional: Add 'All Products' at the top of flat categories if still needed elsewhere
+setCategories([
+  { id: "all", name: "All Products", imageBase64: allproduct },
+  ...fetched,
+]);
+
+// ✅ Set structured grouped categories
+setGroupedCategories(grouped);
+
       } catch (err) {
         console.error("Error fetching categories:", err);
       }
@@ -848,7 +865,7 @@ const Home = () => {
       </div>
 
       {/* Navigation Categories - Desktop View */}
-      <div className="hidden md:block bg-white border-t border-gray-100 overflow-x-auto hideScrollbar flex-shrink-0">
+      {/* <div className="hidden md:block bg-white border-t border-gray-100 overflow-x-auto hideScrollbar flex-shrink-0">
         <div className="max-w-7xl mx-auto flex-shrink-0 overflow-x-auto hideScrollbar">
           <div className="flex items-center justify-between px-4 py-3 overflow-x-auto hideScrollbar gap-10">
             {categories.map((category) => (
@@ -875,7 +892,7 @@ const Home = () => {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Mobile Header */}
       <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
@@ -900,7 +917,7 @@ const Home = () => {
                 <CgProfile className="text-xl text-[#1a7e74]" />
               )}
             </div>
-            <div
+            {/* <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative"
               onClick={handleCartClick}
             >
@@ -910,7 +927,7 @@ const Home = () => {
                   {cartItems.length}
                 </span>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -1009,7 +1026,7 @@ const Home = () => {
         </div>
 
         {/* Categories - Horizontal Scroll */}
-        <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+        {/* <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {categories.map((category) => (
             <div
               key={category.id}
@@ -1040,7 +1057,7 @@ const Home = () => {
               </span>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {/* Render Modals */}
@@ -1070,393 +1087,38 @@ const Home = () => {
           </Swiper>
         </div>
       </div>
-
-      {/* Product Section */}
-      {selectedCategory === "All Products" ? (
-        // Show all products first, then by category when "All" is selected
-        <>
-          {/* All Products Section */}
-          <div className="max-w-7xl mx-auto px-4 mt-2">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-xl md:text-2xl text-gray-800">
-                All Products
-              </h3>
-              <Link
-                to="/productviewall"
-                className="text-blue-600 font-medium flex items-center hover:text-blue-700 transition-colors"
-              >
-                See All
-                <span className="ml-1">→</span>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:grid-cols-3 gap-4">
-              {products.slice(0, 5).map((product) => (
-                <div
-                  key={product.id}
-                  className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                  onMouseEnter={() => setHoveredProduct(product.id)}
-                  onMouseLeave={() => setHoveredProduct(null)}
-                  onClick={(e) => navigateToProduct(product.id, e)}
+      {/* Categories Section */}
+      <div className="max-w-7xl mx-auto px-4 mt-8  min-h-screen">
+        {groupedCategories.map((main) => (
+          <div key={main.id} className="mb-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-6">
+              {main.name}
+            </h2>
+            <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-2  gap-4">
+              {main.subcategories.map((sub) => (
+                <Link
+                  to={`/category/${encodeURIComponent(sub.name)}`}
+                  key={sub.id}
+                  className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer"
                 >
-                  {/* Product Image with Discount Tag */}
-                  <div className="relative">
+                  <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center">
                     <img
-                      src={product.imageBase64 || apple}
-                      alt={product.name}
-                      className="w-full h-40 md:h-44 object-contain"
+                      src={sub.imageBase64 || allproduct}
+                      alt={sub.name}
+                      className="w-20 h-20 object-contain"
                     />
-                    {product.offer > 0 && (
-                      <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
-                        {product.offer}% OFF
-                      </div>
-                    )}
-                    {hoveredProduct === product.id && (
-                      <div className="absolute top-3 right-3 md:flex items-center justify-center hidden">
-                        {/* Replace this section */}
-                        <button
-                          onClick={() => toggleWishlist(product)}
-                          disabled={loading}
-                          className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
-                            wishlist.some((item) => item.id === product.id)
-                              ? "bg-red-100 text-red-500"
-                              : "bg-white text-gray-600 hover:text-red-500"
-                          }`}
-                        >
-                          <Heart
-                            size={16}
-                            fill={
-                              wishlist.some((item) => item.id === product.id)
-                                ? "currentColor"
-                                : "none"
-                            }
-                          />
-                        </button>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Product Details */}
-                  <div className="p-3">
-                    <h4 className="font-medium text-gray-800">
-                      {product.name}
-                    </h4>
-                    <p className="text-gray-500 text-xs mb-1">
-                      {product.weight}
-                    </p>
-                    {renderRating(product.rating || 4)}
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="font-bold text-gray-900">
-                        ₹{product.salePrice || product.originalPrice}
-                      </span>
-                      {product.originalPrice && (
-                        <span className="text-gray-400 text-xs line-through">
-                          ₹{product.originalPrice}
-                        </span>
-                      )}
-                    </div>{" "}
-                    <button
-                      onClick={() => {
-                        const isInCart = cartItems.some(
-                          (item) => item.id === product.id
-                        );
-                        isInCart
-                          ? removeFromCart(product.id)
-                          : addToCart(product);
-                      }}
-                      className={`w-full rounded-lg py-2 mt-3 text-sm font-medium transition-colors flex items-center justify-center ${
-                        cartItems.some((item) => item.id === product.id)
-                          ? "bg-green-600 hover:bg-green-700 text-white"
-                          : "bg-blue-600 hover:bg-blue-700 text-white"
-                      }`}
-                    >
-                      {cartItems.some((item) => item.id === product.id) ? (
-                        <>
-                          <svg
-                            className="w-4 h-4 mr-2"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M5 13l4 4L19 7"
-                            ></path>
-                          </svg>
-                          Added to Cart
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart size={16} className="mr-2" />
-                          Add to Cart
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                  <span className="text-sm font-medium text-center text-gray-800 leading-tight">
+                    {sub.name}
+                  </span>
+                </Link>
               ))}
             </div>
           </div>
+        ))}
+      </div>
 
-          {/* Category Products Sections */}
-          {Object.entries(productsByCategory).map(
-            ([category, categoryProducts]) => (
-              <div key={category} className="max-w-7xl mx-auto px-4 mt-5">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-xl md:text-2xl text-gray-800">
-                    {category}
-                  </h3>
-                  <Link
-                    to={`/category/${encodeURIComponent(category)}`}
-                    className="text-blue-600 font-medium flex items-center hover:text-blue-700 transition-colors"
-                  >
-                    See All
-                    <span className="ml-1">→</span>
-                  </Link>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:grid-cols-3 gap-4">
-                  {categoryProducts.slice(0, 5).map((product) => (
-                    <div
-                      key={product.id}
-                      className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                      onMouseEnter={() => setHoveredProduct(product.id)}
-                      onMouseLeave={() => setHoveredProduct(null)}
-                      onClick={(e) => navigateToProduct(product.id, e)}
-                    >
-                      {/* Product Image with Discount Tag */}
-                      <div className="relative">
-                        <img
-                          src={product.imageBase64 || apple}
-                          alt={product.name}
-                          className="w-full h-40 md:h-44 object-contain"
-                        />
-                        {product.offer > 0 && (
-                          <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
-                            {product.offer}% OFF
-                          </div>
-                        )}
-
-                        {hoveredProduct === product.id && (
-                          <div className="absolute top-3 right-3 md:flex items-center justify-center hidden">
-                            {/* Replace this section */}
-                            <button
-                              onClick={() => toggleWishlist(product)}
-                              disabled={loading}
-                              className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
-                                wishlist.some((item) => item.id === product.id)
-                                  ? "bg-red-100 text-red-500"
-                                  : "bg-white text-gray-600 hover:text-red-500"
-                              }`}
-                            >
-                              <Heart
-                                size={16}
-                                fill={
-                                  wishlist.some(
-                                    (item) => item.id === product.id
-                                  )
-                                    ? "currentColor"
-                                    : "none"
-                                }
-                              />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Product Details */}
-                      <div className="p-3">
-                        <h4 className="font-medium text-gray-800">
-                          {product.name}
-                        </h4>
-                        <p className="text-gray-500 text-xs mb-1">
-                          {product.weight}
-                        </p>
-                        {renderRating(product.rating || 4)}
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className="font-bold text-gray-900">
-                            ₹{product.salePrice || product.originalPrice}
-                          </span>
-                          {product.originalPrice && (
-                            <span className="text-gray-400 text-xs line-through">
-                              ₹{product.originalPrice}
-                            </span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => {
-                            const isInCart = cartItems.some(
-                              (item) => item.id === product.id
-                            );
-                            isInCart
-                              ? removeFromCart(product.id)
-                              : addToCart(product);
-                          }}
-                          className={`w-full rounded-lg py-2 mt-3 text-sm font-medium transition-colors flex items-center justify-center ${
-                            cartItems.some((item) => item.id === product.id)
-                              ? "bg-green-600 hover:bg-green-700 text-white"
-                              : "bg-blue-600 hover:bg-blue-700 text-white"
-                          }`}
-                        >
-                          {cartItems.some((item) => item.id === product.id) ? (
-                            <>
-                              <svg
-                                className="w-4 h-4 mr-2"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M5 13l4 4L19 7"
-                                ></path>
-                              </svg>
-                              Added to Cart
-                            </>
-                          ) : (
-                            <>
-                              <ShoppingCart size={16} className="mr-2" />
-                              Add to Cart
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          )}
-        </>
-      ) : (
-        // Show filtered products when a specific category is selected
-        <div className="max-w-7xl mx-auto px-4 mt-5">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-xl md:text-2xl text-gray-800">
-              {selectedCategory}
-            </h3>
-            <button
-              onClick={() => setSelectedCategory("All Products")}
-              className="text-blue-600 font-medium flex items-center hover:text-blue-700 transition-colors"
-            >
-              Back to All Categories
-            </button>
-          </div>
-          {productsLoader && (
-            <div className="flex justify-center items-center">
-              <ProductsLoader />
-            </div>
-          )}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 md:grid-cols-3 gap-4">
-            {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer"
-                onMouseEnter={() => setHoveredProduct(product.id)}
-                onMouseLeave={() => setHoveredProduct(null)}
-                onClick={(e) => navigateToProduct(product.id, e)}
-              >
-                {/* Product Image with Discount Tag */}
-                <div className="relative">
-                  <img
-                    src={product.imageBase64 || apple}
-                    alt={product.name}
-                    className="w-full h-40 md:h-44 object-contain"
-                  />
-                  {product.offer && (
-                    <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
-                      {product.offer}% OFF
-                    </div>
-                  )}
-                  {hoveredProduct === product.id && (
-                    <div className="absolute top-3 right-3 md:flex items-center justify-center hidden">
-                      {/* Replace this section */}
-                      <button
-                        onClick={() => toggleWishlist(product)}
-                        disabled={loading}
-                        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
-                          wishlist.some((item) => item.id === product.id)
-                            ? "bg-red-100 text-red-500"
-                            : "bg-white text-gray-600 hover:text-red-500"
-                        }`}
-                      >
-                        <Heart
-                          size={16}
-                          fill={
-                            wishlist.some((item) => item.id === product.id)
-                              ? "currentColor"
-                              : "none"
-                          }
-                        />
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Product Details */}
-                <div className="p-3">
-                  <h4 className="font-medium text-gray-800">{product.name}</h4>
-                  <p className="text-gray-500 text-xs mb-1">{product.weight}</p>
-                  {renderRating(product.rating || 4)}
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="font-bold text-gray-900">
-                      ₹{product.salePrice || product.price}
-                    </span>
-                    {product.originalPrice && (
-                      <span className="text-gray-400 text-xs line-through">
-                        ₹{product.originalPrice}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => {
-                      const isInCart = cartItems.some(
-                        (item) => item.id === product.id
-                      );
-                      isInCart
-                        ? removeFromCart(product.id)
-                        : addToCart(product);
-                    }}
-                    className={`w-full rounded-lg py-2 mt-3 text-sm font-medium transition-colors flex items-center justify-center ${
-                      cartItems.some((item) => item.id === product.id)
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-blue-600 hover:bg-blue-700 text-white"
-                    }`}
-                  >
-                    {cartItems.some((item) => item.id === product.id) ? (
-                      <>
-                        <svg
-                          className="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M5 13l4 4L19 7"
-                          ></path>
-                        </svg>
-                        Added to Cart
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart size={16} className="mr-2" />
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Product Section */}
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 mt-5">
@@ -1514,7 +1176,11 @@ const Home = () => {
       <div className="bg-gray-100 mt-5  text-gray-700 relative">
         <div className="absolute bg-[#219085] top-0 bottom-0 left-0 right-0"></div>
         <div className="absolute top-0 bottom-0 left-0 right-0">
-          <img src={ff} alt="" className="w-full h-full object-cover opacity-20"/>
+          <img
+            src={ff}
+            alt=""
+            className="w-full h-full object-cover opacity-20"
+          />
         </div>
         <div className="backdrop-blur-[1px] h-full relative">
           <div className="max-w-6xl mx-auto py-8 px-5 flex flex-col md:flex-row justify-between gap-6">

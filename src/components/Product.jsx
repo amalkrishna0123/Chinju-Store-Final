@@ -27,6 +27,7 @@ import apple from "../assets/apple.jpeg";
 import { updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { optimizeProductData } from "../utils/imageCompression";
+import ReviewSystem from './ReviewSystem';
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -788,7 +789,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                 <CgProfile className="text-xl text-[#1a7e74]" />
               )}
             </div>
-            <div
+            {/* <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative"
               onClick={handleCartClick}
             >
@@ -798,7 +799,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                   {cartItems.length}
                 </span>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -891,7 +892,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                     {product.name}
                   </h1>
                   <p className="text-gray-500">{product.weight}</p>
-                  {renderRating(product.rating || 4)}
+                  {/* {renderRating(product.rating || 4)} */}
                 </div>
                 <div className="mt-3 md:mt-0 md:text-right">
                   <div className="flex items-center md:justify-end gap-2">
@@ -1083,111 +1084,10 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
               {/* Reviews Section */}
               <div className="mt-8 border-t border-gray-100 pt-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold">Customer Reviews</h3>
-                  <button className="text-sm text-blue-600 hover:text-blue-800">
-                    View All
-                  </button>
-                </div>
-
-                {/* Review Stats */}
-                <div className="flex items-center mb-6">
-                  <div className="mr-6">
-                    <div className="text-3xl font-bold text-gray-900">
-                      {product.rating || 4.7}
-                    </div>
-                    <div className="flex mt-1">
-                      {renderRating(product.rating || 4.7)}
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      {product.reviewCount || 32} reviews
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    {/* Rating Bars */}
-                    {[5, 4, 3, 2, 1].map((star) => (
-                      <div key={star} className="flex items-center mb-1">
-                        <div className="flex items-center w-12">
-                          <span className="text-sm text-gray-600">{star}</span>
-                          <span className="text-yellow-400 ml-1">★</span>
-                        </div>
-                        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden ml-2">
-                          <div
-                            className="h-full bg-yellow-400"
-                            style={{
-                              width: `${
-                                star === 5
-                                  ? "70%"
-                                  : star === 4
-                                  ? "20%"
-                                  : star === 3
-                                  ? "5%"
-                                  : star === 2
-                                  ? "3%"
-                                  : "2%"
-                              }`,
-                            }}
-                          ></div>
-                        </div>
-                        <div className="w-10 text-right text-xs text-gray-500">
-                          {star === 5
-                            ? "70%"
-                            : star === 4
-                            ? "20%"
-                            : star === 3
-                            ? "5%"
-                            : star === 2
-                            ? "3%"
-                            : "2%"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Review List */}
-                <div className="space-y-6">
-                  {/* Sample reviews - in a real app, you would map through actual reviews */}
-                  <div className="border-b border-gray-100 pb-6">
-                    <div className="flex items-center mb-2">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                        RK
-                      </div>
-                      <div className="ml-3">
-                        <div className="font-medium">Rahul Kumar</div>
-                        <div className="text-xs text-gray-500">2 days ago</div>
-                      </div>
-                    </div>
-                    <div className="flex mb-2">{renderRating(5)}</div>
-                    <p className="text-gray-600">
-                      Really fresh and tasty. The quality is excellent and
-                      delivery was super quick. Will definitely buy again!
-                    </p>
-                  </div>
-
-                  <div className="border-b border-gray-100 pb-6">
-                    <div className="flex items-center mb-2">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600 font-semibold">
-                        PS
-                      </div>
-                      <div className="ml-3">
-                        <div className="font-medium">Priya Singh</div>
-                        <div className="text-xs text-gray-500">1 week ago</div>
-                      </div>
-                    </div>
-                    <div className="flex mb-2">{renderRating(4)}</div>
-                    <p className="text-gray-600">
-                      Good product but packaging could be improved. The delivery
-                      person was very friendly and professional.
-                    </p>
-                  </div>
-
-                  <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                    Load More Reviews
-                  </button>
-                </div>
+                <ReviewSystem productId={productId} />
               </div>
             </div>
+
           </div>
           <div className="p-10">
             {/* Related Products */}
@@ -1244,6 +1144,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
       {/* Modals */}
       <LoginModal />
       <Cart />
+      
     </div>
   );
 };

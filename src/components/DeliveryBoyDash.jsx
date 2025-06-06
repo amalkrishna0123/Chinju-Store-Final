@@ -97,6 +97,11 @@ const DeliveryDashboard = () => {
 
   const handleDeliveryStatusChange = async (orderId, newStatus) => {
     try {
+      const order = orders.find(o => o.id === orderId);
+      if (order.deliveryStatus === 'delivered') {
+        return; // Prevent changes if already delivered
+      }
+      
       await updateDoc(doc(db, 'orders', orderId), {
         deliveryStatus: newStatus
       });
@@ -311,7 +316,7 @@ const DeliveryDashboard = () => {
                             value={order.deliveryStatus || 'pending'}
                             onChange={(e) => handleDeliveryStatusChange(order.id, e.target.value)}
                             className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm min-w-0 flex-1 sm:flex-none sm:min-w-[140px]"
-                            disabled={order.deliveryStatus === 'cancelled'}
+                            disabled={order.deliveryStatus === 'delivered' ||order.deliveryStatus === 'cancelled'}
                           >
                             <option value="pending">Pending</option>
                             <option value="departed">Departed</option>
@@ -319,7 +324,7 @@ const DeliveryDashboard = () => {
                             <option value="cancelled">Cancelled</option>
                           </select>
                         </div>
-                        {order.deliveryStatus !== 'cancelled' && (
+                        {order.deliveryStatus !== 'delivered' && order.deliveryStatus !== 'cancelled' && (
                           <button
                             onClick={() => {
                               setSelectedOrderId(order.id);

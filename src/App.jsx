@@ -31,6 +31,7 @@ import ProductDetail from "./components/Product";
 import ProductCheckout from "./components/ProductCheckout";
 import OrderConfirm from './components/OrderConfirm';
 import OrderDetails from './components/OrderDetails';
+import ReviewSystem from './components/ReviewSystem';
 import Users from './components/Usersdash';
 import Delivery from './components/DeliveryBoys'
 import AddDeliveryBoy from './components/AddDeliveryBoy';
@@ -38,6 +39,7 @@ import EditDeliveryBoy from './components/EditDeliveryBoy';
 import DeliveryDashboard from './components/DeliveryBoyDash'
 import Payment from './components/Payment';
 import LottieAnimation from "./components/cart animations/LottieAnimation";
+import ReviewManagement from "./components/ReviewManagement";
 // Protected Route Component
 
 const ProtectedRoute = ({ children }) => {
@@ -72,7 +74,18 @@ function AppRoutes() {
     location.pathname === "/dashboard/edit-product" ||
     location.pathname === "/productviewall" ||
     location.pathname === "/category/:categoryName" ||
-    location.pathname === "/product/:productId"
+    location.pathname === "/product/:productId" ||
+    location.pathname === "/reviewmanagement" ||
+    location.pathname === "/delivery-dashboard" ||
+    location.pathname === "/dashboard/orderdetails" ||
+    location.pathname === "/dashboard/users" ||
+    location.pathname === "/dashboard/delivery-boys" ||
+    location.pathname === "/dashboard/reviewmanagement" ||
+    location.pathname === "/dashboard/edit-category/:id" ||
+    location.pathname === "/dashboard/edit-product/:id" ||
+    location.pathname === "/dashboard/edit-banner/:id" ||
+    location.pathname === "/dashboard/add-delivery-boy" ||
+    location.pathname === "/dashboard/edit-delivery-boy/:id" 
   return (
     <>
       <div className="min-h-screen pb-16 bg-[#f5f6fa]">
@@ -102,12 +115,13 @@ function AppRoutes() {
           <Route path="/dashboard/view-product" element={<ViewProduct />} />
           <Route path="/dashboard/edit-product/:id" element={<EditProduct />} />
           <Route path="/productviewall" element={<ProductAllView />} />
-          <Route path="/category/:categoryName" element={<ProductCategoryView />} />
+          <Route path="/category/:subcategoryName" element={<ProductCategoryView />} />
           <Route path="/product/:productId" element={<ProductDetail />} />
           <Route path="/product/ProductCheckout" element={<ProductCheckout />} />
           <Route path="/order-confirm" element={<OrderConfirm />} />
           <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
           <Route path="/dashboard/orderdetails" element={<OrderDetails />} />
+          <Route path="/dashboard/reviewmanagement" element={<ReviewManagement />} />
           <Route path="/dashboard/users" element={<Users />} />
           <Route path="/dashboard/delivery-boys" element={<Delivery />} />
           <Route path="/dashboard/add-delivery-boy" element={<AddDeliveryBoy />} />

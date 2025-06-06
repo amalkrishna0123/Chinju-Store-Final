@@ -26,7 +26,6 @@ import {
 } from "firebase/firestore";
 import { db } from "../Firebase";
 import { optimizeProductData } from "../utils/imageCompression";
-
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/navigation";
@@ -34,6 +33,7 @@ import { useParams } from "react-router-dom";
 import { IoIosArrowRoundForward } from "react-icons/io";
 import allproduct from '../assets/allproduct.jpeg'
 import { useNavigate } from 'react-router-dom';
+
 const ProductCategoryView = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -44,33 +44,43 @@ const ProductCategoryView = () => {
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { categoryName } = useParams();
+  const { subcategoryName } = useParams(); // Changed from categoryName to subcategoryName
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  
-  const [selectedCategory, setSelectedCategory] = useState(
-    decodeURIComponent(categoryName)
+  const navigateToProduct = (productId, event) => {
+    // Prevent event from triggering when clicking on buttons inside the card
+    if (event.target.closest('button')) return;
+    navigate(`/product/${productId}`);
+  };
+  const [selectedSubcategory, setSelectedSubcategory] = useState(
+    decodeURIComponent(subcategoryName)
   );
   const [wishlist, setWishlist] = useState([]);
   const [userLocation, setUserLocation] = useState({
-    address: 'Round North, Kodaly, Kerala', // Default address
+    address: 'Round North, Kodaly, Kerala',
     deliveryTime: '9 mins'
   });
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-
-  // Modern cool color scheme
-  const colors = {
-    primary: "#3B82F6", // Blue
-    secondary: "#6366F1", // Indigo
-    accent: "#8B5CF6", // Purple
-    light: "#F3F4F6",
-    dark: "#1F2937",
-    white: "#FFFFFF",
-    success: "#10B981", // Green
-  };
+  // const { subcategoryName } = useParams();
+  console.log("URL parameter:", subcategoryName);
+  console.log("Decoded subcategory:", decodeURIComponent(subcategoryName));
+  
+  // useEffect(() => {
+  //   const fetchProducts = async () => {
+  //     const snapshot = await getDocs(collection(db, "products"));
+  //     const productList = snapshot.docs.map(doc => ({
+  //       id: doc.id,
+  //       ...doc.data(),
+  //     }));
+  //     console.log("First few products:", productList.slice(0, 3));
+  //     setProducts(productList);
+  //   };
+  //   fetchProducts();
+  // }, []);
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [selectedCategory]);
+  }, [selectedSubcategory]);
+
   // Fetch products from Firestore
   useEffect(() => {
     const fetchProducts = async () => {
@@ -91,27 +101,102 @@ const ProductCategoryView = () => {
 
     fetchProducts();
   }, []);
-  
-  // Function to get filtered products based on category and search query
+
+  // Function to get filtered products based on subcategory and search query
   const getFilteredProducts = () => {
-    let result = selectedCategory === 'All Products' 
-      ? products 
-      : products.filter(product => product.category === selectedCategory);
+    if (!products || !products.length) return [];
     
-    if (searchQuery && searchQuery.trim().length > 0) {
-      const query = searchQuery.toLowerCase().trim();
-      result = result.filter(product => 
-        (product.name && product.name.toLowerCase().includes(query)) ||
-        (product.category && product.category.toLowerCase().includes(query)) ||
-        (product.description && product.description?.toLowerCase().includes(query))
-      );
+    let filtered = [...products];
+    
+    // If "All Products" is selected, show all products
+    if (selectedSubcategory === "All Products") {
+      return filtered;
     }
     
-    return result;
+    // Filter by category
+    filtered = filtered.filter(product => {
+      // Check all possible category fields
+      const categoryFields = [
+        product.category,
+        product.categoryName,
+        product.subCategory,
+        product.subCategoryName,
+        product.type
+      ].filter(Boolean); // Remove undefined/null values
+      
+      // Normalize strings for comparison
+      const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, ' ');
+      const targetCategory = normalize(selectedSubcategory);
+      
+      return categoryFields.some(field => {
+        if (!field) return false;
+        return normalize(field).includes(targetCategory) || 
+               targetCategory.includes(normalize(field));
+      });
+    });
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(product => {
+        const searchFields = [
+          product.name,
+          product.description,
+          product.category,
+          product.brand
+        ].filter(Boolean);
+        
+        return searchFields.some(field => 
+          field.toLowerCase().includes(query)
+        );
+      });
+    }
+    
+    return filtered;
   };
-  
-  
-  // Fetch categories from Firestore
+
+//   const debugProductData = () => {
+//   if (products.length > 0) {
+//     console.log("=== PRODUCT DATA DEBUG ===");
+//     console.log("Total products:", products.length);
+//     console.log("First product:", products[0]);
+//     console.log("All category fields in first product:");
+    
+//     const firstProduct = products[0];
+//     Object.keys(firstProduct).forEach(key => {
+//       if (key.toLowerCase().includes('categ') || key.toLowerCase().includes('type')) {
+//         console.log(`${key}:`, firstProduct[key]);
+//       }
+//     });
+    
+//     console.log("Categories found in all products:");
+//     const allCategories = new Set();
+//     products.forEach(product => {
+//       if (product.category) allCategories.add(product.category);
+//       if (product.subcategory) allCategories.add(product.subcategory);
+//       if (product.categoryName) allCategories.add(product.categoryName);
+//       if (product.subCategoryName) allCategories.add(product.subCategoryName);
+//     });
+//     console.log(Array.from(allCategories));
+//   }
+// };
+
+
+useEffect(() => {
+  console.log("Current products with categories:", 
+    products.map(p => ({
+      id: p.id,
+      name: p.name,
+      categories: {
+        category: p.category,
+        categoryName: p.categoryName,
+        subCategory: p.subCategory,
+        subCategoryName: p.subCategoryName
+      }
+    }))
+  );
+}, [products]);
+  // Fetch categories and subcategories from Firestore
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -120,10 +205,15 @@ const ProductCategoryView = () => {
           id: doc.id,
           ...doc.data(),
         }));
-        // Add "All" category at the beginning
+        
+        // Separate main and sub categories
+        const mainCategories = fetched.filter(cat => cat.type === "main");
+        const subCategories = fetched.filter(cat => cat.type === "sub");
+        
+        // Create a flat list of all subcategories for the selector
         setCategories([
           { id: "all", name: "All Products", imageBase64: allproduct },
-          ...fetched,
+          ...subCategories,
         ]);
       } catch (err) {
         console.error("Error fetching categories:", err);
@@ -668,39 +758,12 @@ const ProductCategoryView = () => {
               to="/"
               className="text-blue-600 text-3xl font-bold flex items-center"
             >
-              zepto
+              Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
               </span>
             </Link>
           </div>
-
-          {/* Delivery Info */}
-        
-          {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
-          <div className="flex flex-col flex-1">
-            <div className="text-black font-bold flex items-center">
-              <span className="mr-2">
-                Delivery in {userLocation.deliveryTime}
-              </span>
-              <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
-                FAST
-              </span>
-            </div>
-            <div className="flex items-center text-sm md:text-black text-black">
-              <span>{userLocation.address}</span>
-              <ChevronDown size={14} className="ml-1" />
-            </div>
-          </div>
-          <button
-            onClick={fetchCurrentLocation}
-            disabled={isLoadingLocation}
-            className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm"
-          >
-            {isLoadingLocation ? "Loading..." : "Change"}
-          </button>
-        </div> */}
-
 
           {/* Search Bar */}
           <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
@@ -751,19 +814,6 @@ const ProductCategoryView = () => {
                 </span>
               </div>
             </div>
-            <div className="flex items-center space-x-2 cursor-pointer group">
-              <Link
-                to="/login"
-                className="flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-all"
-              >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative">
-                  <MdLogin className="text-xl text-[#1a7e74]" />
-                </div>
-                <span className="text-sm font-medium group-hover:text-blue-600 transition-colors">
-                  Login
-                </span>
-              </Link>
-            </div>
           </div>
         </div>
       </div>
@@ -776,7 +826,7 @@ const ProductCategoryView = () => {
             to="/"
             className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
           >
-            zepto
+            Chinju Store
           </Link>
           <div className="flex space-x-3">
             <div
@@ -794,7 +844,7 @@ const ProductCategoryView = () => {
                 <CgProfile className="text-xl text-[#1a7e74]" />
               )}
             </div>
-            <div
+            {/* <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative"
               onClick={handleCartClick}
             >
@@ -804,7 +854,7 @@ const ProductCategoryView = () => {
                   {cartItems.length}
                 </span>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -846,62 +896,43 @@ const ProductCategoryView = () => {
           </div>
         )}
 
-        {/* Delivery Info */}
-        {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
-          <div className="flex flex-col flex-1">
-            <div className="text-white font-bold flex items-center">
-              <span className="mr-2">Delivery in 9 mins</span>
-              <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
-                FAST
-              </span>
-            </div>
-            <div className="flex items-center text-sm md:text-white text-black">
-              <span>Round North, Kodaly, Kerala</span>
-              <ChevronDown size={14} className="ml-1" />
-            </div>
-          </div>
-          <div className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm">
-            Change
-          </div>
-        </div> */}
-
         {/* Search Bar */}
         <div className="relative w-full mb-4">
-  <div className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200">
-    <Search size={18} className="text-gray-400 mr-2" />
-    <input
-      type="text"
-      placeholder="Search for fruits, vegetables, groceries..."
-      className="flex-1 outline-none text-gray-700 text-sm"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-    />
-    {searchQuery && (
-      <button
-        onClick={() => setSearchQuery('')}
-        className="text-gray-400"
-      >
-        <X size={16} />
-      </button>
-    )}
-  </div>
-</div>
+          <div className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200">
+            <Search size={18} className="text-gray-400 mr-2" />
+            <input
+              type="text"
+              placeholder="Search for fruits, vegetables, groceries..."
+              className="flex-1 outline-none text-gray-700 text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-gray-400"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* Categories - Horizontal Scroll */}
-        <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
+        {/* <div className="flex space-x-3 overflow-x-auto pb-2 scrollbar-hide">
           {categories.map((category) => (
             <div
               key={category.id}
               className={`flex flex-col items-center flex-shrink-0 ${
-                selectedCategory === category.name
+                selectedSubcategory === category.name
                   ? "text-white"
                   : "text-white text-opacity-90 hover:text-opacity-100"
               }`}
-              onClick={() => setSelectedCategory(category.name)}
+              onClick={() => setSelectedSubcategory(category.name)}
             >
               <div
                 className={`mb-2 w-14 h-14 rounded-full flex items-center justify-center shadow-md bg-white ${
-                  selectedCategory === category.name
+                  selectedSubcategory === category.name
                     ? "border-2 border-white"
                     : ""
                 }`}
@@ -919,7 +950,7 @@ const ProductCategoryView = () => {
               </span>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
 
       {/* Render Modals */}
@@ -935,11 +966,11 @@ const ProductCategoryView = () => {
           <div>
             <IoIosArrowRoundForward className="text-lg" />
           </div>
-          <div>{selectedCategory}</div>
+          <div>{selectedSubcategory}</div>
         </div>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-800">
-            {selectedCategory}
+            {selectedSubcategory}
           </h2>
         </div>
 
@@ -963,15 +994,16 @@ const ProductCategoryView = () => {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer "
                 onMouseEnter={() => setHoveredProduct(product.id)}
                 onMouseLeave={() => setHoveredProduct(null)}
+                onClick={(e) => navigateToProduct(product.id, e)}
               >
                 <div className="relative">
                   <img
                     src={product.imageBase64 || apple}
                     alt={product.name}
-                    className="w-full h-40 md:h-44 object-cover"
+                    className="w-full h-40 md:h-60 object-cover"
                   />
                   {product.offer > 0 && (
                     <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
@@ -1002,7 +1034,7 @@ const ProductCategoryView = () => {
                 <div className="p-3">
                   <h4 className="font-medium text-gray-800">{product.name}</h4>
                   <p className="text-gray-500 text-xs mb-1">{product.weight}</p>
-                  {renderRating(product.rating || 4)}
+                  {/* {renderRating(product.rating || 4)} */}
                   <div className="flex items-center gap-2 mt-2">
                     <span className="font-bold text-gray-900">
                       ₹{product.salePrice || product.price}

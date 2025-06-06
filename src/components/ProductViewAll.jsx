@@ -14,6 +14,12 @@ import { useNavigate } from 'react-router-dom';
 
 const ProductViewAll = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
+
+  const navigateToProduct = (productId, event) => {
+    // Prevent event from triggering when clicking on buttons inside the card
+    if (event.target.closest('button')) return;
+    navigate(`/product/${productId}`);
+  };
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [cartItems, setCartItems] = useState([]);
@@ -758,9 +764,10 @@ const ProductViewAll = () => {
           {filteredProducts.map((product) => (
             <div
               key={product.id}
-              className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+              className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer"
               onMouseEnter={() => setHoveredProduct(product.id)}
               onMouseLeave={() => setHoveredProduct(null)}
+              onClick={(e) => navigateToProduct(product.id, e)}
             >
               {/* Product Image */}
               <div className="relative">
