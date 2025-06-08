@@ -359,72 +359,71 @@ setGroupedCategories(grouped);
 
   // Improved location function
   const fetchCurrentLocation = async () => {
-  setIsLoadingLocation(true);
+    setIsLoadingLocation(true);
 
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported by this browser.");
-    setIsLoadingLocation(false);
-    return;
-  }
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser.");
+      setIsLoadingLocation(false);
+      return;
+    }
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
 
-      const apiKey = "0f026c32f1ac42d58b4afc31e690a961"; // OpenCage API key
-      const apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${apiKey}`;
+        const apiKey = "0f026c32f1ac42d58b4afc31e690a961"; // OpenCage API key
+        const apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${apiKey}`;
 
-      try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
+        try {
+          const response = await fetch(apiUrl);
+          const data = await response.json();
 
-        const components = data.results[0]?.components || {};
-        const formattedAddress =
-          components.city ||
-          components.town ||
-          components.village ||
-          components.county ||
-          components.state ||
-          components.country ||
-          data.results[0]?.formatted ||
-          `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+          const components = data.results[0]?.components || {};
+          const parts = [
+            components.suburb, // e.g., Chittattukara
+            components.village, // e.g., Pavaratty
+            components.county, // e.g., Thrissur
+          ];
 
-        // ✅ Set user location in state
-        setUserLocation({
-          address: formattedAddress,
-          deliveryTime: "9 mins",
-        });
+          const formattedAddress = parts.filter(Boolean).join(", ");
 
-        // ✅ Optionally update Firestore
-        if (currentUser?.uid) {
-          await updateDoc(doc(db, "users", currentUser.uid), {
-            location: {
-              address: formattedAddress,
-              coordinates: {
-                lat: latitude,
-                lng: longitude,
-              },
-            },
+          setUserLocation({
+            address:
+              formattedAddress ||
+              `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            deliveryTime: "9 mins",
           });
+
+          if (currentUser?.uid) {
+            await updateDoc(doc(db, "users", currentUser.uid), {
+              location: {
+                address: formattedAddress,
+                coordinates: {
+                  lat: latitude,
+                  lng: longitude,
+                },
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching address from OpenCage API:", error);
+          setUserLocation({
+            address: `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            deliveryTime: "9 mins",
+          });
+        } finally {
+          setIsLoadingLocation(false);
         }
-      } catch (error) {
-        console.error("Error fetching address from OpenCage API:", error);
-        setUserLocation({
-          address: `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-          deliveryTime: "9 mins",
-        });
-      } finally {
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Location permission denied. Please allow location access.");
         setIsLoadingLocation(false);
       }
-    },
-    (error) => {
-      console.error("Error getting location:", error);
-      alert("Location permission denied. Please allow location access.");
-      setIsLoadingLocation(false);
-    }
-  );
-};
+    );
+  };
+
 
 
   // Call this in useEffect when user logs in
@@ -749,7 +748,7 @@ setGroupedCategories(grouped);
         <div className="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="text-blue-600 text-3xl font-bold flex items-center">
+            <div className="text-blue-600 text-3xl font-bold flex items-center LogoFont">
               Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
@@ -761,7 +760,7 @@ setGroupedCategories(grouped);
           {/* Desktop View */}
           <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
             <div className="mr-3">
-              <div className="text-blue-600 font-bold">
+              <div className="text-blue-600 font-bold commonFont">
                 Delivery in {userLocation.deliveryTime}
               </div>
               <div className="flex items-center text-sm text-gray-600">
@@ -898,7 +897,7 @@ setGroupedCategories(grouped);
       <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
         {/* Logo Section */}
         <div className="flex justify-between items-center mb-4">
-          <div className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold shadow-md">
+          <div className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold shadow-md LogoFont">
             Chinju Store
           </div>
           <div className="flex space-x-3">
@@ -973,7 +972,7 @@ setGroupedCategories(grouped);
         <div className="bg-white bg-opacity-80 rounded-lg p-4 mb-5 shadow-md backdrop-blur-md flex items-center justify-between">
           <div className="flex flex-col">
             <div className="flex items-center space-x-2">
-              <span className="text-gray-800 font-semibold text-sm">
+              <span className="text-gray-800 text-sm commonFont">
                 Delivery in {userLocation.deliveryTime}
               </span>
               <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
@@ -982,21 +981,20 @@ setGroupedCategories(grouped);
             </div>
             <div className="flex items-center mt-1 text-sm text-gray-600">
               <span>{userLocation.address}</span>
-              {/* <ChevronDown size={14} className="ml-1 text-gray-500" /> */}
             </div>
           </div>
 
           <button
             onClick={fetchCurrentLocation}
             disabled={isLoadingLocation}
-            className="ml-4 bg-[#1a7e74] text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-[#16675f] transition-colors duration-200 disabled:opacity-50"
+            className="ml-4 bg-[#1a7e74] commonFont text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-[#16675f] transition-colors duration-200 disabled:opacity-50"
           >
             {isLoadingLocation ? "Loading..." : "Change"}
           </button>
         </div>
 
         {/* Search Bar */}
-        <div className="relative">
+        <div className="relative commonFont">
           {/* Floating Label Placeholder */}
           <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
             <span>Search for&nbsp;</span>
@@ -1088,27 +1086,27 @@ setGroupedCategories(grouped);
         </div>
       </div>
       {/* Categories Section */}
-      <div className="max-w-7xl mx-auto px-4 mt-8  min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 mt-3  min-h-screen">
         {groupedCategories.map((main) => (
-          <div key={main.id} className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
+          <div key={main.id} className="mb-3">
+            <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
               {main.name}
             </h2>
-            <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-2  gap-4">
+            <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
               {main.subcategories.map((sub) => (
                 <Link
                   to={`/category/${encodeURIComponent(sub.name)}`}
                   key={sub.id}
-                  className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer"
+                  className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden"
                 >
-                  <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                     <img
                       src={sub.imageBase64 || allproduct}
                       alt={sub.name}
                       className="w-20 h-20 object-contain"
                     />
                   </div>
-                  <span className="text-sm font-medium text-center text-gray-800 leading-tight">
+                  <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
                     {sub.name}
                   </span>
                 </Link>

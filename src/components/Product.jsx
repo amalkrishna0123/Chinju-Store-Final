@@ -764,9 +764,9 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
       </div>
 
       {/* Mobile Header */}
-      <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
+      <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] px-4 py-4">
         {/* Logo Section */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
           <Link
             to="/"
             className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
@@ -807,7 +807,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
       {/* Product Detail Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Breadcrumb */}
-        <div className="flex flex-wrap items-center text-sm mb-4">
+        <div className="flex flex-wrap items-center text-sm mb-4 commonFont">
           <Link to="/" className="text-gray-500 hover:text-blue-600">
             Home
           </Link>
@@ -827,7 +827,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
         {/* Back Button (Mobile) */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center mb-4 text-gray-600 hover:text-blue-600 md:hidden"
+          className="flex items-center mb-4 text-gray-600 hover:text-blue-600 md:hidden commonFont text-sm"
         >
           <ArrowLeft size={16} className="mr-1" /> Back
         </button>
@@ -875,7 +875,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
             {/* Info Section */}
             <div
-              className="md:w-2/3 w-full p-4 md:p-6 md:max-h-[70vh] md:overflow-y-auto"
+              className="md:w-2/3 w-full px-4 md:p-6 md:max-h-[70vh] md:overflow-y-auto"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               <style jsx>{`
@@ -886,15 +886,15 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                 }
               `}</style>
               {/* Title, Price */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-3">
                 <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">
+                  <h1 className="text-lg font-semibold commonFont md:text-2xl text-gray-800 mb-1">
                     {product.name}
                   </h1>
                   <p className="text-gray-500">{product.weight}</p>
                   {/* {renderRating(product.rating || 4)} */}
                 </div>
-                <div className="mt-3 md:mt-0 md:text-right">
+                <div className="mt-3 md:mt-0 md:text-right commonFont">
                   <div className="flex items-center md:justify-end gap-2">
                     <span className="text-2xl font-bold text-gray-900">
                       ₹{product.salePrice || product.originalPrice}
@@ -915,7 +915,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
               {/* Description */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Description</h3>
+                <h3 className="mb-2 commonFont">Description</h3>
                 <p className="text-gray-600">
                   {product.description ||
                     "Fresh and high-quality product. No description available."}
@@ -924,7 +924,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
               {/* Quantity */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Quantity</h3>
+                <h3 className="commonFont mb-2">Quantity</h3>
                 <div className="flex items-center">
                   <button
                     onClick={decreaseQuantity}
@@ -1005,11 +1005,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
               </div>
 
               {/* Additional Info */}
-              <div className="mt-8 border-t border-gray-100 pt-6">
+              <div className="border-t border-gray-100 pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Product Details */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">
+                    <h3 className="mb-3 commonFont">
                       Product Details
                     </h3>
                     <div className="space-y-2">
@@ -1051,7 +1051,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                   {/* Delivery Info */}
                   {/* Delivery Info */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">
+                    <h3 className="mb-3 commonFont">
                       Delivery Information
                     </h3>
                     <div className="space-y-2">
@@ -1083,7 +1083,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
               </div>
 
               {/* Reviews Section */}
-              <div className="mt-8 border-t border-gray-100 pt-6">
+              <div className="mt-3 border-t border-gray-100 pt-6">
                 <ReviewSystem productId={productId} />
               </div>
             </div>

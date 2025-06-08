@@ -113,13 +113,13 @@ const Payment = () => {
         <div className="flex items-center mb-6">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center text-gray-600 hover:text-gray-900"
+            className="flex items-center text-gray-600 hover:text-gray-900 commonFont text-sm"
           >
             <ArrowLeft size={20} className="mr-2" />
             Back to Order Confirm
           </button>
         </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Payment Method</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 commonFont text-center md:text-start">Payment Method</h2>
           
           {/* Payment Methods */}
           <div className="space-y-4 mb-6">
@@ -134,7 +134,7 @@ const Payment = () => {
               />
               <div className={`border rounded-lg p-4 cursor-pointer flex items-center gap-3 ${paymentMethod === 'razorpay' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
                 <img src="https://razorpay.com/assets/razorpay-glyph.svg" alt="Razorpay" className="h-8" />
-                <span className="font-medium">Pay with Razorpay</span>
+                <span className="font-medium commonFont">Pay with Razorpay</span>
               </div>
             </label>
 
@@ -149,25 +149,25 @@ const Payment = () => {
               />
               <div className={`border rounded-lg p-4 cursor-pointer flex items-center gap-3 ${paymentMethod === 'cod' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
                 <Wallet size={24} />
-                <span className="font-medium">Cash on Delivery</span>
+                <span className="font-medium commonFont">Cash on Delivery</span>
               </div>
             </label>
           </div>
 
           {/* Order Summary */}
           <div className="border-t border-gray-200 pt-4">
-            <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
+            <h3 className="text-lg font-semibold mb-4 commonFont">Order Summary</h3>
             <div className="space-y-2">
               {orderDetails.items.map((item) => (
                 <div key={item.id} className="flex justify-between py-2 border-b">
                   <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                    <p className="font-medium commonFont">{item.name}</p>
+                    <p className="text-sm text-gray-500 commonFont">Quantity: {item.quantity}</p>
                   </div>
-                  <p className="font-medium flex items-center"><TbCurrencyRupee/>{item.salePrice * item.quantity}</p>
+                  <p className="font-medium flex items-center commonFont text-[15px]"><TbCurrencyRupee/>{item.salePrice * item.quantity}</p>
                 </div>
               ))}
-              <div className="flex justify-between pt-4 font-semibold text-lg">
+              <div className="flex justify-between pt-4 font-semibold text-lg commonFont">
                 <span>Total Amount</span>
                 <span className="flex items-center"><TbCurrencyRupee/>{orderDetails.total}</span>
               </div>
@@ -178,7 +178,7 @@ const Payment = () => {
           <button 
             onClick={handlePayment}
             disabled={loading || !paymentMethod}
-            className={`w-full mt-6 bg-green-500 text-white py-3 rounded font-medium hover:bg-green-600 transition-colors ${loading || !paymentMethod ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`w-full mt-6 bg-green-500 text-white py-3 rounded commonFont font-medium hover:bg-green-600 transition-colors ${loading || !paymentMethod ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loading ? 'Processing...' : 'Confirm Payment'}
           </button>

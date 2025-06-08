@@ -222,11 +222,11 @@ const BottomNav = () => {
             className="flex flex-col items-center text-sm text-gray-700"
           >
             <Home
-              className={`w-6 h-6 ${
-                location.pathname === "/" ? "text-[#1d9e8b]" : ""
+              className={`w-6 h-6 p-1 rounded-md shadow-md ${
+                location.pathname === "/" ? "bg-gradient-to-r from-[#1d9e8b] to-[#006858] bg-[#1d9e8b] text-[#fff] rounded-md" : ""
               }`}
             />
-            <span>Home</span>
+            <span className="text-xs font-bold">Home</span>
           </Link>
           <button
             onClick={handleCartClick}
@@ -234,8 +234,8 @@ const BottomNav = () => {
           >
             <div className="relative">
               <ShoppingCart
-                className={`w-6 h-6 ${
-                  location.pathname === "/cart" ? "text-[#1d9e8b]" : ""
+                className={`w-6 h-6 p-1 rounded-md text-[#1d9e8b] shadow-md bg-[#effffd] ${
+                  location.pathname === "/cart" ? "bg-[#1d9e8b]" : ""
                 }`}
               />
               {cartItems.length > 0 && (
@@ -244,18 +244,18 @@ const BottomNav = () => {
                 </span>
               )}
             </div>
-            <span>Cart</span>
+            <span className="text-xs font-bold">Cart</span>
           </button>
           <Link
             to="/login"
             className="flex flex-col items-center text-sm text-gray-700"
           >
             <GrLogin
-              className={`w-6 h-6 ${
-                location.pathname === "/login" ? "text-[#1d9e8b]" : ""
+              className={`w-6 h-6 p-1 rounded-md text-[#1d9e8b] shadow-md bg-[#effffd] ${
+                location.pathname === "/login" ? "bg-[#1d9e8b] text-[#fff]" : ""
               }`}
             />
-            <span>Login</span>
+            <span className="text-xs font-bold">Login</span>
           </Link>
         </div>
       </div>

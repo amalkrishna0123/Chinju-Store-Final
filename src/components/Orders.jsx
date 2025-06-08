@@ -798,7 +798,7 @@ const Orders = () => {
       </div>
 
       {/* Breadcrumb */}
-      <div className="max-w-7xl mx-auto px-4 mt-6">
+      <div className="max-w-7xl mx-auto px-4 mt-6 commonFont">
         <div className="flex items-center gap-2 text-sm">
           <Link to="/" className="text-gray-500 hover:text-blue-500">
             Home
@@ -813,8 +813,8 @@ const Orders = () => {
       {/* Orders Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">My Orders</h1>
-          <p className="text-gray-600">Track and view your order history</p>
+          <h1 className="text-2xl font-bold text-gray-800 commonFont">My Orders</h1>
+          <p className="text-gray-600 commonFont text-sm">Track and view your order history</p>
         </div>
 
         {loading ? (
@@ -826,11 +826,11 @@ const Orders = () => {
         ) : orders.length === 0 ? (
           <div className="text-center py-8">
             <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No orders</h3>
-            <p className="mt-1 text-sm text-gray-500">Start shopping to see your orders here.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 commonFont">No orders</h3>
+            <p className="mt-1 text-sm text-gray-500 commonFont">Start shopping to see your orders here.</p>
             <Link
               to="/"
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#1a7e74] hover:bg-[#145f5a]"
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#1a7e74] hover:bg-[#145f5a] commonFont"
             >
               Continue Shopping
             </Link>
@@ -845,19 +845,19 @@ const Orders = () => {
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
                     <div>
-                      <h2 className="text-lg font-medium text-gray-900">
+                      <h2 className="text-lg font-medium text-gray-900 commonFont">
                         Order #{order.id.slice(0, 8)}
                       </h2>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 commonFont">
                         {order.createdAt}
                       </p>
                     </div>
-                    <div className="flex flex-col gap-1 text-sm text-gray-800">
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                    <div className="flex flex-col gap-1 text-sm text-gray-800 commonFont">
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-md font-medium">
                         Order Status: {order.status || "N/A"}
                       </span>
                       <span
-                        className={`px-2 py-1 rounded-full font-medium ${
+                        className={`px-2 py-1 rounded-md font-medium ${
                           order.deliveryStatus?.toLowerCase() ===
                           "delivered"
                             ? "bg-green-100 text-green-800"
@@ -874,7 +874,7 @@ const Orders = () => {
                       !order.hasReview && (
                         <button
                           onClick={() => handleAddReview(order)}
-                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 commonFont"
                         >
                           <Star size={16} />
                           Add Review
@@ -882,13 +882,13 @@ const Orders = () => {
                       )}
 
                     {order.hasReview && (
-                      <div className="px-3 py-1 bg-green-50 text-green-700 text-sm rounded-lg border border-green-200">
+                      <div className="px-3 py-1 commonFont bg-green-50 text-green-700 text-sm rounded-lg border border-green-200">
                         ✓ Review Added
                       </div>
                     )}
                   </div>
 
-                  <div className="border-t border-gray-200 pt-4">
+                  <div className="border-t border-gray-200 pt-4 commonFont">
                     {order.items.map((item, index) => (
                       <div
                         key={index}
@@ -900,21 +900,21 @@ const Orders = () => {
                           className="w-12 h-12 object-cover rounded-lg mr-3"
                         />
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900">
+                          <p className="text-xs font-medium text-gray-900">
                             {item.name}
                           </p>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-xs text-gray-500">
                             Qty: {item.quantity}
                           </p>
                         </div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-xs font-medium text-gray-900">
                           ₹{item.salePrice * item.quantity}
                         </p>
                       </div>
                     ))}
                   </div>
 
-                  <div className="border-t border-gray-200 pt-4 mt-4">
+                  <div className="border-t border-gray-200 pt-4 mt-4 commonFont">
                     <div className="flex justify-between">
                       <p className="text-sm font-medium text-gray-900">
                         Total Amount
@@ -926,7 +926,7 @@ const Orders = () => {
                   </div>
 
                   {order.shippingDetails && (
-                    <div className="border-t border-gray-200 pt-4 mt-4">
+                    <div className="border-t border-gray-200 pt-4 mt-4 commonFont">
                       <h3 className="text-sm font-medium text-gray-900 mb-2">
                         Shipping Details
                       </h3>

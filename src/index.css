@@ -4,6 +4,55 @@
 @tailwind components;
 @tailwind utilities;
 
+
+@font-face {
+  font-family: 'Createo Bold';
+  src: url('../src/fonts/CreatoDisplay-Bold.otf');
+}
+
+@font-face {
+  font-family: 'Createo Medium';
+  src: url('../src/fonts/CreatoDisplay-Medium.otf');
+}
+
+@font-face {
+  font-family: 'Made Outer Sans';
+  src: url('../src/fonts/MADE\ Outer\ Sans\ Regular\ PERSONAL\ USE.otf');
+}
+
+@font-face {
+  font-family: 'Retroica';
+  src: url('../src/fonts/Retroica.ttf');
+}
+
+@font-face {
+  font-family: 'Sansaction';
+  src: url('../src/fonts/Sansation_Regular.ttf');
+}
+
+@font-face {
+  font-family: 'Sublima';
+  src: url('../src/fonts/Sublima-ExtraLight.otf');
+}
+
+@font-face {
+  font-family: 'Urban Rounded';
+  src: url('../src/fonts/UrbaneRounded-DemiBold.ttf');
+}
+
+.LogoFont{
+  font-family: 'Urban Rounded';
+}
+
+
+.CategoryTitle{
+  font-family: 'Createo Bold';
+}
+
+.commonFont{
+  font-family: 'Createo Medium';
+}
+
 .hideScrollbar::-webkit-scrollbar {
     width: 10px;
     height: 8px;
