@@ -34,6 +34,7 @@ import { IoLogoWhatsapp } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import ff from "../assets/ff.png"
 import fff from "../assets/fff.jpg"
+import dot from "../assets/dot.png"
 
 const Home = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -782,20 +783,22 @@ setGroupedCategories(grouped);
           {/* Search Bar */}
           <div className="relative">
             {/* Floating Label Placeholder */}
-            <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
-              <span>Search for&nbsp;</span>
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={words[index]}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {words[index]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
+            {searchQuery === "" && (
+              <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
+                <span>Search for&nbsp;</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={words[index]}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {words[index]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* Input Field */}
             <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
@@ -895,29 +898,33 @@ setGroupedCategories(grouped);
       </div> */}
 
       {/* Mobile Header */}
-      <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
-        {/* Logo Section */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold shadow-md LogoFont">
-            Chinju Store
-          </div>
-          <div className="flex space-x-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
-              onClick={() => !currentUser && setShowLoginModal(true)}
-            >
-              {currentUser && currentUser.photoURL ? (
-                <img
-                  src={currentUser.photoURL}
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full"
-                  onClick={() => setShowUserDropdown(!showUserDropdown)}
-                />
-              ) : (
-                <CgProfile className="text-xl text-[#1a7e74]" />
-              )}
+      <div className="relative md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] overflow-hidden">
+        <div className=" absolute opacity-20">
+          <img src={dot} alt="" />
+        </div>
+        <div className=" p-4 relative">
+          {/* Logo Section */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold shadow-md LogoFont">
+              Chinju Store
             </div>
-            {/* <div
+            <div className="flex space-x-3">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
+                onClick={() => !currentUser && setShowLoginModal(true)}
+              >
+                {currentUser && currentUser.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full"
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  />
+                ) : (
+                  <CgProfile className="text-xl text-[#1a7e74]" />
+                )}
+              </div>
+              {/* <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative"
               onClick={handleCartClick}
             >
@@ -928,104 +935,106 @@ setGroupedCategories(grouped);
                 </span>
               )}
             </div> */}
-          </div>
-        </div>
-
-        {/* Mobile User Dropdown */}
-        {showUserDropdown && currentUser && (
-          <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
-            <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-sm font-semibold">
-                {currentUser?.displayName}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {currentUser?.email}
-              </p>
             </div>
-            <a
-              href="/profile"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              My Profile
-            </a>
-            <a
-              href="/orders"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              My Orders
-            </a>
-            <a
-              href="/wishlist"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Wishlist
-            </a>
+          </div>
+
+          {/* Mobile User Dropdown */}
+          {showUserDropdown && currentUser && (
+            <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm font-semibold">
+                  {currentUser?.displayName}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {currentUser?.email}
+                </p>
+              </div>
+              <a
+                href="/profile"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                My Profile
+              </a>
+              <a
+                href="/orders"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                My Orders
+              </a>
+              <a
+                href="/wishlist"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Wishlist
+              </a>
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+
+          {/* Delivery Info */}
+          <div className="bg-white bg-opacity-80 rounded-lg p-4 mb-5 shadow-md backdrop-blur-md flex items-center justify-between">
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-800 text-sm commonFont">
+                  Delivery in {userLocation.deliveryTime}
+                </span>
+                <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                  FAST
+                </span>
+              </div>
+              <div className="flex items-center mt-1 text-sm text-gray-600">
+                <span>{userLocation.address}</span>
+              </div>
+            </div>
+
             <button
-              onClick={handleLogout}
-              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+              onClick={fetchCurrentLocation}
+              disabled={isLoadingLocation}
+              className="ml-4 bg-[#1a7e74] commonFont text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-[#16675f] transition-colors duration-200 disabled:opacity-50"
             >
-              Logout
+              {isLoadingLocation ? "Loading..." : "Change"}
             </button>
           </div>
-        )}
 
-        {/* Delivery Info */}
-        <div className="bg-white bg-opacity-80 rounded-lg p-4 mb-5 shadow-md backdrop-blur-md flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-800 text-sm commonFont">
-                Delivery in {userLocation.deliveryTime}
-              </span>
-              <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                FAST
-              </span>
+          {/* Search Bar */}
+          <div className="relative commonFont">
+            {/* Floating Label Placeholder */}
+            {searchQuery === "" && (
+              <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
+                <span>Search for&nbsp;</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={words[index]}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {words[index]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Input Field */}
+            <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <Search size={20} className="text-gray-400 z-10" />
+              <input
+                type="text"
+                className="bg-transparent outline-none w-full text-gray-700 placeholder-transparent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <div className="flex items-center mt-1 text-sm text-gray-600">
-              <span>{userLocation.address}</span>
-            </div>
           </div>
 
-          <button
-            onClick={fetchCurrentLocation}
-            disabled={isLoadingLocation}
-            className="ml-4 bg-[#1a7e74] commonFont text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-[#16675f] transition-colors duration-200 disabled:opacity-50"
-          >
-            {isLoadingLocation ? "Loading..." : "Change"}
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative commonFont">
-          {/* Floating Label Placeholder */}
-          <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
-            <span>Search for&nbsp;</span>
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={words[index]}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.5 }}
-              >
-                {words[index]}
-              </motion.span>
-            </AnimatePresence>
-          </div>
-
-          {/* Input Field */}
-          <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-            <Search size={20} className="text-gray-400 z-10" />
-            <input
-              type="text"
-              className="bg-transparent outline-none w-full text-gray-700 placeholder-transparent"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Categories - Horizontal Scroll */}
-        {/* <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          {/* Categories - Horizontal Scroll */}
+          {/* <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {categories.map((category) => (
             <div
               key={category.id}
@@ -1057,6 +1066,7 @@ setGroupedCategories(grouped);
             </div>
           ))}
         </div> */}
+        </div>
       </div>
 
       {/* Render Modals */}
@@ -1065,118 +1075,120 @@ setGroupedCategories(grouped);
 
       <div className="relative">
         <div className="absolute top-0 bottom-0 left-0 right-0 z-0 opacity-0 bg-no-repeat">
-          <img src={fff} alt="" className="w-full h-full object-cover"/>
+          <img src={fff} alt="" className="w-full h-full object-cover" />
         </div>
         <div className=" relative">
           {/* Hero Banner */}
-        <div className="max-w-7xl mx-auto px-2 mt-3">
-          <div className="rounded-2xl overflow-hidden">
-            <Swiper
-              modules={[Autoplay, Pagination]}
-              autoplay={{ delay: 3000, disableOnInteraction: false }}
-              pagination={{ clickable: true }}
-              // navigation={true}
-              loop={banners.length > 1}
-              className="w-full"
-            >
-              {banners.map((banner) => (
-                <SwiperSlide key={banner.id}>
-                  <img
-                    src={banner.imageBase64}
-                    alt="Banner"
-                    className="w-full h-full object-contain "
-                  />
-                </SwiperSlide>
-              ))}
-            </Swiper>
-          </div>
-        </div>
-        {/* Categories Section */}
-        <div className="max-w-7xl mx-auto px-4 mt-3  min-h-screen">
-          {groupedCategories.map((main) => (
-            <div key={main.id} className="mb-3">
-              <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
-                {main.name}
-              </h2>
-              <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
-                {main.subcategories.map((sub) => (
-                  <Link
-                    to={`/category/${encodeURIComponent(sub.name)}`}
-                    key={sub.id}
-                    className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden"
-                  >
-                    <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                      <img
-                        src={sub.imageBase64 || allproduct}
-                        alt={sub.name}
-                        className="w-20 h-20 object-contain"
-                      />
-                    </div>
-                    <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
-                      {sub.name}
-                    </span>
-                  </Link>
+          <div className="max-w-7xl mx-auto px-2 mt-3">
+            <div className="rounded-2xl overflow-hidden">
+              <Swiper
+                modules={[Autoplay, Pagination]}
+                autoplay={{ delay: 3000, disableOnInteraction: false }}
+                pagination={{ clickable: true }}
+                // navigation={true}
+                loop={banners.length > 1}
+                className="w-full"
+              >
+                {banners.map((banner) => (
+                  <SwiperSlide key={banner.id}>
+                    <img
+                      src={banner.imageBase64}
+                      alt="Banner"
+                      className="w-full h-full object-contain "
+                    />
+                  </SwiperSlide>
                 ))}
-              </div>
+              </Swiper>
             </div>
-          ))}
-        </div>
+          </div>
+          {/* Categories Section */}
+          <div className="max-w-7xl mx-auto px-4 mt-3  min-h-screen">
+            {groupedCategories.map((main) => (
+              <div key={main.id} className="mb-3">
+                <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
+                  {main.name}
+                </h2>
+                <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
+                  {main.subcategories.map((sub) => (
+                    <Link
+                      to={`/category/${encodeURIComponent(sub.name)}`}
+                      key={sub.id}
+                      className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden"
+                    >
+                      <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                        <img
+                          src={sub.imageBase64 || allproduct}
+                          alt={sub.name}
+                          className="w-20 h-20 object-contain"
+                        />
+                      </div>
+                      <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
+                        {sub.name}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
 
-        {/* Product Section */}
+          {/* Product Section */}
 
-        {/* Features Section */}
-        <div className="max-w-7xl mx-auto px-4 mt-5">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
-                <span className="text-xl">
-                  <img
-                    src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748593991/time_6953238_ejcooq.png"
-                    alt=""
-                  />
-                </span>
+          {/* Features Section */}
+          <div className="max-w-7xl mx-auto px-4 mt-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
+                  <span className="text-xl">
+                    <img
+                      src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748593991/time_6953238_ejcooq.png"
+                      alt=""
+                    />
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800">
+                    Ultrafast Delivery
+                  </h4>
+                  <p className="text-gray-600 text-sm">
+                    Get your groceries in minutes
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="font-bold text-gray-800">Ultrafast Delivery</h4>
-                <p className="text-gray-600 text-sm">
-                  Get your groceries in minutes
-                </p>
+              <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-4">
+                  <span className="text-xl">
+                    <img
+                      src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594067/fresh_6718182_yftabd.png"
+                      alt=""
+                    />
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800">Farm Fresh</h4>
+                  <p className="text-gray-600 text-sm">
+                    100% fresh products daily
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-4">
-                <span className="text-xl">
-                  <img
-                    src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594067/fresh_6718182_yftabd.png"
-                    alt=""
-                  />
-                </span>
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-800">Farm Fresh</h4>
-                <p className="text-gray-600 text-sm">
-                  100% fresh products daily
-                </p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4">
-                <span className="text-xl">
-                  <img
-                    src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594151/dollar-symbol_1151390_dikxve.png"
-                    alt=""
-                  />
-                </span>
-              </div>
-              <div>
-                <h4 className="font-bold text-gray-800">Best Prices</h4>
-                <p className="text-gray-600 text-sm">
-                  Save more with exclusive deals
-                </p>
+              <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4">
+                  <span className="text-xl">
+                    <img
+                      src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594151/dollar-symbol_1151390_dikxve.png"
+                      alt=""
+                    />
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800">Best Prices</h4>
+                  <p className="text-gray-600 text-sm">
+                    Save more with exclusive deals
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
 

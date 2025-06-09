@@ -638,7 +638,7 @@ const AddProduct = () => {
                       <input
                         id="weight"
                         name="weight"
-                        type="number"
+                        type="text"
                         value={formData.weight}
                         onChange={handleChange}
                         placeholder="Enter weight / No."
