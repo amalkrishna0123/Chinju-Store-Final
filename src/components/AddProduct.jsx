@@ -40,6 +40,8 @@ const AddProduct = () => {
     expiryDate: '',
     imported: 'No',
     organic: 'No',
+    stock: 'Available',
+    weight: '',
     brand: '',
     shelfLife: '',
     category: '',
@@ -627,6 +629,35 @@ const AddProduct = () => {
                       >
                         <option value="No">No</option>
                         <option value="Yes">Yes</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="weight" className="block font-medium text-gray-700 mb-1">
+                        Weight / No.
+                      </label>
+                      <input
+                        id="weight"
+                        name="weight"
+                        type="number"
+                        value={formData.weight}
+                        onChange={handleChange}
+                        placeholder="Enter weight / No."
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="stock" className="block font-medium text-gray-700 mb-1">
+                        Stock
+                      </label>
+                      <select
+                        id="stock"
+                        name="stock"
+                        value={formData.stock}
+                        onChange={handleChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="Available">Available</option>
+                        <option value="Out of Stock">Out of Stock</option>
                       </select>
                     </div>
                   </div>

@@ -75,6 +75,7 @@ const ReviewManagement = () => {
           createdAt: data.createdAt?.toDate() || new Date(),
         };
       });
+      console.log("review is", reviewsData)
       setReviews(reviewsData);
       setError("");
     } catch (err) {

@@ -77,6 +77,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
     if (productId) {
       fetchProduct();
+      console.log("productId is", productId)
     }
   }, [productId]);
 
@@ -671,7 +672,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
           </div>
 
           {/* Delivery Info */}
-        {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
+          {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
           <div className="flex flex-col flex-1">
             <div className="text-black font-bold flex items-center">
               <span className="mr-2">
@@ -694,7 +695,6 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
             {isLoadingLocation ? "Loading..." : "Change"}
           </button>
         </div> */}
-
 
           {/* Search Bar */}
           {/* <div className="w-1/3">
@@ -847,7 +847,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
               {product.subImagesBase64?.length > 0 && (
                 <div className="grid grid-cols-5 gap-2">
                   <div
-                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === product.imageBase64 ? 'border-blue-500' : 'border-gray-200'} hover:border-blue-500 transition-colors`}
+                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
+                      selectedImage === product.imageBase64
+                        ? "border-blue-500"
+                        : "border-gray-200"
+                    } hover:border-blue-500 transition-colors`}
                     onClick={() => setSelectedImage(product.imageBase64)}
                   >
                     <img
@@ -859,7 +863,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                   {product.subImagesBase64.map((img, idx) => (
                     <div
                       key={idx}
-                      className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === img ? 'border-blue-500' : 'border-gray-200'} hover:border-blue-500 transition-colors`}
+                      className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
+                        selectedImage === img
+                          ? "border-blue-500"
+                          : "border-gray-200"
+                      } hover:border-blue-500 transition-colors`}
                       onClick={() => setSelectedImage(img)}
                     >
                       <img
@@ -1009,9 +1017,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Product Details */}
                   <div>
-                    <h3 className="mb-3 commonFont">
-                      Product Details
-                    </h3>
+                    <h3 className="mb-3 commonFont">Product Details</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-500">Category</span>
@@ -1051,9 +1057,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                   {/* Delivery Info */}
                   {/* Delivery Info */}
                   <div>
-                    <h3 className="mb-3 commonFont">
-                      Delivery Information
-                    </h3>
+                    <h3 className="mb-3 commonFont">Delivery Information</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-500">Delivery Time</span>
@@ -1082,12 +1086,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                 </div>
               </div>
 
-              {/* Reviews Section */}
-              <div className="mt-3 border-t border-gray-100 pt-6">
+              {/* Review System */}
+              <div className="border-t border-gray-100 pt-6 mt-6">
                 <ReviewSystem productId={productId} />
               </div>
             </div>
-
           </div>
           <div className="p-10">
             {/* Related Products */}
@@ -1144,7 +1147,6 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
       {/* Modals */}
       <LoginModal />
       <Cart />
-      
     </div>
   );
 };

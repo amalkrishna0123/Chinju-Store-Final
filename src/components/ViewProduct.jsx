@@ -107,6 +107,7 @@ const fetchCategories = async () => {
           salePrice,
         };
       });
+      console.log("Fetched Products:", productData); // Log the fetched products to the con
       setProducts(productData);
       setError('');
     } catch (err) {

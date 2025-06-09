@@ -676,6 +676,7 @@ useEffect(() => {
                         {item.name}
                       </h4>
                       <p className="text-xs text-gray-500">{item.weight}</p>
+                      <p className="text-xs text-gray-500">{item.stock}</p>
                       <div className="flex items-center mt-2">
                       <span className="font-semibold text-gray-900">₹{item.salePrice || item.originalPrice}</span>
 
@@ -769,7 +770,7 @@ useEffect(() => {
           <div className="flex items-center space-x-3">
             <Link
               to="/"
-              className="text-blue-600 text-3xl font-bold flex items-center"
+              className="text-blue-600 text-3xl font-bold flex items-center LogoFont"
             >
               Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
@@ -856,7 +857,7 @@ useEffect(() => {
         <div className="flex justify-between items-center mb-4">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
+            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md LogoFont"
           >
             Chinju Store
           </Link>
@@ -1046,8 +1047,8 @@ useEffect(() => {
                     className="w-full h-40 md:h-44 object-cover rounded-lg"
                   />
                   {product.offer > 0 && (
-                    <div className="absolute z-20 top-3 left-3 bg-red-500 text-xs px-2 py-1 rounded-lg font-medium">
-                      {product.offer}% OFF
+                    <div className="absolute z-20 top-3 left-3 bg-red-500 text-xs px-2 py-1 rounded-lg font-medium text-[#fff]">
+                      {product.offer}% off
                     </div>
                   )}
                   {hoveredProduct === product.id && (
@@ -1077,6 +1078,7 @@ useEffect(() => {
                   <div>
                     <h4 className="font-medium text-xs">{product.name}</h4>
                     <p className="text-xs mb-1">{product.weight}</p>
+                    <p className="text-xs mb-1">{product.stock}</p>
                     {/* {renderRating(product.rating || 4)} */}
                   </div>
 

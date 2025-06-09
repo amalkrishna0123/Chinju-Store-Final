@@ -33,6 +33,7 @@ import { PiFacebookLogoBold } from "react-icons/pi";
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import ff from "../assets/ff.png"
+import fff from "../assets/fff.jpg"
 
 const Home = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -1062,111 +1063,120 @@ setGroupedCategories(grouped);
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
 
-      {/* Hero Banner */}
-      <div className="max-w-7xl mx-auto px-4 mt-3">
-        <div className="rounded-2xl overflow-hidden">
-          <Swiper
-            modules={[Autoplay, Pagination]}
-            autoplay={{ delay: 3000, disableOnInteraction: false }}
-            pagination={{ clickable: true }}
-            // navigation={true}
-            loop={banners.length > 1}
-            className="w-full"
-          >
-            {banners.map((banner) => (
-              <SwiperSlide key={banner.id}>
-                <img
-                  src={banner.imageBase64}
-                  alt="Banner"
-                  className="w-full h-full object-contain "
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+      <div className="relative">
+        <div className="absolute top-0 bottom-0 left-0 right-0 z-0 opacity-0 bg-no-repeat">
+          <img src={fff} alt="" className="w-full h-full object-cover"/>
         </div>
-      </div>
-      {/* Categories Section */}
-      <div className="max-w-7xl mx-auto px-4 mt-3  min-h-screen">
-        {groupedCategories.map((main) => (
-          <div key={main.id} className="mb-3">
-            <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
-              {main.name}
-            </h2>
-            <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
-              {main.subcategories.map((sub) => (
-                <Link
-                  to={`/category/${encodeURIComponent(sub.name)}`}
-                  key={sub.id}
-                  className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden"
-                >
-                  <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                    <img
-                      src={sub.imageBase64 || allproduct}
-                      alt={sub.name}
-                      className="w-20 h-20 object-contain"
-                    />
-                  </div>
-                  <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
-                    {sub.name}
-                  </span>
-                </Link>
+        <div className=" relative">
+          {/* Hero Banner */}
+        <div className="max-w-7xl mx-auto px-2 mt-3">
+          <div className="rounded-2xl overflow-hidden">
+            <Swiper
+              modules={[Autoplay, Pagination]}
+              autoplay={{ delay: 3000, disableOnInteraction: false }}
+              pagination={{ clickable: true }}
+              // navigation={true}
+              loop={banners.length > 1}
+              className="w-full"
+            >
+              {banners.map((banner) => (
+                <SwiperSlide key={banner.id}>
+                  <img
+                    src={banner.imageBase64}
+                    alt="Banner"
+                    className="w-full h-full object-contain "
+                  />
+                </SwiperSlide>
               ))}
-            </div>
+            </Swiper>
           </div>
-        ))}
-      </div>
+        </div>
+        {/* Categories Section */}
+        <div className="max-w-7xl mx-auto px-4 mt-3  min-h-screen">
+          {groupedCategories.map((main) => (
+            <div key={main.id} className="mb-3">
+              <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
+                {main.name}
+              </h2>
+              <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
+                {main.subcategories.map((sub) => (
+                  <Link
+                    to={`/category/${encodeURIComponent(sub.name)}`}
+                    key={sub.id}
+                    className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden"
+                  >
+                    <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                      <img
+                        src={sub.imageBase64 || allproduct}
+                        alt={sub.name}
+                        className="w-20 h-20 object-contain"
+                      />
+                    </div>
+                    <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
+                      {sub.name}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
 
-      {/* Product Section */}
+        {/* Product Section */}
 
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-4 mt-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
-              <span className="text-xl">
-                <img
-                  src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748593991/time_6953238_ejcooq.png"
-                  alt=""
-                />
-              </span>
+        {/* Features Section */}
+        <div className="max-w-7xl mx-auto px-4 mt-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
+                <span className="text-xl">
+                  <img
+                    src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748593991/time_6953238_ejcooq.png"
+                    alt=""
+                  />
+                </span>
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-800">Ultrafast Delivery</h4>
+                <p className="text-gray-600 text-sm">
+                  Get your groceries in minutes
+                </p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-bold text-gray-800">Ultrafast Delivery</h4>
-              <p className="text-gray-600 text-sm">
-                Get your groceries in minutes
-              </p>
+            <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+              <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-4">
+                <span className="text-xl">
+                  <img
+                    src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594067/fresh_6718182_yftabd.png"
+                    alt=""
+                  />
+                </span>
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-800">Farm Fresh</h4>
+                <p className="text-gray-600 text-sm">
+                  100% fresh products daily
+                </p>
+              </div>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+              <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4">
+                <span className="text-xl">
+                  <img
+                    src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594151/dollar-symbol_1151390_dikxve.png"
+                    alt=""
+                  />
+                </span>
+              </div>
+              <div>
+                <h4 className="font-bold text-gray-800">Best Prices</h4>
+                <p className="text-gray-600 text-sm">
+                  Save more with exclusive deals
+                </p>
+              </div>
             </div>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-4">
-              <span className="text-xl">
-                <img
-                  src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594067/fresh_6718182_yftabd.png"
-                  alt=""
-                />
-              </span>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-800">Farm Fresh</h4>
-              <p className="text-gray-600 text-sm">100% fresh products daily</p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4">
-              <span className="text-xl">
-                <img
-                  src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594151/dollar-symbol_1151390_dikxve.png"
-                  alt=""
-                />
-              </span>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-800">Best Prices</h4>
-              <p className="text-gray-600 text-sm">
-                Save more with exclusive deals
-              </p>
-            </div>
-          </div>
+        </div>
         </div>
       </div>
 

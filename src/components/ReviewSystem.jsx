@@ -50,7 +50,7 @@ const ReviewSystem = ({ productId, showTitle = true }) => {
             createdAt: reviewData.createdAt?.toDate().toLocaleDateString() || new Date().toLocaleDateString()
           });
         }
-
+        console.log("review Datas", reviewsData)
         setReviews(reviewsData);
       } catch (error) {
         console.error('Error fetching reviews:', error);
