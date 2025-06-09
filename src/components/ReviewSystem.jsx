@@ -151,7 +151,7 @@ const ReviewSystem = ({ productId, showTitle = true }) => {
   return (
     <div className="space-y-6">
       {showTitle && (
-        <h2 className="text-2xl font-bold text-gray-900">Customer Reviews</h2>
+        <h2 className="text-2xl font-bold text-gray-900 commonFont">Customer Reviews</h2>
       )}
 
       {userCanReview && (

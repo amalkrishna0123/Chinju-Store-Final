@@ -221,7 +221,7 @@ const ReviewManagement = () => {
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
+        className={`fixed top-0 left-0 h-screen bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
           sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
         } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
       >
@@ -832,6 +832,14 @@ const ReviewManagement = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Overlay for when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-transparent bg-opacity-50 backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
     </div>
   );

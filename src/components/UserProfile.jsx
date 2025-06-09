@@ -955,14 +955,14 @@ const UserProfile = () => {
         {/* Gradient top bar */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1"></div>
         {/* Mobile Header */}
-        <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
+        <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] px-4 py-2">
           {/* Logo Section */}
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center">
             <Link
               to="/"
-              className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
+              className="bg-white LogoFont text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
             >
-              zepto
+              Chinju Store
             </Link>
             <div className="flex space-x-3">
               <div

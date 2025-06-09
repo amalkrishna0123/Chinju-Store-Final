@@ -7,6 +7,7 @@ import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import { FaStar } from "react-icons/fa6";
 import {
   Search,
   ChevronDown,
@@ -449,8 +450,8 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div className="bg-[#39B2A7] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border-t-4 border-[#2e978e]">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-white">
-              Sign in to Zepto
+            <h2 className="text-xl font-semibold text-white commonFont">
+              Sign in to Chinju Store
             </h2>
             <button
               onClick={() => setShowLoginModal(false)}
@@ -662,9 +663,9 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
           <div className="flex items-center space-x-3">
             <Link
               to="/"
-              className="text-blue-600 text-3xl font-bold flex items-center"
+              className="text-blue-600 text-3xl font-bold flex items-center commonFont"
             >
-              zepto
+              Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
               </span>
@@ -769,9 +770,9 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
         <div className="flex justify-between items-center">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
+            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl commonFont shadow-md"
           >
-            zepto
+            Chinju Store
           </Link>
           <div className="flex space-x-3">
             <div
@@ -1092,14 +1093,14 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
               </div>
             </div>
           </div>
-          <div className="p-10">
+          <div className=" px-2 pb-2">
             {/* Related Products */}
             {relatedProducts.length > 0 && (
               <div className="mt-12 border-t border-gray-100 pt-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                <h3 className="text-lg mb-4 text-grey-900 commonFont">
                   You May Also Like
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {relatedProducts.slice(0, 4).map((item) => (
                     <div
                       key={item.id}
@@ -1114,13 +1115,25 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                         />
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-800 text-sm mb-1">
+                        <h4 className="font-medium text-gray-800 text-sm mb-1 clamp-text">
                           {item.name}
                         </h4>
-                        <p className="text-xs text-gray-500">
+                        <div className="flex justify-between items-center">
+                          <p
+                            className={`text-xs mb-1 mt-1 px-2 py-1 rounded-sm text-white shadow-sm flex justify-start items-center 
+    ${item.stock === "Available" ? "bg-green-600" : "bg-red-600"}`}
+                          >
+                            {item.stock}
+                          </p>
+                          <div className="flex items-center gap-0.5">
+                            <div className="font-medium">4</div>
+                            <span className="text-sm text-[#ffea00]"><FaStar/></span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 font-semibold">
                           {item.weight || "500g"}
                         </p>
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center justify-between mt-1">
                           <span className="font-semibold text-gray-900">
                             ₹{item.salePrice}
                           </span>

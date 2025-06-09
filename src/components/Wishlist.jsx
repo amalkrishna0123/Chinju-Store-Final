@@ -193,7 +193,7 @@ const Wishlist = () => {
         <div className="bg-[#39B2A7] bg-opacity-50 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border-t-4 border-[#2e978e]">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-white">
-              Sign in to Zepto
+              Sign in to Chinju Store
             </h2>
             <button
               onClick={() => setShowLoginModal(false)}
@@ -340,7 +340,7 @@ const Wishlist = () => {
           {/* Logo */}
           <div className="flex items-center space-x-3">
             <Link to="/" className="text-blue-600 text-3xl font-bold flex items-center">
-              zepto
+              Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
               </span>
@@ -447,9 +447,9 @@ const Wishlist = () => {
         <div className="flex justify-between items-center mb-4">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
+            className="bg-white LogoFont text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
           >
-            zepto
+            Chinju Store
           </Link>
           <div className="flex space-x-3">
             <div
@@ -467,7 +467,7 @@ const Wishlist = () => {
                 <ProfileIcon className="text-xl text-[#1a7e74]" />
               )}
             </div>
-            <div
+            {/* <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative"
               onClick={handleCartClick}
             >
@@ -477,7 +477,7 @@ const Wishlist = () => {
                   {cartItems.length}
                 </span>
               )}
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -520,7 +520,7 @@ const Wishlist = () => {
         )}
 
         {/* Delivery Info */}
-        <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
+        {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
           <div className="flex flex-col flex-1">
             <div className="text-white font-bold flex items-center">
               <span className="mr-2">Delivery in 9 mins</span>
@@ -536,17 +536,17 @@ const Wishlist = () => {
           <div className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm">
             Change
           </div>
-        </div>
+        </div> */}
 
         {/* Search Bar */}
-        <div className="relative mb-4">
+        <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search size={18} className="text-gray-400" />
           </div>
           <input
             type="text"
             placeholder="Search for products..."
-            className="bg-white w-full pl-10 pr-4 py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
+            className="bg-white w-full pl-10 commonFont pr-4 py-3 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-300 text-gray-700"
           />
         </div>
       </div>
@@ -567,7 +567,7 @@ const Wishlist = () => {
       {/* Wishlist Content */}
       <div className="max-w-7xl mx-auto px-4 mt-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800">My Wishlist</h1>
+          <h1 className="text-2xl font-bold text-gray-800 commonFont">My Wishlist</h1>
           <p className="text-gray-600">Save items you love to shop later</p>
         </div>
 
@@ -607,8 +607,9 @@ const Wishlist = () => {
                 </div>
 
                 <div className="p-3">
-                  <h3 className="font-medium text-gray-800">{item.name}</h3>
+                  <h3 className="font-medium text-gray-800 text-sm clamp-text">{item.name}</h3>
                   <p className="text-xs text-gray-500 mb-1">{item.weight}</p>
+                  <p className="text-xs text-gray-500 mb-1">{item.stock}</p>
                   
                   <div className="flex items-center gap-2 mt-2">
                     <span className="font-bold text-gray-900">₹{item.price || item.salePrice || item.originalPrice}</span>

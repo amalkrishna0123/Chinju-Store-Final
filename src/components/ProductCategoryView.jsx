@@ -1039,7 +1039,7 @@ useEffect(() => {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-gradient-to-br relative rounded-xl overflow-hidden transition-all cursor-pointer w-full max-w-xs h-[350px] flex flex-col"
+                className="bg-gradient-to-br relative rounded-xl overflow-hidden transition-all cursor-pointer w-full max-w-xs h-[335px] md:h-[350px] flex flex-col"
                 onMouseEnter={() => setHoveredProduct(product.id)}
                 onMouseLeave={() => setHoveredProduct(null)}
                 onClick={(e) => navigateToProduct(product.id, e)}
@@ -1079,18 +1079,26 @@ useEffect(() => {
                   </div>
                 </div>
 
-                <div className="flex flex-col justify-between flex-1 p-3">
+                <div className="flex flex-col justify-between flex-1 pt-3">
                   {/* Top Info */}
                   <div>
-                    <h4 className="font-medium text-xs clamp-text">{product.name}</h4>
-                    
+                    <h4 className="font-medium text-xs clamp-text">
+                      {product.name}
+                    </h4>
+
                     <div className="flex justify-between">
-                      <p className={`text-xs mb-1 mt-1 px-2 py-1 rounded-sm text-white shadow-sm flex justify-start items-center 
-    ${product.stock === 'Available' ? 'bg-green-600' : 'bg-red-600'}`}>{product.stock}</p>
+                      <p
+                        className={`text-xs mb-1 mt-1 px-2 py-1 rounded-sm text-white shadow-sm flex justify-start items-center 
+    ${product.stock === "Available" ? "bg-green-600" : "bg-red-600"}`}
+                      >
+                        {product.stock}
+                      </p>
                       {/* Rating */}
-                      <div className="flex items-center">
+                      <div className="flex items-center bg-[#ebf0ef] px-2 rounded-sm shadow-sm">
                         <div className="font-medium commonFont">4</div>
-                        <span className="text-[#ffdd00]"><HiStar/></span>
+                        <span className="text-[#ffdd00]">
+                          <HiStar />
+                        </span>
                       </div>
                     </div>
                     {/* {renderRating(product.rating || 4)} */}
@@ -1099,7 +1107,12 @@ useEffect(() => {
                   {/* Bottom Price & Button */}
                   <div>
                     {product.weight && (
-                      <p className="text-xs mb-1 text-[#ababab] flex gap-1"><span><FaWeight/></span> {product.weight}</p>
+                      <p className="text-xs mb-1 text-[#ababab] flex gap-1">
+                        <span>
+                          <FaWeight />
+                        </span>{" "}
+                        {product.weight}
+                      </p>
                     )}
                     <div className="flex items-center gap-2 mt-1">
                       <span className="font-bold">

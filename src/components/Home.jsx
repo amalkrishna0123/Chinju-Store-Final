@@ -90,30 +90,71 @@ const Home = () => {
   }, []);
   // Define filtered products with search functionality
   const getFilteredProducts = () => {
-    // First apply category filter
     let result =
       selectedCategory === "All" || selectedCategory === "All Products"
         ? products
-        : products.filter((product) => product.category === selectedCategory);
-
-    // Then apply search query filter if one exists
+        : products.filter(
+            (product) =>
+              product.category === selectedCategory || // main
+              product.subcategory === selectedCategory  // sub
+          );
+  
     if (searchQuery && searchQuery.trim().length > 0) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(
         (product) =>
           (product.name && product.name.toLowerCase().includes(query)) ||
-          (product.category &&
-            product.category.toLowerCase().includes(query)) ||
-          (product.description &&
-            product.description?.toLowerCase().includes(query))
+          (product.category && product.category.toLowerCase().includes(query)) ||
+          (product.subcategory && product.subcategory.toLowerCase().includes(query)) ||
+          (product.description && product.description.toLowerCase().includes(query))
       );
     }
-
+  
     return result;
   };
 
+  const getFilteredProductsAndCategories = () => {
+    // First filter products as before
+    let filteredProducts =
+      selectedCategory === "All" || selectedCategory === "All Products"
+        ? products
+        : products.filter(
+            (product) =>
+              product.category === selectedCategory ||
+              product.subcategory === selectedCategory
+          );
+  
+    if (searchQuery && searchQuery.trim().length > 0) {
+      const query = searchQuery.toLowerCase().trim();
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          (product.name && product.name.toLowerCase().includes(query)) ||
+          (product.category && product.category.toLowerCase().includes(query)) ||
+          (product.subcategory && product.subcategory.toLowerCase().includes(query)) ||
+          (product.description && product.description.toLowerCase().includes(query))
+      );
+      
+      // Also filter categories based on search query
+      const filteredGroupedCategories = groupedCategories.map(mainCategory => ({
+        ...mainCategory,
+        subcategories: mainCategory.subcategories.filter(sub => 
+          sub.name.toLowerCase().includes(query)
+        )
+      })).filter(mainCategory => mainCategory.subcategories.length > 0);
+  
+      return { filteredProducts, filteredGroupedCategories };
+    }
+  
+    return { filteredProducts, filteredGroupedCategories: groupedCategories };
+  };
+  
+  // Use the filtered data
+  const { filteredProducts, filteredGroupedCategories } = getFilteredProductsAndCategories();
+  
+  
+
   // Use the filtered products
-  const filteredProducts = getFilteredProducts();
+  // const filteredProducts = getFilteredProducts();
 
   // Fetch products from Firestore
   useEffect(() => {
@@ -516,7 +557,7 @@ setGroupedCategories(grouped);
       </div>
 
       {showUserDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
           <div className="px-4 py-2 border-b border-gray-100">
             <p className="text-sm font-semibold">{currentUser?.displayName}</p>
             <p className="text-xs text-gray-500 truncate">
@@ -898,8 +939,8 @@ setGroupedCategories(grouped);
       </div> */}
 
       {/* Mobile Header */}
-      <div className="relative md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] overflow-hidden">
-        <div className=" absolute opacity-20">
+      <div className="relative md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E]">
+        <div className=" absolute opacity-20 overflow-hidden top-0 bottom-0">
           <img src={dot} alt="" />
         </div>
         <div className=" p-4 relative">
@@ -940,7 +981,7 @@ setGroupedCategories(grouped);
 
           {/* Mobile User Dropdown */}
           {showUserDropdown && currentUser && (
-            <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
+            <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-40 border border-gray-100">
               <div className="px-4 py-2 border-b border-gray-100">
                 <p className="text-sm font-semibold">
                   {currentUser?.displayName}
@@ -1101,38 +1142,169 @@ setGroupedCategories(grouped);
               </Swiper>
             </div>
           </div>
-          {/* Categories Section */}
-          <div className="max-w-7xl mx-auto px-4 mt-3  min-h-screen">
-            {groupedCategories.map((main) => (
-              <div key={main.id} className="mb-3">
-                <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
-                  {main.name}
-                </h2>
-                <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
-                  {main.subcategories.map((sub) => (
-                    <Link
-                      to={`/category/${encodeURIComponent(sub.name)}`}
-                      key={sub.id}
-                      className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden"
-                    >
-                      <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                        <img
-                          src={sub.imageBase64 || allproduct}
-                          alt={sub.name}
-                          className="w-20 h-20 object-contain"
-                        />
-                      </div>
-                      <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
-                        {sub.name}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
 
-          {/* Product Section */}
+          {/* Categories Section */}
+          {/* Product/Category Section */}
+          <div className="max-w-7xl mx-auto px-4 mt-3 min-h-screen">
+            {searchQuery && searchQuery.trim().length > 0 ? (
+              // Show search results - either categories or products
+              <>
+                {filteredGroupedCategories.length > 0 && (
+                  <div className="mb-8">
+                    <h2 className="text-xl text-gray-800 md:mb-4 CategoryTitle">
+                      Categories matching "{searchQuery}"
+                    </h2>
+                    {filteredGroupedCategories.map((main) => (
+                      <div key={main.id} className="mb-3">
+                        <h3 className="text-lg text-gray-700 md:mb-2">
+                          {main.name}
+                        </h3>
+                        <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
+                          {main.subcategories.map((sub) => (
+                            <Link
+                              to={`/category/${encodeURIComponent(sub.name)}`}
+                              key={sub.id}
+                              className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
+                              onClick={() => setSelectedCategory(sub.name)}
+                            >
+                              <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                <img
+                                  src={sub.imageBase64 || allproduct}
+                                  alt={sub.name}
+                                  className="w-20 h-20 object-contain"
+                                />
+                              </div>
+                              <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
+                                {sub.name}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {filteredProducts.length > 0 && (
+                  <div>
+                    <h2 className="text-xl text-gray-800 md:mb-4 CategoryTitle">
+                      Products matching "{searchQuery}"
+                    </h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {filteredProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="bg-white rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md cursor-pointer"
+                          onClick={(e) => navigateToProduct(product.id, e)}
+                        >
+                          <div className="relative">
+                            <img
+                              src={product.imageBase64 || apple}
+                              alt={product.name}
+                              className="w-full h-48 object-contain"
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleWishlist(product);
+                              }}
+                              className={`absolute top-2 right-2 p-2 rounded-full ${
+                                wishlist.some((item) => item.id === product.id)
+                                  ? "text-red-500 bg-white"
+                                  : "text-gray-400 bg-white"
+                              }`}
+                            >
+                              <Heart
+                                size={20}
+                                fill={
+                                  wishlist.some(
+                                    (item) => item.id === product.id
+                                  )
+                                    ? "currentColor"
+                                    : "none"
+                                }
+                              />
+                            </button>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="text-sm font-medium text-gray-800 mb-1 truncate">
+                              {product.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-2">
+                              {product.weight}
+                            </p>
+                            {renderRating(product.rating || 0)}
+                            <div className="flex items-center justify-between mt-3">
+                              <div>
+                                <span className="font-bold text-gray-900">
+                                  ₹{product.salePrice || product.originalPrice}
+                                </span>
+                                {product.originalPrice && (
+                                  <span className="text-gray-400 text-xs line-through ml-2">
+                                    ₹{product.originalPrice}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addToCart(product);
+                                }}
+                                className="text-white bg-[#1a7e74] hover:bg-[#145f5a] px-3 py-1 rounded-full text-xs transition-colors"
+                              >
+                                Add
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {filteredProducts.length === 0 &&
+                  filteredGroupedCategories.length === 0 && (
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">
+                        No results found for "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
+              </>
+            ) : (
+              // Normal view - show grouped categories
+              <>
+                {groupedCategories.map((main) => (
+                  <div key={main.id} className="mb-3">
+                    <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
+                      {main.name}
+                    </h2>
+                    <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
+                      {main.subcategories.map((sub) => (
+                        <Link
+                          to={`/category/${encodeURIComponent(sub.name)}`}
+                          key={sub.id}
+                          className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
+                          onClick={() => setSelectedCategory(sub.name)}
+                        >
+                          <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                            <img
+                              src={sub.imageBase64 || allproduct}
+                              alt={sub.name}
+                              className="w-20 h-20 object-contain"
+                            />
+                          </div>
+                          <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
+                            {sub.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
 
           {/* Features Section */}
           <div className="max-w-7xl mx-auto px-4 mt-5">
