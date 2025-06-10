@@ -775,7 +775,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
             Chinju Store
           </Link>
           <div className="flex space-x-3">
-            <div
+          <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
               onClick={() => !currentUser && setShowLoginModal(true)}
             >
@@ -803,6 +803,44 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
             </div> */}
           </div>
         </div>
+
+        {/* Mobile User Dropdown */}
+        {showUserDropdown && currentUser && (
+          <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
+            <div className="px-4 py-2 border-b border-gray-100">
+              <p className="text-sm font-semibold">
+                {currentUser?.displayName}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {currentUser?.email}
+              </p>
+            </div>
+            <a
+              href="/profile"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              My Profile
+            </a>
+            <a
+              href="/orders"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              My Orders
+            </a>
+            <a
+              href="/wishlist"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              Wishlist
+            </a>
+            <button
+              onClick={handleLogout}
+              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Product Detail Content */}

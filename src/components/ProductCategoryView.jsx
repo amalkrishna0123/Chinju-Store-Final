@@ -50,6 +50,7 @@ const ProductCategoryView = () => {
   const { subcategoryName } = useParams(); // Changed from categoryName to subcategoryName
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const [averageRatings, setAverageRatings] = useState({});
   const navigateToProduct = (productId, event) => {
     // Prevent event from triggering when clicking on buttons inside the card
     if (event.target.closest('button')) return;
@@ -115,6 +116,39 @@ const ProductCategoryView = () => {
 
     fetchProducts();
   }, []);
+
+  // Calculate average ratings for each product
+
+  useEffect(() => {
+    const fetchAverageRatings = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'reviews'));
+        const ratingMap = {};
+        const counts = {};
+  
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const pid = data.productId;
+          const rating = Number(data.rating);
+          if (rating >= 1 && rating <= 5) {
+            ratingMap[pid] = (ratingMap[pid] || 0) + rating;
+            counts[pid] = (counts[pid] || 0) + 1;
+          }
+        });
+  
+        const averages = {};
+        for (const pid in ratingMap) {
+          averages[pid] = Number((ratingMap[pid] / counts[pid]).toFixed(1));
+        }
+        setAverageRatings(averages);
+      } catch (error) {
+        console.error("Error fetching average ratings:", error);
+      }
+    };
+  
+    fetchAverageRatings();
+  }, []);
+  
 
   // Function to get filtered products based on subcategory and search query
   const getFilteredProducts = () => {
@@ -1039,7 +1073,7 @@ useEffect(() => {
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-gradient-to-br relative rounded-xl overflow-hidden transition-all cursor-pointer w-full max-w-xs h-[335px] md:h-[350px] flex flex-col"
+                className="bg-gradient-to-br relative rounded-xl overflow-hidden transition-all cursor-pointer w-full max-w-xs h-[345px] md:h-[350px] flex flex-col"
                 onMouseEnter={() => setHoveredProduct(product.id)}
                 onMouseLeave={() => setHoveredProduct(null)}
                 onClick={(e) => navigateToProduct(product.id, e)}
@@ -1082,7 +1116,7 @@ useEffect(() => {
                 <div className="flex flex-col justify-between flex-1 pt-3">
                   {/* Top Info */}
                   <div>
-                    <h4 className="font-medium text-xs clamp-text">
+                    <h4 className="font-medium text-sm clamp-text">
                       {product.name}
                     </h4>
 
@@ -1095,7 +1129,9 @@ useEffect(() => {
                       </p>
                       {/* Rating */}
                       <div className="flex items-center bg-[#ebf0ef] px-2 rounded-sm shadow-sm">
-                        <div className="font-medium commonFont">4</div>
+                        <div className="font-medium commonFont">
+                          {averageRatings[product.id] ?? "0.0"}
+                        </div>
                         <span className="text-[#ffdd00]">
                           <HiStar />
                         </span>
@@ -1107,7 +1143,7 @@ useEffect(() => {
                   {/* Bottom Price & Button */}
                   <div>
                     {product.weight && (
-                      <p className="text-xs mb-1 text-[#ababab] flex gap-1">
+                      <p className="text-xs mb-1 mt-1 text-[#ababab] flex gap-1">
                         <span>
                           <FaWeight />
                         </span>{" "}

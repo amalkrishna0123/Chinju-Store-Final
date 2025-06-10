@@ -35,6 +35,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ff from "../assets/ff.png"
 import fff from "../assets/fff.jpg"
 import dot from "../assets/dot.png"
+import HomeLoader from "./cart animations/HomeLoader";
 
 const Home = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -49,6 +50,7 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [homeLoading, setHomeLoading] = useState(true)
   const [wishlist, setWishlist] = useState([]);
   const navigate = useNavigate();
   const [productsLoader, setProductsLoader] = useState(true);
@@ -167,6 +169,7 @@ const Home = () => {
         }));
         setProducts(productList);
         setProductsLoader(false);
+        setHomeLoading(false)
       } catch (err) {
         console.error("Error fetching products:", err);
       }
@@ -204,6 +207,7 @@ setCategories([
 
 // ✅ Set structured grouped categories
 setGroupedCategories(grouped);
+setHomeLoading(false)
 
       } catch (err) {
         console.error("Error fetching categories:", err);
@@ -223,6 +227,7 @@ setGroupedCategories(grouped);
           ...doc.data(),
         }));
         setBanners(bannerList);
+        setHomeLoading(false)
       } catch (err) {
         console.error("Error fetching banners:", err);
       }
@@ -1113,7 +1118,9 @@ setGroupedCategories(grouped);
       {/* Render Modals */}
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
-
+        {homeLoading && (
+          <HomeLoader/>
+        )}
       <div className="relative">
         <div className="absolute top-0 bottom-0 left-0 right-0 z-0 opacity-0 bg-no-repeat">
           <img src={fff} alt="" className="w-full h-full object-cover" />
