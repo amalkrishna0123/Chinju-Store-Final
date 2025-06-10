@@ -946,7 +946,35 @@ const UserProfile = () => {
       fetchUserReviews();
     }
   }, [orders]);
+  const [editingReview, setEditingReview] = useState(null);
 
+  const handleEditClick = (review) => {
+    setEditingReview({ ...review }); // clone so we can edit independently
+  };
+  
+  const handleUpdateReview = async () => {
+    if (!editingReview) return;
+  
+    try {
+      const reviewRef = doc(db, "reviews", editingReview.id);
+      await updateDoc(reviewRef, {
+        text: editingReview.text,
+        rating: editingReview.rating,
+      });
+  
+      // Update local state
+      setUserReviews((prevReviews) =>
+        prevReviews.map((r) =>
+          r.id === editingReview.id ? { ...r, ...editingReview } : r
+        )
+      );
+  
+      setEditingReview(null);
+    } catch (error) {
+      console.error("Failed to update review:", error);
+      alert("Failed to update review. Please try again.");
+    }
+  };  
 
   // For the main profile page
   if (location.pathname === "/profile") {
@@ -1063,7 +1091,7 @@ const UserProfile = () => {
             {/* Logo */}
             <div className="flex items-center space-x-3">
               <div className="text-blue-600 text-3xl font-bold flex items-center">
-                zepto
+                Chinju Store
                 <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                   SUPER SAVER
                 </span>
@@ -1586,46 +1614,88 @@ const UserProfile = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                    {userReviews.map((review) => (
-                      <div key={review.id} className="border rounded-lg p-4">
-                        <div className="flex justify-between items-start mb-3">
-                          <div>
-                            <h3 className="font-medium">
-                              {review.productName}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              Order #{review.orderId?.slice(0, 8)}
-                            </p>
-                          </div>
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                size={16}
-                                className={`${
-                                  i < review.rating
-                                    ? "text-yellow-400 fill-yellow-400"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
+                   {userReviews.map((review) => (
+  <div key={review.id} className="border rounded-lg p-4">
+    <div className="flex justify-between items-start mb-3">
+      <div>
+        <h3 className="font-medium">{review.productName}</h3>
+        <p className="text-sm text-gray-500">
+          Order #{review.orderId?.slice(0, 8)}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        {[...Array(5)].map((_, i) => (
+          <Star
+            key={i}
+            size={16}
+            className={`${
+              i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+            }`}
+          />
+        ))}
+        <button
+          onClick={() => handleEditClick(review)}
+          className="text-blue-500 text-sm hover:underline ml-2"
+        >
+          Edit
+        </button>
+      </div>
+    </div>
 
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <p className="text-gray-800">{review.text}</p>
-                        </div>
+    {editingReview?.id === review.id ? (
+      <div className="bg-gray-50 p-3 rounded-lg space-y-3">
+        <textarea
+          className="w-full border rounded p-2"
+          rows="3"
+          value={editingReview.text}
+          onChange={(e) =>
+            setEditingReview((prev) => ({ ...prev, text: e.target.value }))
+          }
+        />
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Star
+              key={i}
+              size={20}
+              className={`cursor-pointer ${
+                i <= editingReview.rating ? "text-yellow-400" : "text-gray-300"
+              }`}
+              onClick={() =>
+                setEditingReview((prev) => ({ ...prev, rating: i }))
+              }
+            />
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleUpdateReview}
+            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => setEditingReview(null)}
+            className="text-gray-500 hover:underline"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    ) : (
+      <div className="bg-gray-50 p-3 rounded-lg">
+        <p className="text-gray-800">{review.text}</p>
+      </div>
+    )}
 
-                        <div className="flex justify-between items-center mt-3 text-sm text-gray-500">
-                          <span>Reviewed on {review.createdAt}</span>
-                          {review.isVerifiedPurchase && (
-                            <span className="text-green-600">
-                              ✓ Verified Purchase
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+    <div className="flex justify-between items-center mt-3 text-sm text-gray-500">
+      <span>Reviewed on {review.createdAt}</span>
+      {review.isVerifiedPurchase && (
+        <span className="text-green-600">✓ Verified Purchase</span>
+      )}
+    </div>
+  </div>
+))}
+
                   </div>
                 )}
               </div>

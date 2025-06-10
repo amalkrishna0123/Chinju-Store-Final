@@ -955,7 +955,8 @@ useEffect(() => {
 
       {/* Render Modals */}
       <LoginModal />
-      <Cart />
+      <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
+
 
       {/* Main Content - Product Listing */}
       <div className="max-w-7xl mx-auto px-4 mt-6">
