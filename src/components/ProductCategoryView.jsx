@@ -14,6 +14,7 @@ import { CgProfile } from "react-icons/cg";
 import { FcGoogle } from "react-icons/fc";
 import apple from "../assets/apple.jpeg";
 import { useAuth } from "./AuthContext";
+import { motion, AnimatePresence } from "framer-motion";
 import { MdLogin } from "react-icons/md";
 import {
   collection,
@@ -33,6 +34,8 @@ import { useParams } from "react-router-dom";
 import { IoIosArrowRoundForward } from "react-icons/io";
 import allproduct from '../assets/allproduct.jpeg'
 import { useNavigate } from 'react-router-dom';
+import { HiStar } from "react-icons/hi";
+import { FaWeight } from "react-icons/fa";
 
 const ProductCategoryView = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -47,6 +50,7 @@ const ProductCategoryView = () => {
   const { subcategoryName } = useParams(); // Changed from categoryName to subcategoryName
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const [averageRatings, setAverageRatings] = useState({});
   const navigateToProduct = (productId, event) => {
     // Prevent event from triggering when clicking on buttons inside the card
     if (event.target.closest('button')) return;
@@ -56,6 +60,8 @@ const ProductCategoryView = () => {
     decodeURIComponent(subcategoryName)
   );
   const [wishlist, setWishlist] = useState([]);
+  const [index, setIndex] = useState(0);
+  const words = ["products", "categories", "services", "items"];
   const [userLocation, setUserLocation] = useState({
     address: 'Round North, Kodaly, Kerala',
     deliveryTime: '9 mins'
@@ -65,6 +71,15 @@ const ProductCategoryView = () => {
   console.log("URL parameter:", subcategoryName);
   console.log("Decoded subcategory:", decodeURIComponent(subcategoryName));
   
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % words.length);
+    }, 2000); // 1 second
+
+    return () => clearInterval(interval);
+  }, []);
+
   // useEffect(() => {
   //   const fetchProducts = async () => {
   //     const snapshot = await getDocs(collection(db, "products"));
@@ -102,11 +117,45 @@ const ProductCategoryView = () => {
     fetchProducts();
   }, []);
 
+  // Calculate average ratings for each product
+
+  useEffect(() => {
+    const fetchAverageRatings = async () => {
+      try {
+        const snapshot = await getDocs(collection(db, 'reviews'));
+        const ratingMap = {};
+        const counts = {};
+  
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const pid = data.productId;
+          const rating = Number(data.rating);
+          if (rating >= 1 && rating <= 5) {
+            ratingMap[pid] = (ratingMap[pid] || 0) + rating;
+            counts[pid] = (counts[pid] || 0) + 1;
+          }
+        });
+  
+        const averages = {};
+        for (const pid in ratingMap) {
+          averages[pid] = Number((ratingMap[pid] / counts[pid]).toFixed(1));
+        }
+        setAverageRatings(averages);
+      } catch (error) {
+        console.error("Error fetching average ratings:", error);
+      }
+    };
+  
+    fetchAverageRatings();
+  }, []);
+  
+
   // Function to get filtered products based on subcategory and search query
   const getFilteredProducts = () => {
     if (!products || !products.length) return [];
     
     let filtered = [...products];
+    console.log("filtered product isssss",filtered)
     
     // If "All Products" is selected, show all products
     if (selectedSubcategory === "All Products") {
@@ -663,6 +712,7 @@ useEffect(() => {
                         {item.name}
                       </h4>
                       <p className="text-xs text-gray-500">{item.weight}</p>
+                      <p className="text-xs text-gray-500">{item.stock}</p>
                       <div className="flex items-center mt-2">
                       <span className="font-semibold text-gray-900">₹{item.salePrice || item.originalPrice}</span>
 
@@ -756,7 +806,7 @@ useEffect(() => {
           <div className="flex items-center space-x-3">
             <Link
               to="/"
-              className="text-blue-600 text-3xl font-bold flex items-center"
+              className="text-blue-600 text-3xl font-bold flex items-center LogoFont"
             >
               Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
@@ -768,13 +818,32 @@ useEffect(() => {
           {/* Search Bar */}
           <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
             <Search size={20} className="text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search for products..."
-              className="bg-transparent outline-none w-full text-gray-700"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="relative w-full">
+              <input
+                type="text"
+                className="bg-transparent outline-none w-full text-gray-700 placeholder-transparent"
+                placeholder={`Search for ${words[index]}`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {/* Animated Placeholder */}
+              {!searchQuery && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-sm sm:text-base">
+                  <span>Search for&nbsp;</span>
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={words[index]}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.5 }}
+                    >
+                      {words[index]}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Login and Cart */}
@@ -824,7 +893,7 @@ useEffect(() => {
         <div className="flex justify-between items-center mb-4">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
+            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md LogoFont"
           >
             Chinju Store
           </Link>
@@ -897,24 +966,34 @@ useEffect(() => {
         )}
 
         {/* Search Bar */}
-        <div className="relative w-full mb-4">
-          <div className="flex items-center bg-white rounded-lg px-3 py-2 shadow-sm border border-gray-200">
-            <Search size={18} className="text-gray-400 mr-2" />
+        <div className="relative">
+          {/* Floating Label Placeholder */}
+          {!searchQuery && (
+            <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
+              <span>Search for&nbsp;</span>
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={words[index]}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {words[index]}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Input Field */}
+          <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+            <Search size={20} className="text-gray-400 z-10" />
             <input
               type="text"
-              placeholder="Search for fruits, vegetables, groceries..."
-              className="flex-1 outline-none text-gray-700 text-sm"
+              className="bg-transparent outline-none w-full text-gray-700 placeholder-transparent"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-gray-400"
-              >
-                <X size={16} />
-              </button>
-            )}
           </div>
         </div>
 
@@ -959,8 +1038,8 @@ useEffect(() => {
 
 
       {/* Main Content - Product Listing */}
-      <div className="max-w-7xl mx-auto px-4 mt-6">
-        <div className="flex items-center gap-2">
+      <div className="max-w-7xl mx-auto px-4 mt-3 commonFont">
+        <div className="flex items-center gap-2 text-sm">
           <div className="hover:text-blue-500">
             <Link to="/">Home</Link>
           </div>
@@ -969,7 +1048,7 @@ useEffect(() => {
           </div>
           <div>{selectedSubcategory}</div>
         </div>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-5 mt-2">
           <h2 className="text-2xl font-bold text-gray-800">
             {selectedSubcategory}
           </h2>
@@ -991,100 +1070,137 @@ useEffect(() => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {filteredProducts.map((product) => (
               <div
                 key={product.id}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all cursor-pointer "
+                className="bg-gradient-to-br relative rounded-xl overflow-hidden transition-all cursor-pointer w-full max-w-xs h-[345px] md:h-[350px] lg:h-[400px] flex flex-col"
                 onMouseEnter={() => setHoveredProduct(product.id)}
                 onMouseLeave={() => setHoveredProduct(null)}
                 onClick={(e) => navigateToProduct(product.id, e)}
               >
-                <div className="relative">
-                  <img
-                    src={product.imageBase64 || apple}
-                    alt={product.name}
-                    className="w-full h-40 md:h-60 object-cover"
-                  />
-                  {product.offer > 0 && (
-                    <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
-                      {product.offer}% OFF
-                    </div>
-                  )}
-                  {hoveredProduct === product.id && (
-                    <button
-                      onClick={() => toggleWishlist(product)}
-                      disabled={loading}
-                      className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
-                        wishlist.some((item) => item.id === product.id)
-                          ? "bg-red-100 text-red-500"
-                          : "bg-white text-gray-600 hover:text-red-500"
-                      }`}
-                    >
-                      <Heart
-                        size={16}
-                        fill={
+                <div className="p-1 rounded-[10px] bg-gradient-to-r from-[#2CAA9E] to-[#003832] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]">
+                  <div className="relative rounded-[8px] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]  overflow-hidden">
+                    <img
+                      src={product.imageBase64 || apple}
+                      alt={product.name}
+                      className="w-full h-40 md:h-44 object-cover rounded-lg"
+                    />
+                    {product.offer > 0 && (
+                      <div className="absolute z-20 top-3 left-3 bg-red-500 text-xs px-2 py-1 rounded-lg font-medium text-[#fff]">
+                        {product.offer}% off
+                      </div>
+                    )}
+                    {hoveredProduct === product.id && (
+                      <button
+                        onClick={() => toggleWishlist(product)}
+                        disabled={loading}
+                        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
                           wishlist.some((item) => item.id === product.id)
-                            ? "currentColor"
-                            : "none"
-                        }
-                      />
-                    </button>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h4 className="font-medium text-gray-800">{product.name}</h4>
-                  <p className="text-gray-500 text-xs mb-1">{product.weight}</p>
-                  {/* {renderRating(product.rating || 4)} */}
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="font-bold text-gray-900">
-                      ₹{product.salePrice || product.price}
-                    </span>
-                    {product.originalPrice && (
-                      <span className="text-gray-400 text-xs line-through">
-                        ₹{product.originalPrice}
-                      </span>
+                            ? "bg-red-100 text-red-500"
+                            : "bg-white text-gray-600 hover:text-red-500"
+                        }`}
+                      >
+                        <Heart
+                          size={16}
+                          fill={
+                            wishlist.some((item) => item.id === product.id)
+                              ? "currentColor"
+                              : "none"
+                          }
+                        />
+                      </button>
                     )}
                   </div>
-                  <button
-                    onClick={() => {
-                      const isInCart = cartItems.some(
-                        (item) => item.id === product.id
-                      );
-                      isInCart
-                        ? removeFromCart(product.id)
-                        : addToCart(product);
-                    }}
-                    className={`w-full rounded-lg py-2 mt-3 text-sm font-medium transition-colors flex items-center justify-center ${
-                      cartItems.some((item) => item.id === product.id)
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-blue-600 hover:bg-blue-700 text-white"
-                    }`}
-                  >
-                    {cartItems.some((item) => item.id === product.id) ? (
-                      <>
-                        <svg
-                          className="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M5 13l4 4L19 7"
-                          ></path>
-                        </svg>
-                        Added to Cart
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart size={16} className="mr-2" />
-                        Add to Cart
-                      </>
+                </div>
+
+                <div className="flex flex-col justify-between flex-1 pt-3">
+                  {/* Top Info */}
+                  <div>
+                    <h4 className="font-medium text-sm clamp-text lg:text-base">
+                      {product.name}
+                    </h4>
+
+                    <div className="flex justify-between">
+                      <p
+                        className={`text-xs mb-1 mt-1 lg:mt-3 px-2 py-1 rounded-sm text-white shadow-sm flex justify-start items-center 
+    ${product.stock === "Available" ? "bg-green-600" : "bg-red-600"}`}
+                      >
+                        {product.stock}
+                      </p>
+                      {/* Rating */}
+                      <div className="flex items-center mt-1 lg:mt-3 bg-[#ebf0ef] px-2 rounded-sm shadow-sm">
+                        <div className="font-medium commonFont">
+                          {averageRatings[product.id] ?? "0.0"}
+                        </div>
+                        <span className="text-[#ffdd00]">
+                          <HiStar />
+                        </span>
+                      </div>
+                    </div>
+                    {/* {renderRating(product.rating || 4)} */}
+                  </div>
+
+                  {/* Bottom Price & Button */}
+                  <div>
+                    {product.weight && (
+                      <p className="text-xs mb-1 mt-1 text-[#ababab] flex gap-1">
+                        <span>
+                          <FaWeight />
+                        </span>{" "}
+                        {product.weight}
+                      </p>
                     )}
-                  </button>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="font-bold">
+                        ₹{product.salePrice || product.price}
+                      </span>
+                      {product.originalPrice && (
+                        <span className="text-gray-400 line-through">
+                          ₹{product.originalPrice}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        const isInCart = cartItems.some(
+                          (item) => item.id === product.id
+                        );
+                        isInCart
+                          ? removeFromCart(product.id)
+                          : addToCart(product);
+                      }}
+                      className={`w-full rounded-lg py-2 mt-2 text-sm font-medium transition-colors flex items-center justify-center ${
+                        cartItems.some((item) => item.id === product.id)
+                          ? "bg-green-600 hover:bg-green-700 text-white"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                      }`}
+                    >
+                      {cartItems.some((item) => item.id === product.id) ? (
+                        <>
+                          <svg
+                            className="w-4 h-4 mr-2"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              d="M5 13l4 4L19 7"
+                            ></path>
+                          </svg>
+                          Added to Cart
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart size={16} className="mr-2" />
+                          Add to Cart
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

@@ -7,6 +7,7 @@ import { Navigation, Pagination } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import { FaStar } from "react-icons/fa6";
 import {
   Search,
   ChevronDown,
@@ -77,6 +78,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
     if (productId) {
       fetchProduct();
+      console.log("productId is", productId)
     }
   }, [productId]);
 
@@ -448,8 +450,8 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
         <div className="bg-[#39B2A7] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border-t-4 border-[#2e978e]">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-white">
-              Sign in to Zepto
+            <h2 className="text-xl font-semibold text-white commonFont">
+              Sign in to Chinju Store
             </h2>
             <button
               onClick={() => setShowLoginModal(false)}
@@ -677,8 +679,9 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
           <div className="flex items-center space-x-3">
             <Link
               to="/"
-              className="text-blue-600 text-3xl font-bold flex items-center"
+              className="text-blue-600 text-3xl font-bold flex items-center commonFont"
             >
+              
               Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
@@ -687,7 +690,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
           </div>
 
           {/* Delivery Info */}
-        {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
+          {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
           <div className="flex flex-col flex-1">
             <div className="text-black font-bold flex items-center">
               <span className="mr-2">
@@ -710,7 +713,6 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
             {isLoadingLocation ? "Loading..." : "Change"}
           </button>
         </div> */}
-
 
           {/* Search Bar */}
           {/* <div className="w-1/3">
@@ -780,17 +782,17 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
       </div>
 
       {/* Mobile Header */}
-      <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
+      <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] px-4 py-4">
         {/* Logo Section */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
+            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl commonFont shadow-md"
           >
-            zepto
+            Chinju Store
           </Link>
           <div className="flex space-x-3">
-            <div
+          <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
               onClick={() => !currentUser && setShowLoginModal(true)}
             >
@@ -818,12 +820,50 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
             </div> */}
           </div>
         </div>
+
+        {/* Mobile User Dropdown */}
+        {showUserDropdown && currentUser && (
+          <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
+            <div className="px-4 py-2 border-b border-gray-100">
+              <p className="text-sm font-semibold">
+                {currentUser?.displayName}
+              </p>
+              <p className="text-xs text-gray-500 truncate">
+                {currentUser?.email}
+              </p>
+            </div>
+            <a
+              href="/profile"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              My Profile
+            </a>
+            <a
+              href="/orders"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              My Orders
+            </a>
+            <a
+              href="/wishlist"
+              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+            >
+              Wishlist
+            </a>
+            <button
+              onClick={handleLogout}
+              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+            >
+              Logout
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Product Detail Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Breadcrumb */}
-        <div className="flex flex-wrap items-center text-sm mb-4">
+        <div className="flex flex-wrap items-center text-sm mb-4 commonFont">
           <Link to="/" className="text-gray-500 hover:text-blue-600">
             Home
           </Link>
@@ -843,7 +883,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
         {/* Back Button (Mobile) */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center mb-4 text-gray-600 hover:text-blue-600 md:hidden"
+          className="flex items-center mb-4 text-gray-600 hover:text-blue-600 md:hidden commonFont text-sm"
         >
           <ArrowLeft size={16} className="mr-1" /> Back
         </button>
@@ -863,7 +903,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
               {product.subImagesBase64?.length > 0 && (
                 <div className="grid grid-cols-5 gap-2">
                   <div
-                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === product.imageBase64 ? 'border-blue-500' : 'border-gray-200'} hover:border-blue-500 transition-colors`}
+                    className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
+                      selectedImage === product.imageBase64
+                        ? "border-blue-500"
+                        : "border-gray-200"
+                    } hover:border-blue-500 transition-colors`}
                     onClick={() => setSelectedImage(product.imageBase64)}
                   >
                     <img
@@ -875,7 +919,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                   {product.subImagesBase64.map((img, idx) => (
                     <div
                       key={idx}
-                      className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${selectedImage === img ? 'border-blue-500' : 'border-gray-200'} hover:border-blue-500 transition-colors`}
+                      className={`aspect-square rounded-lg overflow-hidden cursor-pointer border-2 ${
+                        selectedImage === img
+                          ? "border-blue-500"
+                          : "border-gray-200"
+                      } hover:border-blue-500 transition-colors`}
                       onClick={() => setSelectedImage(img)}
                     >
                       <img
@@ -891,7 +939,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
             {/* Info Section */}
             <div
-              className="md:w-2/3 w-full p-4 md:p-6 md:max-h-[70vh] md:overflow-y-auto"
+              className="md:w-2/3 w-full px-4 md:p-6 md:max-h-[70vh] md:overflow-y-auto"
               style={{ WebkitOverflowScrolling: "touch" }}
             >
               <style jsx>{`
@@ -902,15 +950,15 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                 }
               `}</style>
               {/* Title, Price */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-3">
                 <div>
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-800 mb-1">
+                  <h1 className="text-lg font-semibold commonFont md:text-2xl text-gray-800 mb-1">
                     {product.name}
                   </h1>
                   <p className="text-gray-500">{product.weight}</p>
                   {/* {renderRating(product.rating || 4)} */}
                 </div>
-                <div className="mt-3 md:mt-0 md:text-right">
+                <div className="mt-3 md:mt-0 md:text-right commonFont">
                   <div className="flex items-center md:justify-end gap-2">
                     <span className="text-2xl font-bold text-gray-900">
                       ₹{product.salePrice || product.originalPrice}
@@ -931,7 +979,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
               {/* Description */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Description</h3>
+                <h3 className="mb-2 commonFont">Description</h3>
                 <p className="text-gray-600">
                   {product.description ||
                     "Fresh and high-quality product. No description available."}
@@ -940,7 +988,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
               {/* Quantity */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-2">Quantity</h3>
+                <h3 className="commonFont mb-2">Quantity</h3>
                 <div className="flex items-center">
                   <button
                     onClick={decreaseQuantity}
@@ -1021,13 +1069,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
               </div>
 
               {/* Additional Info */}
-              <div className="mt-8 border-t border-gray-100 pt-6">
+              <div className="border-t border-gray-100 pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Product Details */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">
-                      Product Details
-                    </h3>
+                    <h3 className="mb-3 commonFont">Product Details</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-500">Category</span>
@@ -1067,9 +1113,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                   {/* Delivery Info */}
                   {/* Delivery Info */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-3">
-                      Delivery Information
-                    </h3>
+                    <h3 className="mb-3 commonFont">Delivery Information</h3>
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-gray-500">Delivery Time</span>
@@ -1098,21 +1142,20 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                 </div>
               </div>
 
-              {/* Reviews Section */}
-              <div className="mt-8 border-t border-gray-100 pt-6">
+              {/* Review System */}
+              <div className="border-t border-gray-100 pt-6 mt-6">
                 <ReviewSystem productId={productId} />
               </div>
             </div>
-
           </div>
-          <div className="p-10">
+          <div className=" px-2 pb-2">
             {/* Related Products */}
             {relatedProducts.length > 0 && (
               <div className="mt-12 border-t border-gray-100 pt-6">
-                <h3 className="text-lg font-semibold mb-4 text-gray-800">
+                <h3 className="text-lg mb-4 text-grey-900 commonFont">
                   You May Also Like
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {relatedProducts.slice(0, 4).map((item) => (
                     <div
                       key={item.id}
@@ -1127,13 +1170,25 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                         />
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-800 text-sm mb-1">
+                        <h4 className="font-medium text-gray-800 text-sm mb-1 clamp-text">
                           {item.name}
                         </h4>
-                        <p className="text-xs text-gray-500">
+                        <div className="flex justify-between items-center">
+                          <p
+                            className={`text-xs mb-1 mt-1 px-2 py-1 rounded-sm text-white shadow-sm flex justify-start items-center 
+    ${item.stock === "Available" ? "bg-green-600" : "bg-red-600"}`}
+                          >
+                            {item.stock}
+                          </p>
+                          <div className="flex items-center gap-0.5">
+                            <div className="font-medium">4</div>
+                            <span className="text-sm text-[#ffea00]"><FaStar/></span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 font-semibold">
                           {item.weight || "500g"}
                         </p>
-                        <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center justify-between mt-1">
                           <span className="font-semibold text-gray-900">
                             ₹{item.salePrice}
                           </span>

@@ -258,7 +258,7 @@ const DashboardContent = ({ stats, loading, error, orders }) => {
           <p className="text-sm text-gray-500">Orders will appear here when customers make purchases</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl overflow-hidden border border-gray-100">
+        <div className="bg-white rounded-xl overflow-x-auto border border-gray-100">
           <table className="min-w-full text-sm divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -457,7 +457,7 @@ const Dashboard = () => {
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50 overflow-hidden">
       {/* Sidebar - Now a slide-out menu */}
       <div
-        className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 
+        className={`fixed top-0 left-0 h-screen bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 
           ${sidebarOpen  ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
         } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
       >
@@ -598,7 +598,7 @@ const Dashboard = () => {
       {/* Overlay for when sidebar is open */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-transparent bg-opacity-50 z-30"
+          className="fixed inset-0 bg-transparent bg-opacity-50 backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}

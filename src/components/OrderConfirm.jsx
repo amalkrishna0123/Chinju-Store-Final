@@ -51,18 +51,18 @@ const OrderConfirm = () => {
         <div className="flex items-center mb-6">
           <button
             onClick={() => navigate('/')}
-            className="flex items-center text-gray-600 hover:text-gray-900"
+            className="flex items-center text-gray-600 commonFont text-sm hover:text-gray-900"
           >
             <ArrowLeft size={20} className="mr-2" />
             Back to Home
           </button>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">Order Confirmation</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center commonFont">Order Confirmation</h1>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg overflow-hidden p-6 space-y-6">
           {/* Shipping Details */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+            <h2 className="commonFont text-gray-900 flex items-center gap-2 font-semibold">
               <MapPin size={20} />
               Shipping Details
             </h2>
@@ -76,22 +76,22 @@ const OrderConfirm = () => {
 
           {/* Order Summary */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-gray-900">Order Summary</h2>
+            <h2 className="font-semibold text-gray-900 commonFont">Order Summary</h2>
             <div className="space-y-2">
               {currentUser?.cartItems?.length > 0 ? (
                 currentUser.cartItems.map((item) => (
                   <div key={item.id} className="flex justify-between py-2 border-b">
                     <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                      <p className="font-medium commonFont text-sm">{item.name}</p>
+                      <p className="text-sm text-gray-500 commonFont">Quantity: {item.quantity}</p>
                     </div>
-                    <p className="font-medium">₹{item.salePrice * item.quantity}</p>
+                    <p className="font-medium commonFont text-[15px]">₹{item.salePrice * item.quantity}</p>
                   </div>
                 ))
               ) : (
                 <div className="text-center py-4 text-gray-500">Your cart is empty</div>
               )}
-              <div className="flex justify-between pt-4 font-semibold text-lg">
+              <div className="flex justify-between pt-4 font-semibold text-lg commonFont">
                 <span>Total Amount</span>
                 <span>₹{currentUser?.cartItems?.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0) || 0}</span>
               </div>

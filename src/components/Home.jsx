@@ -33,6 +33,9 @@ import { PiFacebookLogoBold } from "react-icons/pi";
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
 import ff from "../assets/ff.png"
+import fff from "../assets/fff.jpg"
+import dot from "../assets/dot.png"
+import HomeLoader from "./cart animations/HomeLoader";
 
 const Home = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -47,6 +50,7 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [homeLoading, setHomeLoading] = useState(true)
   const [wishlist, setWishlist] = useState([]);
   const navigate = useNavigate();
   const [productsLoader, setProductsLoader] = useState(true);
@@ -88,30 +92,71 @@ const Home = () => {
   }, []);
   // Define filtered products with search functionality
   const getFilteredProducts = () => {
-    // First apply category filter
     let result =
       selectedCategory === "All" || selectedCategory === "All Products"
         ? products
-        : products.filter((product) => product.category === selectedCategory);
-
-    // Then apply search query filter if one exists
+        : products.filter(
+            (product) =>
+              product.category === selectedCategory || // main
+              product.subcategory === selectedCategory  // sub
+          );
+  
     if (searchQuery && searchQuery.trim().length > 0) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(
         (product) =>
           (product.name && product.name.toLowerCase().includes(query)) ||
-          (product.category &&
-            product.category.toLowerCase().includes(query)) ||
-          (product.description &&
-            product.description?.toLowerCase().includes(query))
+          (product.category && product.category.toLowerCase().includes(query)) ||
+          (product.subcategory && product.subcategory.toLowerCase().includes(query)) ||
+          (product.description && product.description.toLowerCase().includes(query))
       );
     }
-
+  
     return result;
   };
 
+  const getFilteredProductsAndCategories = () => {
+    // First filter products as before
+    let filteredProducts =
+      selectedCategory === "All" || selectedCategory === "All Products"
+        ? products
+        : products.filter(
+            (product) =>
+              product.category === selectedCategory ||
+              product.subcategory === selectedCategory
+          );
+  
+    if (searchQuery && searchQuery.trim().length > 0) {
+      const query = searchQuery.toLowerCase().trim();
+      filteredProducts = filteredProducts.filter(
+        (product) =>
+          (product.name && product.name.toLowerCase().includes(query)) ||
+          (product.category && product.category.toLowerCase().includes(query)) ||
+          (product.subcategory && product.subcategory.toLowerCase().includes(query)) ||
+          (product.description && product.description.toLowerCase().includes(query))
+      );
+      
+      // Also filter categories based on search query
+      const filteredGroupedCategories = groupedCategories.map(mainCategory => ({
+        ...mainCategory,
+        subcategories: mainCategory.subcategories.filter(sub => 
+          sub.name.toLowerCase().includes(query)
+        )
+      })).filter(mainCategory => mainCategory.subcategories.length > 0);
+  
+      return { filteredProducts, filteredGroupedCategories };
+    }
+  
+    return { filteredProducts, filteredGroupedCategories: groupedCategories };
+  };
+  
+  // Use the filtered data
+  const { filteredProducts, filteredGroupedCategories } = getFilteredProductsAndCategories();
+  
+  
+
   // Use the filtered products
-  const filteredProducts = getFilteredProducts();
+  // const filteredProducts = getFilteredProducts();
 
   // Fetch products from Firestore
   useEffect(() => {
@@ -124,6 +169,7 @@ const Home = () => {
         }));
         setProducts(productList);
         setProductsLoader(false);
+        setHomeLoading(false)
       } catch (err) {
         console.error("Error fetching products:", err);
       }
@@ -161,6 +207,7 @@ setCategories([
 
 // ✅ Set structured grouped categories
 setGroupedCategories(grouped);
+setHomeLoading(false)
 
       } catch (err) {
         console.error("Error fetching categories:", err);
@@ -180,6 +227,7 @@ setGroupedCategories(grouped);
           ...doc.data(),
         }));
         setBanners(bannerList);
+        setHomeLoading(false)
       } catch (err) {
         console.error("Error fetching banners:", err);
       }
@@ -359,72 +407,71 @@ setGroupedCategories(grouped);
 
   // Improved location function
   const fetchCurrentLocation = async () => {
-  setIsLoadingLocation(true);
+    setIsLoadingLocation(true);
 
-  if (!navigator.geolocation) {
-    alert("Geolocation is not supported by this browser.");
-    setIsLoadingLocation(false);
-    return;
-  }
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by this browser.");
+      setIsLoadingLocation(false);
+      return;
+    }
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
 
-      const apiKey = "0f026c32f1ac42d58b4afc31e690a961"; // OpenCage API key
-      const apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${apiKey}`;
+        const apiKey = "0f026c32f1ac42d58b4afc31e690a961"; // OpenCage API key
+        const apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${apiKey}`;
 
-      try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
+        try {
+          const response = await fetch(apiUrl);
+          const data = await response.json();
 
-        const components = data.results[0]?.components || {};
-        const formattedAddress =
-          components.city ||
-          components.town ||
-          components.village ||
-          components.county ||
-          components.state ||
-          components.country ||
-          data.results[0]?.formatted ||
-          `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`;
+          const components = data.results[0]?.components || {};
+          const parts = [
+            components.suburb, // e.g., Chittattukara
+            components.village, // e.g., Pavaratty
+            components.county, // e.g., Thrissur
+          ];
 
-        // ✅ Set user location in state
-        setUserLocation({
-          address: formattedAddress,
-          deliveryTime: "9 mins",
-        });
+          const formattedAddress = parts.filter(Boolean).join(", ");
 
-        // ✅ Optionally update Firestore
-        if (currentUser?.uid) {
-          await updateDoc(doc(db, "users", currentUser.uid), {
-            location: {
-              address: formattedAddress,
-              coordinates: {
-                lat: latitude,
-                lng: longitude,
-              },
-            },
+          setUserLocation({
+            address:
+              formattedAddress ||
+              `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            deliveryTime: "9 mins",
           });
+
+          if (currentUser?.uid) {
+            await updateDoc(doc(db, "users", currentUser.uid), {
+              location: {
+                address: formattedAddress,
+                coordinates: {
+                  lat: latitude,
+                  lng: longitude,
+                },
+              },
+            });
+          }
+        } catch (error) {
+          console.error("Error fetching address from OpenCage API:", error);
+          setUserLocation({
+            address: `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+            deliveryTime: "9 mins",
+          });
+        } finally {
+          setIsLoadingLocation(false);
         }
-      } catch (error) {
-        console.error("Error fetching address from OpenCage API:", error);
-        setUserLocation({
-          address: `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-          deliveryTime: "9 mins",
-        });
-      } finally {
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Location permission denied. Please allow location access.");
         setIsLoadingLocation(false);
       }
-    },
-    (error) => {
-      console.error("Error getting location:", error);
-      alert("Location permission denied. Please allow location access.");
-      setIsLoadingLocation(false);
-    }
-  );
-};
+    );
+  };
+
 
 
   // Call this in useEffect when user logs in
@@ -515,7 +562,7 @@ setGroupedCategories(grouped);
       </div>
 
       {showUserDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
+        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50 border border-gray-100">
           <div className="px-4 py-2 border-b border-gray-100">
             <p className="text-sm font-semibold">{currentUser?.displayName}</p>
             <p className="text-xs text-gray-500 truncate">
@@ -740,7 +787,7 @@ setGroupedCategories(grouped);
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-[300px]">
       {/* Gradient top bar */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1"></div>
 
@@ -749,7 +796,7 @@ setGroupedCategories(grouped);
         <div className="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="text-blue-600 text-3xl font-bold flex items-center">
+            <div className="text-blue-600 text-3xl font-bold flex items-center LogoFont">
               Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
@@ -761,7 +808,7 @@ setGroupedCategories(grouped);
           {/* Desktop View */}
           <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
             <div className="mr-3">
-              <div className="text-blue-600 font-bold">
+              <div className="text-blue-600 font-bold commonFont">
                 Delivery in {userLocation.deliveryTime}
               </div>
               <div className="flex items-center text-sm text-gray-600">
@@ -782,20 +829,22 @@ setGroupedCategories(grouped);
           {/* Search Bar */}
           <div className="relative">
             {/* Floating Label Placeholder */}
-            <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
-              <span>Search for&nbsp;</span>
-              <AnimatePresence mode="wait">
-                <motion.span
-                  key={words[index]}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  {words[index]}
-                </motion.span>
-              </AnimatePresence>
-            </div>
+            {searchQuery === "" && (
+              <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
+                <span>Search for&nbsp;</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={words[index]}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {words[index]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            )}
 
             {/* Input Field */}
             <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
@@ -895,29 +944,33 @@ setGroupedCategories(grouped);
       </div> */}
 
       {/* Mobile Header */}
-      <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
-        {/* Logo Section */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold shadow-md">
-            Chinju Store
-          </div>
-          <div className="flex space-x-3">
-            <div
-              className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
-              onClick={() => !currentUser && setShowLoginModal(true)}
-            >
-              {currentUser && currentUser.photoURL ? (
-                <img
-                  src={currentUser.photoURL}
-                  alt="Profile"
-                  className="w-10 h-10 rounded-full"
-                  onClick={() => setShowUserDropdown(!showUserDropdown)}
-                />
-              ) : (
-                <CgProfile className="text-xl text-[#1a7e74]" />
-              )}
+      <div className="relative md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E]">
+        <div className=" absolute opacity-20 overflow-hidden top-0 bottom-0">
+          <img src={dot} alt="" />
+        </div>
+        <div className=" p-4 relative">
+          {/* Logo Section */}
+          <div className="flex justify-between items-center mb-4">
+            <div className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold shadow-md LogoFont">
+              Chinju Store
             </div>
-            {/* <div
+            <div className="flex space-x-3">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
+                onClick={() => !currentUser && setShowLoginModal(true)}
+              >
+                {currentUser && currentUser.photoURL ? (
+                  <img
+                    src={currentUser.photoURL}
+                    alt="Profile"
+                    className="w-10 h-10 rounded-full"
+                    onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  />
+                ) : (
+                  <CgProfile className="text-xl text-[#1a7e74]" />
+                )}
+              </div>
+              {/* <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md relative"
               onClick={handleCartClick}
             >
@@ -928,105 +981,106 @@ setGroupedCategories(grouped);
                 </span>
               )}
             </div> */}
-          </div>
-        </div>
-
-        {/* Mobile User Dropdown */}
-        {showUserDropdown && currentUser && (
-          <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10 border border-gray-100">
-            <div className="px-4 py-2 border-b border-gray-100">
-              <p className="text-sm font-semibold">
-                {currentUser?.displayName}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {currentUser?.email}
-              </p>
             </div>
-            <a
-              href="/profile"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              My Profile
-            </a>
-            <a
-              href="/orders"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              My Orders
-            </a>
-            <a
-              href="/wishlist"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              Wishlist
-            </a>
+          </div>
+
+          {/* Mobile User Dropdown */}
+          {showUserDropdown && currentUser && (
+            <div className="absolute right-4 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-40 border border-gray-100">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm font-semibold">
+                  {currentUser?.displayName}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {currentUser?.email}
+                </p>
+              </div>
+              <a
+                href="/profile"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                My Profile
+              </a>
+              <a
+                href="/orders"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                My Orders
+              </a>
+              <a
+                href="/wishlist"
+                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                Wishlist
+              </a>
+              <button
+                onClick={handleLogout}
+                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+
+          {/* Delivery Info */}
+          <div className="bg-white bg-opacity-80 rounded-lg p-4 mb-5 shadow-md backdrop-blur-md flex items-center justify-between">
+            <div className="flex flex-col">
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-800 text-sm commonFont">
+                  Delivery in {userLocation.deliveryTime}
+                </span>
+                <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
+                  FAST
+                </span>
+              </div>
+              <div className="flex items-center mt-1 text-sm text-gray-600">
+                <span>{userLocation.address}</span>
+              </div>
+            </div>
+
             <button
-              onClick={handleLogout}
-              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+              onClick={fetchCurrentLocation}
+              disabled={isLoadingLocation}
+              className="ml-4 bg-[#1a7e74] commonFont text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-[#16675f] transition-colors duration-200 disabled:opacity-50"
             >
-              Logout
+              {isLoadingLocation ? "Loading..." : "Change"}
             </button>
           </div>
-        )}
 
-        {/* Delivery Info */}
-        <div className="bg-white bg-opacity-80 rounded-lg p-4 mb-5 shadow-md backdrop-blur-md flex items-center justify-between">
-          <div className="flex flex-col">
-            <div className="flex items-center space-x-2">
-              <span className="text-gray-800 font-semibold text-sm">
-                Delivery in {userLocation.deliveryTime}
-              </span>
-              <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                FAST
-              </span>
+          {/* Search Bar */}
+          <div className="relative commonFont">
+            {/* Floating Label Placeholder */}
+            {searchQuery === "" && (
+              <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
+                <span>Search for&nbsp;</span>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={words[index]}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    {words[index]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+            )}
+
+            {/* Input Field */}
+            <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
+              <Search size={20} className="text-gray-400 z-10" />
+              <input
+                type="text"
+                className="bg-transparent outline-none w-full text-gray-700 placeholder-transparent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
-            <div className="flex items-center mt-1 text-sm text-gray-600">
-              <span>{userLocation.address}</span>
-              {/* <ChevronDown size={14} className="ml-1 text-gray-500" /> */}
-            </div>
           </div>
 
-          <button
-            onClick={fetchCurrentLocation}
-            disabled={isLoadingLocation}
-            className="ml-4 bg-[#1a7e74] text-white px-4 py-1.5 rounded-md text-sm font-medium hover:bg-[#16675f] transition-colors duration-200 disabled:opacity-50"
-          >
-            {isLoadingLocation ? "Loading..." : "Change"}
-          </button>
-        </div>
-
-        {/* Search Bar */}
-        <div className="relative">
-          {/* Floating Label Placeholder */}
-          <div className="absolute left-10 top-1/2 -translate-y-1/2 pointer-events-none flex text-gray-400 text-sm sm:text-base">
-            <span>Search for&nbsp;</span>
-            <AnimatePresence mode="wait">
-              <motion.span
-                key={words[index]}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.5 }}
-              >
-                {words[index]}
-              </motion.span>
-            </AnimatePresence>
-          </div>
-
-          {/* Input Field */}
-          <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 mb-2 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-            <Search size={20} className="text-gray-400 z-10" />
-            <input
-              type="text"
-              className="bg-transparent outline-none w-full text-gray-700 placeholder-transparent"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        {/* Categories - Horizontal Scroll */}
-        {/* <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+          {/* Categories - Horizontal Scroll */}
+          {/* <div className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
           {categories.map((category) => (
             <div
               key={category.id}
@@ -1058,115 +1112,260 @@ setGroupedCategories(grouped);
             </div>
           ))}
         </div> */}
+        </div>
       </div>
 
       {/* Render Modals */}
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
-
-      {/* Hero Banner */}
-      <div className="max-w-7xl mx-auto px-4 mt-3">
-        <div className="rounded-2xl overflow-hidden">
-          <Swiper
-            modules={[Autoplay, Pagination]}
-            autoplay={{ delay: 3000, disableOnInteraction: false }}
-            pagination={{ clickable: true }}
-            // navigation={true}
-            loop={banners.length > 1}
-            className="w-full"
-          >
-            {banners.map((banner) => (
-              <SwiperSlide key={banner.id}>
-                <img
-                  src={banner.imageBase64}
-                  alt="Banner"
-                  className="w-full h-full object-contain "
-                />
-              </SwiperSlide>
-            ))}
-          </Swiper>
+        {homeLoading && (
+          <HomeLoader/>
+        )}
+      <div className="relative">
+        <div className="absolute top-0 bottom-0 left-0 right-0 z-0 opacity-0 bg-no-repeat">
+          <img src={fff} alt="" className="w-full h-full object-cover" />
         </div>
-      </div>
-      {/* Categories Section */}
-      <div className="max-w-7xl mx-auto px-4 mt-8  min-h-screen">
-        {groupedCategories.map((main) => (
-          <div key={main.id} className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              {main.name}
-            </h2>
-            <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-2  gap-4">
-              {main.subcategories.map((sub) => (
-                <Link
-                  to={`/category/${encodeURIComponent(sub.name)}`}
-                  key={sub.id}
-                  className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer"
-                >
-                  <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className=" relative">
+          {/* Hero Banner */}
+          <div className="max-w-7xl mx-auto px-2 mt-3">
+            <div className="rounded-2xl overflow-hidden">
+              <Swiper
+                modules={[Autoplay, Pagination]}
+                autoplay={{ delay: 3000, disableOnInteraction: false }}
+                pagination={{ clickable: true }}
+                // navigation={true}
+                loop={banners.length > 1}
+                className="w-full"
+              >
+                {banners.map((banner) => (
+                  <SwiperSlide key={banner.id}>
                     <img
-                      src={sub.imageBase64 || allproduct}
-                      alt={sub.name}
-                      className="w-20 h-20 object-contain"
+                      src={banner.imageBase64}
+                      alt="Banner"
+                      className="w-full h-full object-contain "
                     />
+                  </SwiperSlide>
+                ))}
+              </Swiper>
+            </div>
+          </div>
+
+          {/* Categories Section */}
+          {/* Product/Category Section */}
+          <div className="max-w-7xl mx-auto px-4 mt-3 min-h-[300px]">
+            {searchQuery && searchQuery.trim().length > 0 ? (
+              // Show search results - either categories or products
+              <>
+                {filteredGroupedCategories.length > 0 && (
+                  <div className="mb-8">
+                    <h2 className="text-xl text-gray-800 md:mb-4 CategoryTitle lg:text-2xl">
+                      Categories matching "{searchQuery}"
+                    </h2>
+                    {filteredGroupedCategories.map((main) => (
+                      <div key={main.id} className="mb-3">
+                        <h3 className="text-lg text-gray-700 md:mb-2 lg:text-2xl">
+                          {main.name}
+                        </h3>
+                        <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
+                          {main.subcategories.map((sub) => (
+                            <Link
+                              to={`/category/${encodeURIComponent(sub.name)}`}
+                              key={sub.id}
+                              className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
+                              onClick={() => setSelectedCategory(sub.name)}
+                            >
+                              <div className="w-20 h-20 lg:w-[300px] mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                                <img
+                                  src={sub.imageBase64 || allproduct}
+                                  alt={sub.name}
+                                  className="w-20 h-20 object-contain"
+                                />
+                              </div>
+                              <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
+                                {sub.name}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <span className="text-sm font-medium text-center text-gray-800 leading-tight">
-                    {sub.name}
+                )}
+
+                {filteredProducts.length > 0 && (
+                  <div>
+                    <h2 className="text-xl text-gray-800 md:mb-4 CategoryTitle">
+                      Products matching "{searchQuery}"
+                    </h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {filteredProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          className="bg-white rounded-lg shadow-sm overflow-hidden transition-all hover:shadow-md cursor-pointer"
+                          onClick={(e) => navigateToProduct(product.id, e)}
+                        >
+                          <div className="relative">
+                            <img
+                              src={product.imageBase64 || apple}
+                              alt={product.name}
+                              className="w-full h-48 object-contain"
+                            />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleWishlist(product);
+                              }}
+                              className={`absolute top-2 right-2 p-2 rounded-full ${
+                                wishlist.some((item) => item.id === product.id)
+                                  ? "text-red-500 bg-white"
+                                  : "text-gray-400 bg-white"
+                              }`}
+                            >
+                              <Heart
+                                size={20}
+                                fill={
+                                  wishlist.some(
+                                    (item) => item.id === product.id
+                                  )
+                                    ? "currentColor"
+                                    : "none"
+                                }
+                              />
+                            </button>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="text-sm font-medium text-gray-800 mb-1 truncate">
+                              {product.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 mb-2">
+                              {product.weight}
+                            </p>
+                            {renderRating(product.rating || 0)}
+                            <div className="flex items-center justify-between mt-3">
+                              <div>
+                                <span className="font-bold text-gray-900">
+                                  ₹{product.salePrice || product.originalPrice}
+                                </span>
+                                {product.originalPrice && (
+                                  <span className="text-gray-400 text-xs line-through ml-2">
+                                    ₹{product.originalPrice}
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  addToCart(product);
+                                }}
+                                className="text-white bg-[#1a7e74] hover:bg-[#145f5a] px-3 py-1 rounded-full text-xs transition-colors"
+                              >
+                                Add
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {filteredProducts.length === 0 &&
+                  filteredGroupedCategories.length === 0 && (
+                    <div className="text-center py-10">
+                      <p className="text-gray-500">
+                        No results found for "{searchQuery}"
+                      </p>
+                    </div>
+                  )}
+              </>
+            ) : (
+              // Normal view - show grouped categories
+              <>
+                {groupedCategories.map((main) => (
+                  <div key={main.id} className="mb-3">
+                    <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle lg:text-3xl">
+                      {main.name}
+                    </h2>
+                    <div className="grid md:grid-cols-6 lg:grid-cols-5 grid-cols-4 gap-x-2 md:gap-4 lg:gap-5">
+                      {main.subcategories.map((sub) => (
+                        <Link
+                          to={`/category/${encodeURIComponent(sub.name)}`}
+                          key={sub.id}
+                          className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
+                          onClick={() => setSelectedCategory(sub.name)}
+                        >
+                          <div className="w-20 h-20 lg:rounded-3xl lg:w-[300px] lg:h-[300px] mb-3 bg-gray-100 rounded-lg shadow-sm flex items-center justify-center overflow-hidden">
+                            <img
+                              src={sub.imageBase64 || allproduct}
+                              alt={sub.name}
+                              className="w-20 h-20 lg:w-full lg:h-full object-contain lg:rounded-3xl"
+                            />
+                          </div>
+                          <span className="text-[11px] lg:text-base font-bold text-center text-gray-800 leading-tight">
+                            {sub.name}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Features Section */}
+          <div className="max-w-7xl mx-auto px-4 mt-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
+                  <span className="text-xl">
+                    <img
+                      src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748593991/time_6953238_ejcooq.png"
+                      alt=""
+                    />
                   </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Product Section */}
-
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-4 mt-5">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
-              <span className="text-xl">
-                <img
-                  src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748593991/time_6953238_ejcooq.png"
-                  alt=""
-                />
-              </span>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-800">Ultrafast Delivery</h4>
-              <p className="text-gray-600 text-sm">
-                Get your groceries in minutes
-              </p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-4">
-              <span className="text-xl">
-                <img
-                  src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594067/fresh_6718182_yftabd.png"
-                  alt=""
-                />
-              </span>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-800">Farm Fresh</h4>
-              <p className="text-gray-600 text-sm">100% fresh products daily</p>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4">
-              <span className="text-xl">
-                <img
-                  src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594151/dollar-symbol_1151390_dikxve.png"
-                  alt=""
-                />
-              </span>
-            </div>
-            <div>
-              <h4 className="font-bold text-gray-800">Best Prices</h4>
-              <p className="text-gray-600 text-sm">
-                Save more with exclusive deals
-              </p>
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800">
+                    Ultrafast Delivery
+                  </h4>
+                  <p className="text-gray-600 text-sm">
+                    Get your groceries in minutes
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center text-green-600 mr-4">
+                  <span className="text-xl">
+                    <img
+                      src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594067/fresh_6718182_yftabd.png"
+                      alt=""
+                    />
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800">Farm Fresh</h4>
+                  <p className="text-gray-600 text-sm">
+                    100% fresh products daily
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm flex items-center">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600 mr-4">
+                  <span className="text-xl">
+                    <img
+                      src="https://res.cloudinary.com/dqydgc2ky/image/upload/v1748594151/dollar-symbol_1151390_dikxve.png"
+                      alt=""
+                    />
+                  </span>
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800">Best Prices</h4>
+                  <p className="text-gray-600 text-sm">
+                    Save more with exclusive deals
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
