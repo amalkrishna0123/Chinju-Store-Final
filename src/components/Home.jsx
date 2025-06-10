@@ -787,7 +787,7 @@ setHomeLoading(false)
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-gray-50 min-h-[300px]">
       {/* Gradient top bar */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1"></div>
 
@@ -1152,18 +1152,18 @@ setHomeLoading(false)
 
           {/* Categories Section */}
           {/* Product/Category Section */}
-          <div className="max-w-7xl mx-auto px-4 mt-3 min-h-screen">
+          <div className="max-w-7xl mx-auto px-4 mt-3 min-h-[300px]">
             {searchQuery && searchQuery.trim().length > 0 ? (
               // Show search results - either categories or products
               <>
                 {filteredGroupedCategories.length > 0 && (
                   <div className="mb-8">
-                    <h2 className="text-xl text-gray-800 md:mb-4 CategoryTitle">
+                    <h2 className="text-xl text-gray-800 md:mb-4 CategoryTitle lg:text-2xl">
                       Categories matching "{searchQuery}"
                     </h2>
                     {filteredGroupedCategories.map((main) => (
                       <div key={main.id} className="mb-3">
-                        <h3 className="text-lg text-gray-700 md:mb-2">
+                        <h3 className="text-lg text-gray-700 md:mb-2 lg:text-2xl">
                           {main.name}
                         </h3>
                         <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
@@ -1174,7 +1174,7 @@ setHomeLoading(false)
                               className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
                               onClick={() => setSelectedCategory(sub.name)}
                             >
-                              <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                              <div className="w-20 h-20 lg:w-[300px] mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
                                 <img
                                   src={sub.imageBase64 || allproduct}
                                   alt={sub.name}
@@ -1283,10 +1283,10 @@ setHomeLoading(false)
               <>
                 {groupedCategories.map((main) => (
                   <div key={main.id} className="mb-3">
-                    <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle">
+                    <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle lg:text-3xl">
                       {main.name}
                     </h2>
-                    <div className="grid md:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4">
+                    <div className="grid md:grid-cols-6 lg:grid-cols-5 grid-cols-4 gap-x-2 md:gap-4 lg:gap-5">
                       {main.subcategories.map((sub) => (
                         <Link
                           to={`/category/${encodeURIComponent(sub.name)}`}
@@ -1294,14 +1294,14 @@ setHomeLoading(false)
                           className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
                           onClick={() => setSelectedCategory(sub.name)}
                         >
-                          <div className="w-20 h-20 mb-3 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+                          <div className="w-20 h-20 lg:rounded-3xl lg:w-[300px] lg:h-[300px] mb-3 bg-gray-100 rounded-lg shadow-sm flex items-center justify-center overflow-hidden">
                             <img
                               src={sub.imageBase64 || allproduct}
                               alt={sub.name}
-                              className="w-20 h-20 object-contain"
+                              className="w-20 h-20 lg:w-full lg:h-full object-contain lg:rounded-3xl"
                             />
                           </div>
-                          <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
+                          <span className="text-[11px] lg:text-base font-bold text-center text-gray-800 leading-tight">
                             {sub.name}
                           </span>
                         </Link>
