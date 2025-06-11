@@ -95,6 +95,24 @@ const ProductCategoryView = () => {
     window.scrollTo(0, 0);
   }, [selectedSubcategory]);
 
+  useEffect(() => {
+    const fetchUserWishlist = async () => {
+      if (currentUser?.uid) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setWishlist(data.wishlist || []);
+          }
+        } catch (error) {
+          console.error("Error fetching wishlist from Firestore:", error);
+        }
+      }
+    };
+
+    fetchUserWishlist();
+  }, [currentUser]);
+
   // Fetch products from Firestore
   useEffect(() => {
     const fetchProducts = async () => {
@@ -1099,7 +1117,7 @@ const toggleWishlist = async (product) => {
                 onMouseLeave={() => setHoveredProduct(null)}
                 onClick={(e) => navigateToProduct(product.id, e)}
               >
-                <div className="p-[2px] rounded-[10px] bg-gradient-to-r from-[#2CAA9E] to-[#003832] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]">
+                <div className="p-1 rounded-[10px] bg-gradient-to-r from-[#2CAA9E] to-[#003832] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]">
                   <div className="relative rounded-[8px] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]  overflow-hidden">
                     <img
                       src={product.imageBase64 || apple}
@@ -1111,10 +1129,8 @@ const toggleWishlist = async (product) => {
                         {product.offer}% off
                       </div>
                     )}
-                    {/* {hoveredProduct === product.id && ( */}
-                    {hoveredProduct === product.id ||
-                    wishlist.some((item) => item.id === product.id) ? (
-                    <button
+                    
+                      <button
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleWishlist(product);
@@ -1134,9 +1150,8 @@ const toggleWishlist = async (product) => {
                               : "none"
                           }
                         />
-                      </button>
-                    ) : null}
-                    {/* )} */}
+                      </button>
+                    
                   </div>
                 </div>
 
