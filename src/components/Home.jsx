@@ -1411,16 +1411,13 @@ setHomeLoading(false)
             {/* Info or Links Section (optional for future expansion) */}
             <div className="flex flex-col items-start text-sm text-[#fff]">
               <a href="/shippingdelivery" className="hover:underline py-1">
-                Customer Support
+                Shipping & Delivery
               </a>
               <a href="/privacypolicy" className="hover:underline py-1">
                 Privacy Policy
               </a>
-              <a href="/refundpolicy" className="hover:underline py-1">
-                Refund Policy
-              </a>
-              <a href="/cancellationpolicy" className="hover:underline py-1">
-                Cancellation Policy
+              <a href="/cancellationRefundpolicy" className="hover:underline py-1">
+                Cancellation & Refund Policy
               </a>
               <a href="/termsandconditions" className="hover:underline py-1">
                 Terms & Conditions

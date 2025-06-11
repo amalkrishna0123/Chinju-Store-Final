@@ -46,6 +46,7 @@ import CancellationPolicy from './components/CancellationPolicy'
 import ShippingDelivery from './components/ShippingDelivery'
 import TermsAndConditions from './components/TermsAndConditions'
 import ContactUs from './components/ContactUs'
+import CancellationRefundPolicy from "./components/CancellationRefundPolicy";
 // Protected Route Component
 
 const ProtectedRoute = ({ children }) => {
@@ -134,10 +135,11 @@ function AppRoutes() {
           <Route path="/dashboard/edit-delivery-boy/:id" element={<EditDeliveryBoy />} />
           <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
           <Route path="/privacypolicy" element={<PrivacyPolicy />} />
-          <Route path="/refundpolicy" element={<RefundPolicy />} />
-          <Route path="/cancellationpolicy" element={<CancellationPolicy />} />
+          {/* <Route path="/refundpolicy" element={<RefundPolicy />} />
+          <Route path="/cancellationpolicy" element={<CancellationPolicy />} /> */}
           <Route path="/shippingdelivery" element={<ShippingDelivery />} />
           <Route path="/termsandconditions" element={<TermsAndConditions />} />
+          <Route path="/cancellationRefundpolicy" element={<CancellationRefundPolicy />} />
           <Route path="/contact" element={<ContactUs />} />
 
           <Route
