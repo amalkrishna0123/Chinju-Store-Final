@@ -1431,7 +1431,7 @@ setHomeLoading(false)
             </div>
 
             {/* Copyright */}
-            <div className="text-sm text-[#eee] md:text-right flex">
+            <div className="text-sm text-[#eee] md:text-right flex justify-start">
               <p>© 2025 Chinju Store</p>
               <p>All rights reserved</p>
             </div>
