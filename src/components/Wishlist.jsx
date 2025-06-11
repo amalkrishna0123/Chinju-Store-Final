@@ -585,14 +585,16 @@ const Wishlist = () => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {wishlistItems.map((item) => (
+           {wishlistItems.map((item) => (
               <div key={item.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-all">
                 <div className="relative">
+                  <Link to={`/product/${item.id}`}>
                   <img 
                     src={item.imageBase64 || apple} 
                     alt={item.name}
                     className="w-full h-40 object-contain"
                   />
+                  </Link>
                   {item.discount && (
                     <div className="absolute top-3 left-3 bg-red-500 text-white text-xs px-2 py-1 rounded-lg font-medium">
                       {item.discount} OFF
@@ -607,7 +609,9 @@ const Wishlist = () => {
                 </div>
 
                 <div className="p-3">
+                  <Link to={`/product/${item.id}`}>
                   <h3 className="font-medium text-gray-800 text-sm clamp-text">{item.name}</h3>
+                  </Link>
                   <p className="text-xs text-gray-500 mb-1">{item.weight}</p>
                   <p className="text-xs text-gray-500 mb-1">{item.stock}</p>
                   
@@ -628,6 +632,7 @@ const Wishlist = () => {
                 </div>
               </div>
             ))}
+
           </div>
         )}
       </div>

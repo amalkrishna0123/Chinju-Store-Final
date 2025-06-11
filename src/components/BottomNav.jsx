@@ -3,7 +3,7 @@ import { Home, ShoppingCart, X, Minus, Plus, Trash } from "lucide-react";
 import { GrLogin } from "react-icons/gr";
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../Firebase";
 import apple from "../assets/apple.jpeg";
 
@@ -15,14 +15,37 @@ const BottomNav = () => {
   const [cartItems, setCartItems] = useState([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // Fetch cart items when user changes
+  // Fetch cart items when user changes - WITH REAL-TIME LISTENER
   useEffect(() => {
-    if (currentUser?.cartItems) {
-      setCartItems(currentUser.cartItems);
-    } else {
+    if (!currentUser?.uid) {
       setCartItems([]);
+      return;
     }
-  }, [currentUser]);
+
+    // Set up real-time listener for the user document
+    const unsubscribe = onSnapshot(
+      doc(db, "users", currentUser.uid),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          setCartItems(userData.cartItems || []);
+        }
+      },
+      (error) => {
+        console.error("Error listening to cart changes:", error);
+        // Fallback to currentUser.cartItems if listener fails
+        setCartItems(currentUser.cartItems || []);
+      }
+    );
+
+    // Initial load from currentUser if available
+    if (currentUser.cartItems) {
+      setCartItems(currentUser.cartItems);
+    }
+
+    // Cleanup listener on unmount
+    return () => unsubscribe();
+  }, [currentUser?.uid, currentUser?.cartItems]);
 
   const handleCartClick = () => {
     if (!currentUser) {
@@ -50,7 +73,8 @@ const BottomNav = () => {
         });
       }
 
-      setCartItems(updatedItems);
+      // Note: We don't need to manually update setCartItems here 
+      // because the onSnapshot listener will handle it
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
@@ -66,7 +90,8 @@ const BottomNav = () => {
         });
       }
 
-      setCartItems(updatedItems);
+      // Note: We don't need to manually update setCartItems here 
+      // because the onSnapshot listener will handle it
     } catch (error) {
       console.error("Error removing item:", error);
     }
@@ -80,6 +105,7 @@ const BottomNav = () => {
   };
 
   const CartModal = () => {
+    // ... rest of your CartModal code remains the same
     if (!showCart) return null;
 
     return (

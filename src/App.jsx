@@ -40,6 +40,12 @@ import DeliveryDashboard from './components/DeliveryBoyDash'
 import Payment from './components/Payment';
 import LottieAnimation from "./components/cart animations/LottieAnimation";
 import ReviewManagement from "./components/ReviewManagement";
+import PrivacyPolicy from './components/PrivacyPolicy';
+import RefundPolicy from './components/RefundPolicy';
+import CancellationPolicy from './components/CancellationPolicy'
+import ShippingDelivery from './components/ShippingDelivery'
+import TermsAndConditions from './components/TermsAndConditions'
+import ContactUs from './components/ContactUs'
 // Protected Route Component
 
 const ProtectedRoute = ({ children }) => {
@@ -127,6 +133,13 @@ function AppRoutes() {
           <Route path="/dashboard/add-delivery-boy" element={<AddDeliveryBoy />} />
           <Route path="/dashboard/edit-delivery-boy/:id" element={<EditDeliveryBoy />} />
           <Route path="/delivery-dashboard" element={<DeliveryDashboard />} />
+          <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+          <Route path="/refundpolicy" element={<RefundPolicy />} />
+          <Route path="/cancellationpolicy" element={<CancellationPolicy />} />
+          <Route path="/shippingdelivery" element={<ShippingDelivery />} />
+          <Route path="/termsandconditions" element={<TermsAndConditions />} />
+          <Route path="/contact" element={<ContactUs />} />
+
           <Route
             path="/cart"
             element={

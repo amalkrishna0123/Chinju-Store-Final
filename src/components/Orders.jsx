@@ -647,8 +647,11 @@ const Orders = () => {
         <div className="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <Link to="/" className="text-blue-600 text-3xl font-bold flex items-center">
-              zepto
+            <Link
+              to="/"
+              className="text-blue-600 text-3xl font-bold flex items-center commonFont"
+            >
+              Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
               </span>
@@ -700,8 +703,11 @@ const Orders = () => {
       <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] p-4">
         {/* Logo Section */}
         <div className="flex justify-between items-center mb-4">
-          <Link to="/" className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md">
-            zepto
+          <Link
+            to="/"
+            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-md shadow-md LogoFont"
+          >
+            Chinju Store
           </Link>
           <div className="flex space-x-3">
             <div
@@ -813,8 +819,12 @@ const Orders = () => {
       {/* Orders Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 commonFont">My Orders</h1>
-          <p className="text-gray-600 commonFont text-sm">Track and view your order history</p>
+          <h1 className="text-2xl font-bold text-gray-800 commonFont">
+            My Orders
+          </h1>
+          <p className="text-gray-600 commonFont text-sm">
+            Track and view your order history
+          </p>
         </div>
 
         {loading ? (
@@ -826,8 +836,12 @@ const Orders = () => {
         ) : orders.length === 0 ? (
           <div className="text-center py-8">
             <ShoppingBag className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900 commonFont">No orders</h3>
-            <p className="mt-1 text-sm text-gray-500 commonFont">Start shopping to see your orders here.</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900 commonFont">
+              No orders
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 commonFont">
+              Start shopping to see your orders here.
+            </p>
             <Link
               to="/"
               className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#1a7e74] hover:bg-[#145f5a] commonFont"
@@ -858,14 +872,12 @@ const Orders = () => {
                       </span>
                       <span
                         className={`px-2 py-1 rounded-md font-medium ${
-                          order.deliveryStatus?.toLowerCase() ===
-                          "delivered"
+                          order.deliveryStatus?.toLowerCase() === "delivered"
                             ? "bg-green-100 text-green-800"
                             : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        Delivery Status:{" "}
-                        {order.deliveryStatus || "Pending"}
+                        Delivery Status: {order.deliveryStatus || "Pending"}
                       </span>
                     </div>
 
@@ -890,10 +902,7 @@ const Orders = () => {
 
                   <div className="border-t border-gray-200 pt-4 commonFont">
                     {order.items.map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center py-2"
-                      >
+                      <div key={index} className="flex items-center py-2">
                         <img
                           src={item.imageBase64 || apple}
                           alt={item.name}

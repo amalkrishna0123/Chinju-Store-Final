@@ -1118,9 +1118,7 @@ setHomeLoading(false)
       {/* Render Modals */}
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
-        {homeLoading && (
-          <HomeLoader/>
-        )}
+      {homeLoading && <HomeLoader />}
       <div className="relative">
         <div className="absolute top-0 bottom-0 left-0 right-0 z-0 opacity-0 bg-no-repeat">
           <img src={fff} alt="" className="w-full h-full object-cover" />
@@ -1382,47 +1380,46 @@ setHomeLoading(false)
           />
         </div>
         <div className="backdrop-blur-[1px] h-full relative">
-          <div className="max-w-6xl mx-auto py-8 px-5 flex flex-col md:flex-row justify-between gap-6">
-            {/* Logo and Social */}
-            <div className="flex flex-col gap-4">
-              <div className="text-2xl font-semibold text-[#ffffff]">
-                Chinju Store
-              </div>
-              <div className="flex items-center gap-4 text-[#ffffff] text-xl">
-                <a
-                  href="#"
-                  className="hover:text-[#219085] transition-colors duration-200"
-                >
-                  <AiOutlineInstagram />
-                </a>
-                <a
-                  href="#"
-                  className="hover:text-[#219085] transition-colors duration-200"
-                >
-                  <PiFacebookLogoBold />
-                </a>
-                <a
-                  href="#"
-                  className="hover:text-[#219085] transition-colors duration-200"
-                >
-                  <IoLogoWhatsapp />
-                </a>
-              </div>
-            </div>
+<div className="max-w-6xl mx-auto py-8 px-5 text-[#eee]">
+  {/* Top: 2 columns on mobile, side-by-side on desktop */}
+  <div className="grid grid-cols-2 gap-8">
+    
+    {/* Column 1: Logo and Social */}
+    <div className="flex flex-col items-start gap-4 text-center sm:text-left pt-10">
+      <div className="text-2xl font-semibold text-white">Chinju Store</div>
+      <div className="flex items-center gap-4 text-xl">
+        <a href="#" className="hover:text-[#219085] transition-colors duration-200">
+          <AiOutlineInstagram />
+        </a>
+        <a href="#" className="hover:text-[#219085] transition-colors duration-200">
+          <PiFacebookLogoBold />
+        </a>
+        <a href="#" className="hover:text-[#219085] transition-colors duration-200">
+          <IoLogoWhatsapp />
+        </a>
+      </div>
+    </div>
 
-            {/* Info or Links Section (optional for future expansion) */}
-            <div className="text-sm text-[#eee]">
-              <p>Customer Support</p>
-              <p>Privacy Policy</p>
-              <p>Terms & Conditions</p>
-            </div>
+    {/* Column 2: Footer Links */}
+    <div className="flex flex-col items-start text-sm">
+      <Link to="/shippingdelivery" className="hover:underline py-1">Customer Support</Link>
+      <Link to="/privacypolicy" className="hover:underline py-1">Privacy Policy</Link>
+      <Link to="/refundpolicy" className="hover:underline py-1">Refund Policy</Link>
+      <Link to="/cancellationpolicy" className="hover:underline py-1">Cancellation Policy</Link>
+      <Link to="/termsandconditions" className="hover:underline py-1">Terms & Conditions</Link>
+      <Link to="/contact" className="hover:underline py-1">Contact Us</Link>
 
-            {/* Copyright */}
-            <div className="text-sm text-[#eee] md:text-right">
-              <p>© 2025 Chinju Store</p>
-              <p>All rights reserved</p>
-            </div>
-          </div>
+    </div>
+  </div>
+
+  {/* Bottom: Copyright */}
+  <div className="mt-8 text-sm text-center sm:text-right">
+    <p>© 2025 Chinju Store</p>
+    <p>All rights reserved</p>
+  </div>
+</div>
+
+
         </div>
       </div>
     </div>

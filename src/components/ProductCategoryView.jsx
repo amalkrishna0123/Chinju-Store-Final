@@ -23,7 +23,7 @@ import {
   updateDoc,
   arrayUnion,
   arrayRemove,
-  getDoc
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../Firebase";
 import { optimizeProductData } from "../utils/imageCompression";
@@ -32,8 +32,8 @@ import "swiper/css/pagination";
 import "swiper/css/navigation";
 import { useParams } from "react-router-dom";
 import { IoIosArrowRoundForward } from "react-icons/io";
-import allproduct from '../assets/allproduct.jpeg'
-import { useNavigate } from 'react-router-dom';
+import allproduct from "../assets/allproduct.jpeg";
+import { useNavigate } from "react-router-dom";
 import { HiStar } from "react-icons/hi";
 import { FaWeight } from "react-icons/fa";
 
@@ -48,12 +48,12 @@ const ProductCategoryView = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const { subcategoryName } = useParams(); // Changed from categoryName to subcategoryName
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const [averageRatings, setAverageRatings] = useState({});
   const navigateToProduct = (productId, event) => {
     // Prevent event from triggering when clicking on buttons inside the card
-    if (event.target.closest('button')) return;
+    if (event.target.closest("button")) return;
     navigate(`/product/${productId}`);
   };
   const [selectedSubcategory, setSelectedSubcategory] = useState(
@@ -63,15 +63,14 @@ const ProductCategoryView = () => {
   const [index, setIndex] = useState(0);
   const words = ["products", "categories", "services", "items"];
   const [userLocation, setUserLocation] = useState({
-    address: 'Round North, Kodaly, Kerala',
-    deliveryTime: '9 mins'
+    address: "Round North, Kodaly, Kerala",
+    deliveryTime: "9 mins",
   });
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   // const { subcategoryName } = useParams();
   console.log("URL parameter:", subcategoryName);
   console.log("Decoded subcategory:", decodeURIComponent(subcategoryName));
-  
-
+ 
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % words.length);
@@ -122,10 +121,10 @@ const ProductCategoryView = () => {
   useEffect(() => {
     const fetchAverageRatings = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'reviews'));
+        const snapshot = await getDocs(collection(db, "reviews"));
         const ratingMap = {};
         const counts = {};
-  
+
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
           const pid = data.productId;
@@ -135,7 +134,7 @@ const ProductCategoryView = () => {
             counts[pid] = (counts[pid] || 0) + 1;
           }
         });
-  
+
         const averages = {};
         for (const pid in ratingMap) {
           averages[pid] = Number((ratingMap[pid] / counts[pid]).toFixed(1));
@@ -145,106 +144,108 @@ const ProductCategoryView = () => {
         console.error("Error fetching average ratings:", error);
       }
     };
-  
+
     fetchAverageRatings();
   }, []);
-  
 
   // Function to get filtered products based on subcategory and search query
   const getFilteredProducts = () => {
     if (!products || !products.length) return [];
-    
+
     let filtered = [...products];
-    console.log("filtered product isssss",filtered)
-    
+    console.log("filtered product isssss", filtered);
+
     // If "All Products" is selected, show all products
     if (selectedSubcategory === "All Products") {
       return filtered;
     }
-    
+
     // Filter by category
-    filtered = filtered.filter(product => {
+    filtered = filtered.filter((product) => {
       // Check all possible category fields
       const categoryFields = [
         product.category,
         product.categoryName,
         product.subCategory,
         product.subCategoryName,
-        product.type
+        product.type,
       ].filter(Boolean); // Remove undefined/null values
-      
+
       // Normalize strings for comparison
-      const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, ' ');
+      const normalize = (str) => str.toLowerCase().trim().replace(/\s+/g, " ");
       const targetCategory = normalize(selectedSubcategory);
-      
-      return categoryFields.some(field => {
+
+      return categoryFields.some((field) => {
         if (!field) return false;
-        return normalize(field).includes(targetCategory) || 
-               targetCategory.includes(normalize(field));
+        return (
+          normalize(field).includes(targetCategory) ||
+          targetCategory.includes(normalize(field))
+        );
       });
     });
-    
+
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(product => {
+      filtered = filtered.filter((product) => {
         const searchFields = [
           product.name,
           product.description,
           product.category,
-          product.brand
+          product.brand,
         ].filter(Boolean);
-        
-        return searchFields.some(field => 
+
+        return searchFields.some((field) =>
           field.toLowerCase().includes(query)
         );
       });
     }
-    
+
     return filtered;
   };
 
-//   const debugProductData = () => {
-//   if (products.length > 0) {
-//     console.log("=== PRODUCT DATA DEBUG ===");
-//     console.log("Total products:", products.length);
-//     console.log("First product:", products[0]);
-//     console.log("All category fields in first product:");
-    
-//     const firstProduct = products[0];
-//     Object.keys(firstProduct).forEach(key => {
-//       if (key.toLowerCase().includes('categ') || key.toLowerCase().includes('type')) {
-//         console.log(`${key}:`, firstProduct[key]);
-//       }
-//     });
-    
-//     console.log("Categories found in all products:");
-//     const allCategories = new Set();
-//     products.forEach(product => {
-//       if (product.category) allCategories.add(product.category);
-//       if (product.subcategory) allCategories.add(product.subcategory);
-//       if (product.categoryName) allCategories.add(product.categoryName);
-//       if (product.subCategoryName) allCategories.add(product.subCategoryName);
-//     });
-//     console.log(Array.from(allCategories));
-//   }
-// };
+  //   const debugProductData = () => {
+  //   if (products.length > 0) {
+  //     console.log("=== PRODUCT DATA DEBUG ===");
+  //     console.log("Total products:", products.length);
+  //     console.log("First product:", products[0]);
+  //     console.log("All category fields in first product:");
 
+  //     const firstProduct = products[0];
+  //     Object.keys(firstProduct).forEach(key => {
+  //       if (key.toLowerCase().includes('categ') || key.toLowerCase().includes('type')) {
+  //         console.log(`${key}:`, firstProduct[key]);
+  //       }
+  //     });
 
-useEffect(() => {
-  console.log("Current products with categories:", 
-    products.map(p => ({
-      id: p.id,
-      name: p.name,
-      categories: {
-        category: p.category,
-        categoryName: p.categoryName,
-        subCategory: p.subCategory,
-        subCategoryName: p.subCategoryName
-      }
-    }))
-  );
-}, [products]);
+  //     console.log("Categories found in all products:");
+  //     const allCategories = new Set();
+  //     products.forEach(product => {
+  //       if (product.category) allCategories.add(product.category);
+  //       if (product.subcategory) allCategories.add(product.subcategory);
+  //       if (product.categoryName) allCategories.add(product.categoryName);
+  //       if (product.subCategoryName) allCategories.add(product.subCategoryName);
+  //     });
+  //     console.log(Array.from(allCategories));
+  //   }
+  // };
+
+  useEffect(() => {
+    console.log(
+      "Current products with categories:",
+      products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        categories: {
+          category: p.category,
+          categoryName: p.categoryName,
+          subCategory: p.subCategory,
+          subCategoryName: p.subCategoryName,
+        },
+      }))
+    );
+  }, [products]);
+
   // Fetch categories and subcategories from Firestore
   useEffect(() => {
     const fetchCategories = async () => {
@@ -254,11 +255,11 @@ useEffect(() => {
           id: doc.id,
           ...doc.data(),
         }));
-        
+
         // Separate main and sub categories
-        const mainCategories = fetched.filter(cat => cat.type === "main");
-        const subCategories = fetched.filter(cat => cat.type === "sub");
-        
+        const mainCategories = fetched.filter((cat) => cat.type === "main");
+        const subCategories = fetched.filter((cat) => cat.type === "sub");
+
         // Create a flat list of all subcategories for the selector
         setCategories([
           { id: "all", name: "All Products", imageBase64: allproduct },
@@ -330,7 +331,7 @@ useEffect(() => {
           quantity: 1,
           addedAt: new Date().toISOString(),
         };
-        
+
         // Optimize the product data by compressing images
         const optimizedProduct = await optimizeProductData(productToAdd);
         updatedItems.push(optimizedProduct);
@@ -397,47 +398,54 @@ useEffect(() => {
   };
 
   // Wishlist functions - Updated to match ProductViewAll.jsx
-  const toggleWishlist = async (product) => {
-    if (!currentUser) {
-      setShowLoginModal(true);
-      return;
-    }
+const toggleWishlist = async (product) => {
+  if (!currentUser) {
+    setShowLoginModal(true);
+    return;
+  }
 
-    try {
-      setLoading(true);
-      const isInWishlist = wishlist.some((item) => item.id === product.id);
+  try {
+    setLoading(true);
 
-      if (isInWishlist) {
-        await updateDoc(doc(db, "users", currentUser.uid), {
-          wishlist: arrayRemove(product),
-        });
-        setWishlist((prev) => prev.filter((item) => item.id !== product.id));
-      } else {
-        // Create a simplified product object with only necessary data
-        const productToAdd = {
-          id: product.id,
-          name: product.name,
-          originalPrice: product.originalPrice,
-          salePrice: product.salePrice,
-          offer: product.offer,
-          category: product.category,
-          imageBase64: product.imageBase64,
-        };
-        
-        // Optimize the product data by compressing images
-        const optimizedProduct = await optimizeProductData(productToAdd);
-        
-        await updateDoc(doc(db, "users", currentUser.uid), {
-          wishlist: arrayUnion(optimizedProduct),
-        });
-        setWishlist((prev) => [...prev, optimizedProduct]);
-      }
-    } catch (error) {
-      console.error("Error toggling wishlist:", error);
-    } finally {
-      setLoading(false);
+    const userRef = doc(db, "users", currentUser.uid);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.exists() ? userSnap.data() : {};
+    const wishlistFromDB = userData.wishlist || [];
+
+    const existingItem = wishlistFromDB.find((item) => item.id === product.id);
+
+    if (existingItem) {
+      // REMOVE (must match the exact object in Firestore)
+      await updateDoc(userRef, {
+        wishlist: arrayRemove(existingItem),
+      });
+      setWishlist((prev) => prev.filter((item) => item.id !== product.id));
+    } else {
+      // ADD
+      const productToAdd = {
+        id: product.id,
+        name: product.name,
+        originalPrice: product.originalPrice,
+        salePrice: product.salePrice,
+        offer: product.offer,
+        category: product.category,
+        imageBase64: product.imageBase64,
+      };
+
+      const optimizedProduct = await optimizeProductData(productToAdd);
+
+      await updateDoc(userRef, {
+        wishlist: arrayUnion(optimizedProduct),
+      });
+      setWishlist((prev) => [...prev, optimizedProduct]);
     }
-  };
+  } catch (error) {
+    console.error("Error toggling wishlist:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Render stars based on rating
   const renderRating = (rating) => {
@@ -480,60 +488,69 @@ useEffect(() => {
   };
   const fetchCurrentLocation = () => {
     setIsLoadingLocation(true);
-    
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
-            
+
             // Set a simple location without relying on Google API
             setUserLocation({
-              address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-              deliveryTime: '9 mins'
+              address: `Location detected (${latitude.toFixed(
+                4
+              )}, ${longitude.toFixed(4)})`,
+              deliveryTime: "9 mins",
             });
-            
+
             // Save location to user's profile if logged in
             if (currentUser?.uid) {
-              await updateDoc(doc(db, 'users', currentUser.uid), {
+              await updateDoc(doc(db, "users", currentUser.uid), {
                 location: {
-                  address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                  address: `Location detected (${latitude.toFixed(
+                    4
+                  )}, ${longitude.toFixed(4)})`,
                   coordinates: {
                     lat: latitude,
-                    lng: longitude
-                  }
-                }
+                    lng: longitude,
+                  },
+                },
               });
             }
           } catch (error) {
-            console.error('Error setting location:', error);
-            alert("Could not detect your precise location. Using default address.");
+            console.error("Error setting location:", error);
+            alert(
+              "Could not detect your precise location. Using default address."
+            );
           } finally {
             setIsLoadingLocation(false);
           }
         },
         (error) => {
-          console.error('Error getting location:', error);
-          alert("Location permission denied. Please allow location access to use this feature.");
+          console.error("Error getting location:", error);
+          alert(
+            "Location permission denied. Please allow location access to use this feature."
+          );
           setIsLoadingLocation(false);
         }
       );
     } else {
-      alert('Geolocation is not supported by this browser.');
+      alert("Geolocation is not supported by this browser.");
       setIsLoadingLocation(false);
     }
   };
+
   useEffect(() => {
     const fetchUserLocation = async () => {
       if (currentUser?.uid) {
         setIsLoadingLocation(true);
         try {
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists() && userDoc.data().location) {
             setUserLocation(userDoc.data().location);
           }
         } catch (error) {
-          console.error('Error fetching user location:', error);
+          console.error("Error fetching user location:", error);
         } finally {
           setIsLoadingLocation(false);
         }
@@ -542,6 +559,7 @@ useEffect(() => {
 
     fetchUserLocation();
   }, [currentUser]);
+  
   // User Profile Component
   const UserProfile = () => (
     <div className="relative">
@@ -714,7 +732,9 @@ useEffect(() => {
                       <p className="text-xs text-gray-500">{item.weight}</p>
                       <p className="text-xs text-gray-500">{item.stock}</p>
                       <div className="flex items-center mt-2">
-                      <span className="font-semibold text-gray-900">₹{item.salePrice || item.originalPrice}</span>
+                        <span className="font-semibold text-gray-900">
+                          ₹{item.salePrice || item.originalPrice}
+                        </span>
 
                         {item.originalPrice && (
                           <span className="text-gray-400 text-xs line-through ml-2">
@@ -778,9 +798,10 @@ useEffect(() => {
                     ₹{calculateTotal() + 40}
                   </span>
                 </div>
-                <button 
-                onClick={() => navigate('/order-confirm')}
-                className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">
+                <button
+                  onClick={() => navigate("/order-confirm")}
+                  className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200"
+                >
                   Proceed to Checkout
                 </button>
               </div>
@@ -893,7 +914,7 @@ useEffect(() => {
         <div className="flex justify-between items-center mb-4">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md LogoFont"
+            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-md shadow-md LogoFont"
           >
             Chinju Store
           </Link>
@@ -1036,7 +1057,6 @@ useEffect(() => {
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
 
-
       {/* Main Content - Product Listing */}
       <div className="max-w-7xl mx-auto px-4 mt-3 commonFont">
         <div className="flex items-center gap-2 text-sm">
@@ -1079,7 +1099,7 @@ useEffect(() => {
                 onMouseLeave={() => setHoveredProduct(null)}
                 onClick={(e) => navigateToProduct(product.id, e)}
               >
-                <div className="p-1 rounded-[10px] bg-gradient-to-r from-[#2CAA9E] to-[#003832] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]">
+                <div className="p-[2px] rounded-[10px] bg-gradient-to-r from-[#2CAA9E] to-[#003832] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]">
                   <div className="relative rounded-[8px] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]  overflow-hidden">
                     <img
                       src={product.imageBase64 || apple}
@@ -1091,9 +1111,14 @@ useEffect(() => {
                         {product.offer}% off
                       </div>
                     )}
-                    {hoveredProduct === product.id && (
-                      <button
-                        onClick={() => toggleWishlist(product)}
+                    {/* {hoveredProduct === product.id && ( */}
+                    {hoveredProduct === product.id ||
+                    wishlist.some((item) => item.id === product.id) ? (
+                    <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleWishlist(product);
+                        }}
                         disabled={loading}
                         className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
                           wishlist.some((item) => item.id === product.id)
@@ -1109,8 +1134,9 @@ useEffect(() => {
                               : "none"
                           }
                         />
-                      </button>
-                    )}
+                      </button>
+                    ) : null}
+                    {/* )} */}
                   </div>
                 </div>
 

@@ -35,6 +35,7 @@ import { db } from "../Firebase";
 import apple from "../assets/apple.jpeg";
 import { query, where, orderBy } from "firebase/firestore";
 import AddressManager from "./AddressManager";
+import { useNavigate } from "react-router-dom";
 
 const UserProfile = () => {
   const { currentUser, logout, signInWithGoogle } = useAuth();
@@ -67,7 +68,7 @@ const UserProfile = () => {
     landmark: "",
   });
   const [isEditing, setIsEditing] = useState(false);
-
+  const navigate = useNavigate();
   const [userReviews, setUserReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [reviewsError, setReviewsError] = useState(null);
@@ -75,7 +76,11 @@ const UserProfile = () => {
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
   };
-
+  const navigateToProduct = (productId, event) => {
+    // Prevent event from triggering when clicking on buttons inside the card
+    if (event.target.closest("button")) return;
+    navigate(`/product/${productId}`);
+  };
 
   // fetch orders
   useEffect(() => {
@@ -988,7 +993,7 @@ const UserProfile = () => {
           <div className="flex justify-between items-center">
             <Link
               to="/"
-              className="bg-white LogoFont text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl shadow-md"
+              className="bg-white LogoFont text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-md shadow-md"
             >
               Chinju Store
             </Link>
@@ -1355,77 +1360,88 @@ const UserProfile = () => {
               </div>
             )}
 
-            {activePage === "wishlist" && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <h2 className="text-2xl font-semibold mb-6">My Wishlist</h2>
+        {activePage === "wishlist" && (
+  <div className="bg-white rounded-lg shadow-sm p-6">
+    <h2 className="text-2xl font-semibold mb-6">My Wishlist</h2>
 
-                {loading ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                  </div>
-                ) : wishlistItems.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-                    <p className="text-gray-500 mb-4">Your wishlist is empty</p>
-                    <Link
-                      to="/"
-                      className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Continue Shopping
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {wishlistItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        <div className="aspect-w-1 aspect-h-1">
-                          <img
-                            src={item.imageBase64}
-                            alt={item.name}
-                            className="w-full h-52 object-contain"
-                          />
-                        </div>
-                        <div className="p-4">
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            {item.name}
-                          </h3>
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2">
-                              <span className="text-lg font-bold text-gray-900">
-                                ₹{item.salePrice}
-                              </span>
-                              {item.originalPrice && (
-                                <span className="text-sm text-gray-500 line-through">
-                                  ₹{item.originalPrice}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => handleMoveToCart(item)}
-                              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                            >
-                              <ShoppingCart size={16} />
-                              Add to Cart
-                            </button>
-                            <button
-                              onClick={() => handleRemoveFromWishlist(item.id)}
-                              className="p-2 text-gray-500 hover:text-red-500 border border-gray-200 rounded-lg transition-colors"
-                            >
-                              <Trash size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+    {loading ? (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    ) : wishlistItems.length === 0 ? (
+      <div className="text-center py-12">
+        <Heart size={48} className="mx-auto text-gray-300 mb-4" />
+        <p className="text-gray-500 mb-4">Your wishlist is empty</p>
+        <Link
+          to="/"
+          className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Continue Shopping
+        </Link>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {wishlistItems.map((item) => (
+          <div
+            key={item.id}
+            className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative"
+            onClick={(e) => {
+              // Prevent navigation when clicking on buttons
+              if (e.target.closest("button")) return;
+              navigate(`/product/${item.id}`);
+            }}
+          >
+            <div className="aspect-w-1 aspect-h-1">
+              <img
+                src={item.imageBase64 || apple}
+                alt={item.name}
+                className="w-full h-52 object-contain"
+              />
+            </div>
+            <div className="p-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {item.name}
+              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-gray-900">
+                    ₹{item.salePrice || item.price}
+                  </span>
+                  {item.originalPrice && (
+                    <span className="text-sm text-gray-500 line-through">
+                      ₹{item.originalPrice}
+                    </span>
+                  )}
+                </div>
               </div>
-            )}
+              <div className="flex space-x-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMoveToCart(item);
+                  }}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <ShoppingCart size={16} />
+                  Add to Cart
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveFromWishlist(item.id);
+                  }}
+                  className="p-2 text-gray-500 hover:text-red-500 border border-gray-200 rounded-lg transition-colors"
+                >
+                  <Trash size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
             {activePage === "addresses" && (
               <div className="bg-white rounded-lg shadow-sm p-6">
@@ -1614,88 +1630,101 @@ const UserProfile = () => {
                   </div>
                 ) : (
                   <div className="space-y-6">
-                   {userReviews.map((review) => (
-  <div key={review.id} className="border rounded-lg p-4">
-    <div className="flex justify-between items-start mb-3">
-      <div>
-        <h3 className="font-medium">{review.productName}</h3>
-        <p className="text-sm text-gray-500">
-          Order #{review.orderId?.slice(0, 8)}
-        </p>
-      </div>
-      <div className="flex items-center gap-2">
-        {[...Array(5)].map((_, i) => (
-          <Star
-            key={i}
-            size={16}
-            className={`${
-              i < review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-            }`}
-          />
-        ))}
-        <button
-          onClick={() => handleEditClick(review)}
-          className="text-blue-500 text-sm hover:underline ml-2"
-        >
-          Edit
-        </button>
-      </div>
-    </div>
+                    {userReviews.map((review) => (
+                      <div key={review.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h3 className="font-medium">
+                              {review.productName}
+                            </h3>
+                            <p className="text-sm text-gray-500">
+                              Order #{review.orderId?.slice(0, 8)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={16}
+                                className={`${
+                                  i < review.rating
+                                    ? "text-yellow-400 fill-yellow-400"
+                                    : "text-gray-300"
+                                }`}
+                              />
+                            ))}
+                            <button
+                              onClick={() => handleEditClick(review)}
+                              className="text-blue-500 text-sm hover:underline ml-2"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </div>
 
-    {editingReview?.id === review.id ? (
-      <div className="bg-gray-50 p-3 rounded-lg space-y-3">
-        <textarea
-          className="w-full border rounded p-2"
-          rows="3"
-          value={editingReview.text}
-          onChange={(e) =>
-            setEditingReview((prev) => ({ ...prev, text: e.target.value }))
-          }
-        />
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Star
-              key={i}
-              size={20}
-              className={`cursor-pointer ${
-                i <= editingReview.rating ? "text-yellow-400" : "text-gray-300"
-              }`}
-              onClick={() =>
-                setEditingReview((prev) => ({ ...prev, rating: i }))
-              }
-            />
-          ))}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleUpdateReview}
-            className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-          >
-            Save
-          </button>
-          <button
-            onClick={() => setEditingReview(null)}
-            className="text-gray-500 hover:underline"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    ) : (
-      <div className="bg-gray-50 p-3 rounded-lg">
-        <p className="text-gray-800">{review.text}</p>
-      </div>
-    )}
+                        {editingReview?.id === review.id ? (
+                          <div className="bg-gray-50 p-3 rounded-lg space-y-3">
+                            <textarea
+                              className="w-full border rounded p-2"
+                              rows="3"
+                              value={editingReview.text}
+                              onChange={(e) =>
+                                setEditingReview((prev) => ({
+                                  ...prev,
+                                  text: e.target.value,
+                                }))
+                              }
+                            />
+                            <div className="flex gap-1">
+                              {[1, 2, 3, 4, 5].map((i) => (
+                                <Star
+                                  key={i}
+                                  size={20}
+                                  className={`cursor-pointer ${
+                                    i <= editingReview.rating
+                                      ? "text-yellow-400"
+                                      : "text-gray-300"
+                                  }`}
+                                  onClick={() =>
+                                    setEditingReview((prev) => ({
+                                      ...prev,
+                                      rating: i,
+                                    }))
+                                  }
+                                />
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={handleUpdateReview}
+                                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => setEditingReview(null)}
+                                className="text-gray-500 hover:underline"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            <p className="text-gray-800">{review.text}</p>
+                          </div>
+                        )}
 
-    <div className="flex justify-between items-center mt-3 text-sm text-gray-500">
-      <span>Reviewed on {review.createdAt}</span>
-      {review.isVerifiedPurchase && (
-        <span className="text-green-600">✓ Verified Purchase</span>
-      )}
-    </div>
-  </div>
-))}
-
+                        <div className="flex justify-between items-center mt-3 text-sm text-gray-500">
+                          <span>Reviewed on {review.createdAt}</span>
+                          {review.isVerifiedPurchase && (
+                            <span className="text-green-600">
+                              ✓ Verified Purchase
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

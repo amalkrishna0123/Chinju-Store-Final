@@ -51,7 +51,23 @@ const [userLocation, setUserLocation] = useState({
   deliveryTime: '9 mins'
 });
 const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+useEffect(() => {
+  const fetchUserWishlist = async () => {
+    if (currentUser?.uid) {
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          setWishlist(data.wishlist || []);
+        }
+      } catch (error) {
+        console.error("Error fetching wishlist from Firestore:", error);
+      }
+    }
+  };
 
+  fetchUserWishlist();
+}, [currentUser]);
   // Fetch product details when component mounts
   useEffect(() => {
     const fetchProduct = async () => {
@@ -679,9 +695,8 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
           <div className="flex items-center space-x-3">
             <Link
               to="/"
-              className="text-blue-600 text-3xl font-bold flex items-center commonFont"
+              className="text-blue-600 text-3xl font-bold flex items-center LogoFont"
             >
-              
               Chinju Store
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
@@ -792,7 +807,7 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
             Chinju Store
           </Link>
           <div className="flex space-x-3">
-          <div
+            <div
               className="w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-md"
               onClick={() => !currentUser && setShowLoginModal(true)}
             >
@@ -1050,10 +1065,10 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                 <button
                   onClick={() => toggleWishlist(product)}
                   disabled={loading}
-                  className={`w-full md:w-auto flex-1 border border-gray-300 hover:border-red-500 hover:text-red-500 rounded-lg py-3 px-6 flex items-center justify-center ${
+                  className={`w-full md:w-auto flex-1 border border-gray-300 rounded-lg py-3 px-6 flex items-center justify-center transition-colors ${
                     wishlist.some((item) => item.id === product.id)
-                      ? "bg-red-100 text-red-500"
-                      : "bg-white text-gray-600 hover:text-red-500"
+                      ? "bg-red-100 text-red-500 border-red-500"
+                      : "bg-white text-gray-600 hover:text-red-500 hover:border-red-500"
                   }`}
                 >
                   <Heart
@@ -1063,8 +1078,11 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                         ? "currentColor"
                         : "none"
                     }
+                    className="mr-2"
                   />
-                  Add to Wishlist
+                  {wishlist.some((item) => item.id === product.id)
+                    ? "Wishlisted"
+                    : "Add to Wishlist"}
                 </button>
               </div>
 
@@ -1182,7 +1200,9 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
                           </p>
                           <div className="flex items-center gap-0.5">
                             <div className="font-medium">4</div>
-                            <span className="text-sm text-[#ffea00]"><FaStar/></span>
+                            <span className="text-sm text-[#ffea00]">
+                              <FaStar />
+                            </span>
                           </div>
                         </div>
                         <p className="text-xs text-gray-500 font-semibold">
@@ -1210,13 +1230,45 @@ const [isLoadingLocation, setIsLoadingLocation] = useState(false);
             )}
           </div>
         </div>
+
+        {wishlist.length > 0 && (
+          <div className="max-w-[1400px] mx-auto px-4 py-8">
+            <h2 className="text-xl font-bold mb-4">Your Wishlist</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {wishlist.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition"
+                >
+                  <img
+                    src={item.imageBase64 || apple}
+                    alt={item.name}
+                    className="w-full h-40 object-cover"
+                  />
+                  <div className="p-4">
+                    <h3 className="text-sm font-semibold truncate">
+                      {item.name}
+                    </h3>
+                    <div className="mt-2 text-sm text-gray-700">
+                      ₹{item.salePrice || item.originalPrice}
+                    </div>
+                    <Link
+                      to={`/product/${item.id}`}
+                      className="inline-block mt-2 text-blue-500 text-sm hover:underline"
+                    >
+                      View Product
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals */}
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
-
-      
     </div>
   );
 };
