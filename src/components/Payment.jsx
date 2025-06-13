@@ -41,7 +41,7 @@ const Payment = () => {
     }
 
     const options = {
-      key: "rzp_test_6DM9f6Su512KsW",
+      key: "rzp_live_6D2pAOoOcVdAop",
       amount: orderDetails.total * 100,
       currency: "INR",
       name: "Chinju Store",
