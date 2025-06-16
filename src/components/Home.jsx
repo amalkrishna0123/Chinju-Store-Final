@@ -32,9 +32,9 @@ import { AiOutlineInstagram } from "react-icons/ai";
 import { PiFacebookLogoBold } from "react-icons/pi";
 import { IoLogoWhatsapp } from "react-icons/io5";
 import { motion, AnimatePresence } from "framer-motion";
-import ff from "../assets/ff.png"
-import fff from "../assets/fff.jpg"
-import dot from "../assets/dot.png"
+import ff from "../assets/ff.png";
+import fff from "../assets/fff.jpg";
+import dot from "../assets/dot.png";
 import HomeLoader from "./cart animations/HomeLoader";
 
 const Home = () => {
@@ -50,7 +50,7 @@ const Home = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
-  const [homeLoading, setHomeLoading] = useState(true)
+  const [homeLoading, setHomeLoading] = useState(true);
   const [wishlist, setWishlist] = useState([]);
   const navigate = useNavigate();
   const [productsLoader, setProductsLoader] = useState(true);
@@ -62,6 +62,12 @@ const Home = () => {
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const words = ["products", "categories", "services", "items"];
   const [groupedCategories, setGroupedCategories] = useState([]);
+  // const desiredCategoryOrder = [
+  //   "Grocery & Kitchen",
+  //   "Snacks & Drinks",
+  //   "Beauty & Personal care",
+  //   "Household Essentials"
+  // ];
 
   // Modern cool color scheme
   const colors = {
@@ -87,9 +93,12 @@ const Home = () => {
     if (event.target.closest("button")) return;
     navigate(`/product/${productId}`);
   };
+
+  // scroll
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
   // Define filtered products with search functionality
   const getFilteredProducts = () => {
     let result =
@@ -98,23 +107,27 @@ const Home = () => {
         : products.filter(
             (product) =>
               product.category === selectedCategory || // main
-              product.subcategory === selectedCategory  // sub
+              product.subcategory === selectedCategory // sub
           );
-  
+
     if (searchQuery && searchQuery.trim().length > 0) {
       const query = searchQuery.toLowerCase().trim();
       result = result.filter(
         (product) =>
           (product.name && product.name.toLowerCase().includes(query)) ||
-          (product.category && product.category.toLowerCase().includes(query)) ||
-          (product.subcategory && product.subcategory.toLowerCase().includes(query)) ||
-          (product.description && product.description.toLowerCase().includes(query))
+          (product.category &&
+            product.category.toLowerCase().includes(query)) ||
+          (product.subcategory &&
+            product.subcategory.toLowerCase().includes(query)) ||
+          (product.description &&
+            product.description.toLowerCase().includes(query))
       );
     }
-  
+
     return result;
   };
 
+  // filtered category product
   const getFilteredProductsAndCategories = () => {
     // First filter products as before
     let filteredProducts =
@@ -125,35 +138,39 @@ const Home = () => {
               product.category === selectedCategory ||
               product.subcategory === selectedCategory
           );
-  
+
     if (searchQuery && searchQuery.trim().length > 0) {
       const query = searchQuery.toLowerCase().trim();
       filteredProducts = filteredProducts.filter(
         (product) =>
           (product.name && product.name.toLowerCase().includes(query)) ||
-          (product.category && product.category.toLowerCase().includes(query)) ||
-          (product.subcategory && product.subcategory.toLowerCase().includes(query)) ||
-          (product.description && product.description.toLowerCase().includes(query))
+          (product.category &&
+            product.category.toLowerCase().includes(query)) ||
+          (product.subcategory &&
+            product.subcategory.toLowerCase().includes(query)) ||
+          (product.description &&
+            product.description.toLowerCase().includes(query))
       );
-      
+
       // Also filter categories based on search query
-      const filteredGroupedCategories = groupedCategories.map(mainCategory => ({
-        ...mainCategory,
-        subcategories: mainCategory.subcategories.filter(sub => 
-          sub.name.toLowerCase().includes(query)
-        )
-      })).filter(mainCategory => mainCategory.subcategories.length > 0);
-  
+      const filteredGroupedCategories = groupedCategories
+        .map((mainCategory) => ({
+          ...mainCategory,
+          subcategories: mainCategory.subcategories.filter((sub) =>
+            sub.name.toLowerCase().includes(query)
+          ),
+        }))
+        .filter((mainCategory) => mainCategory.subcategories.length > 0);
+
       return { filteredProducts, filteredGroupedCategories };
     }
-  
+
     return { filteredProducts, filteredGroupedCategories: groupedCategories };
   };
-  
+
   // Use the filtered data
-  const { filteredProducts, filteredGroupedCategories } = getFilteredProductsAndCategories();
-  
-  
+  const { filteredProducts, filteredGroupedCategories } =
+    getFilteredProductsAndCategories();
 
   // Use the filtered products
   // const filteredProducts = getFilteredProducts();
@@ -169,7 +186,7 @@ const Home = () => {
         }));
         setProducts(productList);
         setProductsLoader(false);
-        setHomeLoading(false)
+        setHomeLoading(false);
       } catch (err) {
         console.error("Error fetching products:", err);
       }
@@ -179,43 +196,172 @@ const Home = () => {
   }, []);
 
   // Fetch categories from Firestore
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const snapshot = await getDocs(collection(db, "categories"));
-        const fetched = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        // Add "All" category at the beginning
-       // Separate main and sub categories
-const main = fetched.filter((cat) => cat.type === "main");
-const sub = fetched.filter((cat) => cat.type === "sub");
+  //   useEffect(() => {
+  //     const fetchCategories = async () => {
+  //       try {
+  //         const snapshot = await getDocs(collection(db, "categories"));
+  //         const fetched = snapshot.docs.map((doc) => ({
+  //           id: doc.id,
+  //           ...doc.data(),
+  //         }));
+  //         // Add "All" category at the beginning
+  //        // Separate main and sub categories
+  // const main = fetched.filter((cat) => cat.type === "main");
+  // const sub = fetched.filter((cat) => cat.type === "sub");
 
-// Group subcategories under main categories
-const grouped = main.map((mainCat) => ({
-  id: mainCat.id,
-  name: mainCat.name,
-  subcategories: sub.filter((subCat) => subCat.parentId === mainCat.id),
-}));
+  // // Group subcategories under main categories
+  // const grouped = main.map((mainCat) => ({
+  //   id: mainCat.id,
+  //   name: mainCat.name,
+  //   subcategories: sub.filter((subCat) => subCat.parentId === mainCat.id),
+  // }));
 
-// Optional: Add 'All Products' at the top of flat categories if still needed elsewhere
-setCategories([
-  { id: "all", name: "All Products", imageBase64: allproduct },
-  ...fetched,
-]);
+  // // Optional: Add 'All Products' at the top of flat categories if still needed elsewhere
+  // setCategories([
+  //   { id: "all", name: "All Products", imageBase64: allproduct },
+  //   ...fetched,
+  // ]);
 
-// ✅ Set structured grouped categories
-setGroupedCategories(grouped);
-setHomeLoading(false)
+  // // ✅ Set structured grouped categories
+  // setGroupedCategories(grouped);
+  // setHomeLoading(false)
 
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-      }
-    };
+  //       } catch (err) {
+  //         console.error("Error fetching categories:", err);
+  //       }
+  //     };
 
-    fetchCategories();
-  }, []);
+  //     fetchCategories();
+  //   }, []);
+
+  // Define the exact desired order (make sure these names exactly match your Firestore data)
+ useEffect(() => {
+  // Use main category IDs for ordering instead of names
+  const CATEGORY_DISPLAY_ORDER = [
+    "egWACgVKvqO1o6S3QJqS", // Grocery & Kitchen
+    "LqtTquG9TfhkovdvJFdD", // Snacks & Drinks
+    "HwEpO9DIkQ2ZFtGxVxWF", // Beauty & Personal care
+    "96tY0zTWrAyjLuztp8Pe", // Household Essentials
+  ];
+  
+  // Map main category IDs to their subcategory ID orders
+  const SUBCATEGORY_ID_ORDERS = {
+    egWACgVKvqO1o6S3QJqS: [
+      // Grocery & Kitchen
+      "pDIlYhnM25VyAWGanFck", // Fruits & Vegetables
+      "o3XBW2tkRKGp7XaqfdJy", // Dairy, Bread & Eggs
+      "bsUVGwFHr9mKsd3tDtEA", // Atta, Rice, Oil & Dals
+      "obuYruSyIDZ3u8DPZdh2", // Masala & Dry Fruits
+      "4F4RBqDTcNLckK86eJ6s", // Breakfast & Sauces
+      "6tj4n7TYc0XbQKwy3DpO", // Package Foods
+    ],
+    LqtTquG9TfhkovdvJFdD: [
+      // Snacks & Drinks
+      "o9ceHTun7JizNwAUTeEJ", // Tea, Coffee & More
+      "EveHMgA7W0evPRujrerW", // Ice Cream & More
+      "X09NiEXeEhN9lDh99Hy6", // Frozen Food
+      "xigeItGtCwEGoDkM2Lht", // Sweet Cravings
+      "7Xyr2X9vpSITeDAKOsZq", // Cold Drinks & Juices
+      "qpIobAA2q93w0vQY7WRH", // Munchies
+      "tjM9u8y5YZmFARMb7iiI", // Biscuits & Cookies
+    ],
+    HwEpO9DIkQ2ZFtGxVxWF: [
+      "3FaJ10wV0AEHzg3lhHJV", // Makeup
+      "KdaOTRsfHTsJLwQRjx3S", // Skin Care
+      "olgTss7Hk3ZDfX0fOLQB", // Bath & Body
+      "09fIfVCJAJIz10fKrYWD", // Hair Care
+      "4PAkqyM0oHQWluSIuOSB", // Fragrances
+      "Di8jCGdyVFTinaTAtpls", // Men’s Grooming
+
+      "yCv3oaYE3qJqjaszQKoB", // Feminine Hygiene
+      "ywuxnLZcUFgRmLllVe8h", // Oral Care
+    ], // Beauty & Personal care
+    "96tY0zTWrAyjLuztp8Pe": [
+       
+       "IEZajimU0SRjcJ2DC0qh", // Home Safety & Hygiene
+       "MGjtqz8S76o6tVYItM39", // Laundry Care
+       "MLaEYnkCRjBAxhGFDbMU", // Dishwashing Essentials
+       "NrWbuediTrSenmg4yWDL", // Paper Products
+       "vXoSiAVazyyulVelieK4", // Disinfectants & Sanitizer
+       "Rkp5ThzbThlxJviI2k2h", // Tissues & Napkins
+       "dTtby9rrqKxMNWrF2L7q", // Bathroom Essentials
+       "e9YVg7gy8EJDz4jEq6gS", // Air Fresheners & Deodorizers
+       "k2YRjwMMpuSIvzzn2tiP", // Storage & Organizers
+       "kgumepwd7COKCfdEtxta", // Batteries & Electricals
+       "lBJ15JWhwLtqrIQJNHxp", // Lighting & Bulbs
+       "uXT0brFO7EzS3lds8pZh", // Trash Bags & Bins
+       
+       "5F0eToUsslWjemNS2t35", // Pest Control
+    ], // Household Essentials
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "categories"));
+      const fetched = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      // Separate main and sub categories
+      const mainCategories = fetched.filter((cat) => cat.type === "main");
+      const subCategories = fetched.filter((cat) => cat.type === "sub");
+
+      // Sort main categories according to our specific ID order
+      const sortedMainCategories = CATEGORY_DISPLAY_ORDER
+        .map(id => mainCategories.find(cat => cat.id === id))
+        .filter(Boolean);
+
+      // Group subcategories under the sorted main categories with their own ordering
+      const grouped = sortedMainCategories.map((mainCat) => {
+        if (!mainCat) return null;
+        
+        const subcats = subCategories.filter((subCat) => subCat.parentId === mainCat.id);
+        
+        // Sort subcategories if we have a defined ID order for this main category
+        let sortedSubcats = [];
+        if (SUBCATEGORY_ID_ORDERS[mainCat.id] && SUBCATEGORY_ID_ORDERS[mainCat.id].length > 0) {
+          // Create subcategories in exact order specified by ID
+          SUBCATEGORY_ID_ORDERS[mainCat.id].forEach((orderedId) => {
+            const found = subcats.find(sub => sub.id === orderedId);
+            if (found) {
+              sortedSubcats.push(found);
+            }
+          });
+          
+          // Add any remaining subcategories not in the ordered list
+          const remainingSubcats = subcats
+            .filter(sub => !SUBCATEGORY_ID_ORDERS[mainCat.id].includes(sub.id))
+            .sort((a, b) => a.name.localeCompare(b.name));
+          
+          sortedSubcats = [...sortedSubcats, ...remainingSubcats];
+        } else {
+          // Default alphabetical sorting for categories without specific order
+          sortedSubcats = [...subcats].sort((a, b) => a.name.localeCompare(b.name));
+        }
+
+        return {
+          id: mainCat.id,
+          name: mainCat.name,
+          subcategories: sortedSubcats
+        };
+      }).filter(Boolean);
+
+      setGroupedCategories(grouped);
+      setHomeLoading(false);
+
+      setCategories([
+        { id: "all", name: "All Products", imageBase64: allproduct },
+        ...fetched,
+      ]);
+
+    } catch (err) {
+      console.error("Error fetching categories:", err);
+    }
+  };
+
+  fetchCategories();
+}, []);
 
   // Fetch banners from Firestore
   useEffect(() => {
@@ -227,7 +373,7 @@ setHomeLoading(false)
           ...doc.data(),
         }));
         setBanners(bannerList);
-        setHomeLoading(false)
+        setHomeLoading(false);
       } catch (err) {
         console.error("Error fetching banners:", err);
       }
@@ -471,8 +617,6 @@ setHomeLoading(false)
       }
     );
   };
-
-
 
   // Call this in useEffect when user logs in
   useEffect(() => {
@@ -1179,7 +1323,7 @@ setHomeLoading(false)
                                   className="w-20 h-20 object-contain"
                                 />
                               </div>
-                              <span className="text-[10px] font-bold text-center text-gray-800 leading-tight">
+                              <span className="text-[10px] font-bold text-center text-gray-800 leading-tight ">
                                 {sub.name}
                               </span>
                             </Link>
@@ -1292,7 +1436,7 @@ setHomeLoading(false)
                           className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
                           onClick={() => setSelectedCategory(sub.name)}
                         >
-                          <div className="w-20 h-20 lg:rounded-3xl lg:w-[300px] lg:h-[300px] mb-3 bg-gray-100 rounded-lg shadow-sm flex items-center justify-center overflow-hidden">
+                          <div className="w-20 h-20 lg:rounded-3xl lg:w-[300px] lg:h-[300px] mb-3 bg-white rounded-lg shadow-sm flex items-center justify-center overflow-hidden">
                             <img
                               src={sub.imageBase64 || allproduct}
                               alt={sub.name}
@@ -1416,7 +1560,10 @@ setHomeLoading(false)
               <a href="/privacypolicy" className="hover:underline py-1">
                 Privacy Policy
               </a>
-              <a href="/cancellationRefundpolicy" className="hover:underline py-1">
+              <a
+                href="/cancellationRefundpolicy"
+                className="hover:underline py-1"
+              >
                 Cancellation & Refund Policy
               </a>
               <a href="/termsandconditions" className="hover:underline py-1">

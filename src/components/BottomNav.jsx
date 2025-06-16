@@ -6,11 +6,13 @@ import { useAuth } from "./AuthContext";
 import { doc, updateDoc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../Firebase";
 import apple from "../assets/apple.jpeg";
+import { FcGoogle } from "react-icons/fc";
+import { VscAccount } from "react-icons/vsc";
 
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, signInWithGoogle } = useAuth();
   const [showCart, setShowCart] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -22,7 +24,6 @@ const BottomNav = () => {
       return;
     }
 
-    // Set up real-time listener for the user document
     const unsubscribe = onSnapshot(
       doc(db, "users", currentUser.uid),
       (docSnapshot) => {
@@ -33,17 +34,14 @@ const BottomNav = () => {
       },
       (error) => {
         console.error("Error listening to cart changes:", error);
-        // Fallback to currentUser.cartItems if listener fails
         setCartItems(currentUser.cartItems || []);
       }
     );
 
-    // Initial load from currentUser if available
     if (currentUser.cartItems) {
       setCartItems(currentUser.cartItems);
     }
 
-    // Cleanup listener on unmount
     return () => unsubscribe();
   }, [currentUser?.uid, currentUser?.cartItems]);
 
@@ -52,6 +50,15 @@ const BottomNav = () => {
       setShowLoginModal(true);
     } else {
       setShowCart(true);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      setShowLoginModal(false);
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
     }
   };
 
@@ -72,9 +79,6 @@ const BottomNav = () => {
           cartItems: updatedItems,
         });
       }
-
-      // Note: We don't need to manually update setCartItems here 
-      // because the onSnapshot listener will handle it
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
@@ -89,9 +93,6 @@ const BottomNav = () => {
           cartItems: updatedItems,
         });
       }
-
-      // Note: We don't need to manually update setCartItems here 
-      // because the onSnapshot listener will handle it
     } catch (error) {
       console.error("Error removing item:", error);
     }
@@ -105,7 +106,6 @@ const BottomNav = () => {
   };
 
   const CartModal = () => {
-    // ... rest of your CartModal code remains the same
     if (!showCart) return null;
 
     return (
@@ -239,6 +239,53 @@ const BottomNav = () => {
     );
   };
 
+  const LoginModal = () => {
+    if (!showLoginModal) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-[#39B2A7] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border-t-4 border-[#2e978e]">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-white">
+              Sign in to Chinju Store
+            </h2>
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="text-white hover:text-gray-700 bg-gray-100 rounded-full p-2 w-8 h-8 flex items-center justify-center transition-colors"
+            >
+              ✖
+            </button>
+          </div>
+
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-[#65D2CD] flex items-center justify-center mb-4">
+              <VscAccount className="text-white text-3xl" />
+            </div>
+
+            <p className="text-center text-white mb-6">
+              Sign in to access your cart, save favorites, and check out faster!
+            </p>
+
+            <button
+              onClick={handleGoogleSignIn}
+              className="w-full flex items-center justify-center gap-2 border hover:text-black border-white rounded-lg py-3.5 px-4 text-white hover:bg-[#fff] transition duration-200 mb-4 shadow-sm"
+            >
+              <FcGoogle size={24} />
+              <span className="font-medium">Continue with Google</span>
+            </button>
+
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="w-full text-[#fff] border border-[#fff] py-3 rounded-lg hover:bg-[#fff] hover:text-black hover:bg-opacity-10 hover:border-[#fff] transition duration-200 font-medium"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-r from-[#1d9e8b] to-[#057161] shadow-md flex justify-around z-50 pt-[2.5px]">
@@ -277,8 +324,8 @@ const BottomNav = () => {
           {currentUser ? (
             <button
               onClick={() => {
-                localStorage.clear(); // Optional: clear local storage if needed
-                window.location.reload(); // Simple way to "logout" if you're not using Firebase signOut directly
+                localStorage.clear();
+                window.location.reload();
               }}
               className="flex flex-col items-center text-sm text-gray-700"
             >
@@ -286,22 +333,17 @@ const BottomNav = () => {
               <span className="text-xs font-bold">Logout</span>
             </button>
           ) : (
-            <Link
-              to="/login"
+            <button
+              onClick={() => setShowLoginModal(true)}
               className="flex flex-col items-center text-sm text-gray-700"
             >
-              <GrLogin
-                className={`w-6 h-6 p-1 rounded-md text-[#1d9e8b] shadow-md bg-[#effffd] ${
-                  location.pathname === "/login"
-                    ? "bg-[#1d9e8b] text-[#fff]"
-                    : ""
-                }`}
-              />
+              <GrLogin className="w-6 h-6 p-1 rounded-md text-[#1d9e8b] shadow-md bg-[#effffd]" />
               <span className="text-xs font-bold">Login</span>
-            </Link>
+            </button>
           )}
         </div>
       </div>
+      <LoginModal />
       <CartModal />
     </>
   );

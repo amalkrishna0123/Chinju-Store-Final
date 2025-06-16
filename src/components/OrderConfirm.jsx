@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { db } from '../Firebase';
-import { doc, updateDoc, addDoc, collection, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, serverTimestamp, arrayUnion, onSnapshot } from 'firebase/firestore';
 import { Phone, MapPin, CreditCard, Wallet, ArrowLeft } from 'lucide-react';
 import AddressManager from './AddressManager';
 
@@ -11,6 +11,54 @@ const OrderConfirm = () => {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [cartItems, setCartItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch cart items with real-time listener (same as BottomNav)
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setCartItems([]);
+      setIsLoading(false);
+      return;
+    }
+
+    console.log('Setting up real-time listener for user:', currentUser.uid);
+
+    // Set up real-time listener for the user document
+    const unsubscribe = onSnapshot(
+      doc(db, "users", currentUser.uid),
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          const userData = docSnapshot.data();
+          console.log('Real-time data received:', userData);
+          console.log('Cart items from Firestore:', userData.cartItems);
+          setCartItems(userData.cartItems || []);
+        } else {
+          console.log('User document does not exist');
+          setCartItems([]);
+        }
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error("Error listening to cart changes:", error);
+        // Fallback to currentUser.cartItems if listener fails
+        setCartItems(currentUser.cartItems || []);
+        setIsLoading(false);
+      }
+    );
+
+    // Initial load from currentUser if available
+    if (currentUser.cartItems) {
+      console.log('Initial load from currentUser:', currentUser.cartItems);
+      setCartItems(currentUser.cartItems);
+    }
+
+    // Cleanup listener on unmount
+    return () => {
+      console.log('Cleaning up listener');
+      unsubscribe();
+    };
+  }, [currentUser?.uid]);
 
   const handleSelectAddress = (address) => {
     setSelectedAddress(address);
@@ -18,7 +66,7 @@ const OrderConfirm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!currentUser?.cartItems?.length) {
+    if (!cartItems?.length) {
       alert('Your cart is empty!');
       return;
     }
@@ -29,7 +77,7 @@ const OrderConfirm = () => {
     }
 
     // Calculate total amount
-    const total = currentUser.cartItems.reduce((sum, item) => {
+    const total = cartItems.reduce((sum, item) => {
       return sum + (item.salePrice * item.quantity);
     }, 0);
 
@@ -37,13 +85,35 @@ const OrderConfirm = () => {
     navigate('/payment', {
       state: {
         orderDetails: {
-          items: currentUser.cartItems,
+          items: cartItems,
           shippingDetails: selectedAddress,
           total: total
         }
       }
     });
   };
+
+  // Calculate total amount
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
+
+  // Show loading while fetching cart data
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600 commonFont">Loading order details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('Rendering with cart items:', cartItems);
+  console.log('Cart items count:', cartItems.length);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -78,8 +148,8 @@ const OrderConfirm = () => {
           <div className="space-y-4">
             <h2 className="font-semibold text-gray-900 commonFont">Order Summary</h2>
             <div className="space-y-2">
-              {currentUser?.cartItems?.length > 0 ? (
-                currentUser.cartItems.map((item) => (
+              {cartItems?.length > 0 ? (
+                cartItems.map((item) => (
                   <div key={item.id} className="flex justify-between py-2 border-b">
                     <div>
                       <p className="font-medium commonFont text-sm">{item.name}</p>
@@ -93,7 +163,7 @@ const OrderConfirm = () => {
               )}
               <div className="flex justify-between pt-4 font-semibold text-lg commonFont">
                 <span>Total Amount</span>
-                <span>₹{currentUser?.cartItems?.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0) || 0}</span>
+                <span>₹{totalAmount}</span>
               </div>
             </div>
           </div>
@@ -102,8 +172,8 @@ const OrderConfirm = () => {
           <div className="mt-6">
             <button
               type="submit"
-              disabled={loading || !selectedAddress || !currentUser?.cartItems?.length}
-              className={`w-full py-3 px-4 text-white font-medium rounded-lg ${loading || !selectedAddress || !currentUser?.cartItems?.length ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+              disabled={loading || !selectedAddress || !cartItems?.length}
+              className={`w-full py-3 px-4 text-white font-medium rounded-lg ${loading || !selectedAddress || !cartItems?.length ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
             >
               {loading ? 'Processing...' : 'Proceed to Payment'}
             </button>

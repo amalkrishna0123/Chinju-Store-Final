@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, getDocs, collection } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  collection,
+  onSnapshot,
+} from "firebase/firestore";
 import { db } from "../Firebase";
-import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination } from 'swiper/modules';
-import 'swiper/css';
-import 'swiper/css/navigation';
-import 'swiper/css/pagination';
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
 import { FaStar } from "react-icons/fa6";
 import {
   Search,
@@ -28,7 +34,7 @@ import apple from "../assets/apple.jpeg";
 import { updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { optimizeProductData } from "../utils/imageCompression";
-import ReviewSystem from './ReviewSystem';
+import ReviewSystem from "./ReviewSystem";
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -45,29 +51,32 @@ const ProductDetail = () => {
   const navigate = useNavigate();
   const [allProducts, setAllProducts] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
-const [subImages, setSubImages] = useState([]);
-const [userLocation, setUserLocation] = useState({
-  address: 'Round North, Kodaly, Kerala', // Default address
-  deliveryTime: '9 mins'
-});
-const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-useEffect(() => {
-  const fetchUserWishlist = async () => {
-    if (currentUser?.uid) {
-      try {
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          setWishlist(data.wishlist || []);
-        }
-      } catch (error) {
-        console.error("Error fetching wishlist from Firestore:", error);
-      }
-    }
-  };
+  const [subImages, setSubImages] = useState([]);
+  const [userLocation, setUserLocation] = useState({
+    address: "Round North, Kodaly, Kerala", // Default address
+    deliveryTime: "9 mins",
+  });
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-  fetchUserWishlist();
-}, [currentUser]);
+  // fetchuserwishlist
+  useEffect(() => {
+    const fetchUserWishlist = async () => {
+      if (currentUser?.uid) {
+        try {
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setWishlist(data.wishlist || []);
+          }
+        } catch (error) {
+          console.error("Error fetching wishlist from Firestore:", error);
+        }
+      }
+    };
+
+    fetchUserWishlist();
+  }, [currentUser]);
+
   // Fetch product details when component mounts
   useEffect(() => {
     const fetchProduct = async () => {
@@ -94,7 +103,7 @@ useEffect(() => {
 
     if (productId) {
       fetchProduct();
-      console.log("productId is", productId)
+      console.log("productId is", productId);
     }
   }, [productId]);
 
@@ -108,18 +117,49 @@ useEffect(() => {
   }, [product]);
 
   // Load cart items
+  // useEffect(() => {
+  //   if (currentUser?.cartItems) {
+  //     setCartItems(currentUser.cartItems);
+  //   } else {
+  //     setCartItems([]);
+  //   }
+  //   if (currentUser?.wishlist) {
+  //     setWishlist(currentUser.wishlist);
+  //   } else {
+  //     setWishlist([]);
+  //   }
+  // }, [currentUser]);
+
+  // fetch cart items live updation
   useEffect(() => {
-    if (currentUser?.cartItems) {
-      setCartItems(currentUser.cartItems);
+    let unsubscribe = null;
+
+    if (currentUser?.uid) {
+      // Set up real-time listener for user document
+      unsubscribe = onSnapshot(
+        doc(db, "users", currentUser.uid),
+        (doc) => {
+          if (doc.exists()) {
+            const userData = doc.data();
+            setCartItems(userData.cartItems || []);
+            setWishlist(userData.wishlist || []);
+          }
+        },
+        (error) => {
+          console.error("Error listening to user data:", error);
+        }
+      );
     } else {
+      // Clear cart and wishlist when user logs out
       setCartItems([]);
-    }
-    if (currentUser?.wishlist) {
-      setWishlist(currentUser.wishlist);
-    } else {
       setWishlist([]);
     }
-  }, [currentUser]);
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [currentUser?.uid]);
 
   // Fetch all products for related products section
   useEffect(() => {
@@ -146,6 +186,7 @@ useEffect(() => {
     }
   };
 
+  // quantity increase
   const increaseQuantity = () => {
     setQuantity(quantity + 1);
   };
@@ -189,11 +230,14 @@ useEffect(() => {
         cartItems: updatedItems,
       });
 
-      setCartItems(updatedItems);
+      // Note: We don't need to manually update state here because
+      // the real-time listener will handle it
     } catch (error) {
       console.error("Error updating cart:", error);
     }
   };
+
+  // removecart
   const removeFromCart = async (productId) => {
     if (!currentUser) return;
 
@@ -204,15 +248,19 @@ useEffect(() => {
         cartItems: updatedItems,
       });
 
-      setCartItems(updatedItems);
+      // Note: We don't need to manually update state here because
+      // the real-time listener will handle it
     } catch (error) {
       console.error("Error removing from cart:", error);
     }
   };
 
+  // scroll
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [productId]);
+
+
   // Toggle wishlist
   const toggleWishlist = async () => {
     if (!currentUser) {
@@ -256,6 +304,7 @@ useEffect(() => {
     }
   };
 
+
   // Handle cart click
   const handleCartClick = () => {
     if (!currentUser) {
@@ -288,62 +337,73 @@ useEffect(() => {
     }
   };
 
+  // fetchcurrentlocation
   const fetchCurrentLocation = () => {
     setIsLoadingLocation(true);
-    
+
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
             const { latitude, longitude } = position.coords;
-            
+
             // Set a simple location without relying on Google API
             setUserLocation({
-              address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
-              deliveryTime: '9 mins'
+              address: `Location detected (${latitude.toFixed(
+                4
+              )}, ${longitude.toFixed(4)})`,
+              deliveryTime: "9 mins",
             });
-            
+
             // Save location to user's profile if logged in
             if (currentUser?.uid) {
-              await updateDoc(doc(db, 'users', currentUser.uid), {
+              await updateDoc(doc(db, "users", currentUser.uid), {
                 location: {
-                  address: `Location detected (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
+                  address: `Location detected (${latitude.toFixed(
+                    4
+                  )}, ${longitude.toFixed(4)})`,
                   coordinates: {
                     lat: latitude,
-                    lng: longitude
-                  }
-                }
+                    lng: longitude,
+                  },
+                },
               });
             }
           } catch (error) {
-            console.error('Error setting location:', error);
-            alert("Could not detect your precise location. Using default address.");
+            console.error("Error setting location:", error);
+            alert(
+              "Could not detect your precise location. Using default address."
+            );
           } finally {
             setIsLoadingLocation(false);
           }
         },
         (error) => {
-          console.error('Error getting location:', error);
-          alert("Location permission denied. Please allow location access to use this feature.");
+          console.error("Error getting location:", error);
+          alert(
+            "Location permission denied. Please allow location access to use this feature."
+          );
           setIsLoadingLocation(false);
         }
       );
     } else {
-      alert('Geolocation is not supported by this browser.');
+      alert("Geolocation is not supported by this browser.");
       setIsLoadingLocation(false);
     }
   };
+
+  // fetchuserlocation
   useEffect(() => {
     const fetchUserLocation = async () => {
       if (currentUser?.uid) {
         setIsLoadingLocation(true);
         try {
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
           if (userDoc.exists() && userDoc.data().location) {
             setUserLocation(userDoc.data().location);
           }
         } catch (error) {
-          console.error('Error fetching user location:', error);
+          console.error("Error fetching user location:", error);
         } finally {
           setIsLoadingLocation(false);
         }
@@ -352,6 +412,8 @@ useEffect(() => {
 
     fetchUserLocation();
   }, [currentUser]);
+
+
   // Logout handler
   const handleLogout = async () => {
     await logout();
@@ -359,6 +421,7 @@ useEffect(() => {
     setCartItems([]);
   };
 
+  
   // Render stars based on rating
   const renderRating = (rating) => {
     const stars = [];
@@ -506,146 +569,145 @@ useEffect(() => {
     );
   };
 
+  // Cart Component
+  const Cart = () => {
+    if (!showCart) return null;
 
-    // Cart Component
-    const Cart = () => {
-      if (!showCart) return null;
-  
-      const calculateTotal = () => {
-        return cartItems.reduce(
-          (total, item) => total + item.salePrice * item.quantity,
-          0
-        );
-      };
-  
-      return (
-        <div className="fixed inset-0 bg-transparent bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
-          <div className="w-full md:w-1/4 h-full md:h-screen bg-white md:shadow-lg transform transition-transform duration-300 flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Your Cart {cartItems.length > 0 ? `(${cartItems.length})` : ""}
-              </h2>
-              <button
-                onClick={() => setShowCart(false)}
-                className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2"
-              >
-                <X size={18} />
-              </button>
-            </div>
-  
-            {cartItems.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-6">
-                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4">
-                  <ShoppingCart size={24} />
-                </div>
-                <p className="text-center text-gray-600 mb-6">
-                  Your cart is empty
-                </p>
-                <button
-                  onClick={() => setShowCart(false)}
-                  className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200"
-                >
-                  Continue Shopping
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex-1 overflow-y-auto p-4">
-                  {cartItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center py-4 border-b border-gray-100"
-                    >
-                      <img
-                        src={item.imageBase64 || apple}
-                        alt={item.name}
-                        className="w-16 h-16 object-cover rounded-lg"
-                      />
-                      <div className="ml-4 flex-1">
-                        <h4 className="text-sm font-medium text-gray-800">
-                          {item.name}
-                        </h4>
-                        <p className="text-xs text-gray-500">{item.weight}</p>
-                        <div className="flex items-center mt-2">
-                          <span className="font-semibold text-gray-900">
-                            ₹{item.salePrice || item.originalPrice}
-                          </span>
-  
-                          {item.originalPrice && (
-                            <span className="text-gray-400 text-xs line-through ml-2">
-                              ₹{item.originalPrice}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <button
-                          onClick={() => removeItem(item.id)}
-                          className="text-gray-400 hover:text-red-500 mb-2"
-                        >
-                          <Trash size={16} />
-                        </button>
-                        <div className="flex items-center border border-gray-200 rounded-lg">
-                          <button
-                            onClick={() =>
-                              updateQuantity(
-                                item.id,
-                                Math.max(1, item.quantity - 1)
-                              )
-                            }
-                            className="px-2 py-1 text-gray-500 hover:text-blue-600"
-                          >
-                            <Minus size={16} />
-                          </button>
-                          <span className="px-2 text-gray-800">
-                            {item.quantity}
-                          </span>
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            className="px-2 py-1 text-gray-500 hover:text-blue-600"
-                          >
-                            <Plus size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-  
-                <div className="border-t border-gray-100 p-4">
-                  <div className="flex justify-between mb-4">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold">₹{calculateTotal()}</span>
-                  </div>
-                  <div className="flex justify-between mb-4">
-                    <span className="text-gray-600">Delivery</span>
-                    <span className="font-semibold">₹40</span>
-                  </div>
-                  <div className="flex justify-between mb-4 pb-4 border-b border-gray-100">
-                    <span className="text-gray-600">Discount</span>
-                    <span className="font-semibold text-green-600">-₹0</span>
-                  </div>
-                  <div className="flex justify-between mb-6">
-                    <span className="text-lg font-semibold">Total</span>
-                    <span className="text-lg font-bold">
-                      ₹{calculateTotal() + 40}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => navigate("/order-confirm")}
-                    className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200"
-                  >
-                    Proceed to Checkout
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+    const calculateTotal = () => {
+      return cartItems.reduce(
+        (total, item) => total + item.salePrice * item.quantity,
+        0
       );
     };
+
+    return (
+      <div className="fixed inset-0 bg-transparent bg-opacity-50 z-50 flex items-center justify-center md:justify-end">
+        <div className="w-full md:w-1/4 h-full md:h-screen bg-white md:shadow-lg transform transition-transform duration-300 flex flex-col">
+          <div className="flex justify-between items-center p-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-800">
+              Your Cart {cartItems.length > 0 ? `(${cartItems.length})` : ""}
+            </h2>
+            <button
+              onClick={() => setShowCart(false)}
+              className="text-gray-500 hover:text-gray-700 bg-gray-100 rounded-full p-2"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {cartItems.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center p-6">
+              <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4">
+                <ShoppingCart size={24} />
+              </div>
+              <p className="text-center text-gray-600 mb-6">
+                Your cart is empty
+              </p>
+              <button
+                onClick={() => setShowCart(false)}
+                className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex-1 overflow-y-auto p-4">
+                {cartItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center py-4 border-b border-gray-100"
+                  >
+                    <img
+                      src={item.imageBase64 || apple}
+                      alt={item.name}
+                      className="w-16 h-16 object-cover rounded-lg"
+                    />
+                    <div className="ml-4 flex-1">
+                      <h4 className="text-sm font-medium text-gray-800">
+                        {item.name}
+                      </h4>
+                      <p className="text-xs text-gray-500">{item.weight}</p>
+                      <div className="flex items-center mt-2">
+                        <span className="font-semibold text-gray-900">
+                          ₹{item.salePrice || item.originalPrice}
+                        </span>
+
+                        {item.originalPrice && (
+                          <span className="text-gray-400 text-xs line-through ml-2">
+                            ₹{item.originalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="text-gray-400 hover:text-red-500 mb-2"
+                      >
+                        <Trash size={16} />
+                      </button>
+                      <div className="flex items-center border border-gray-200 rounded-lg">
+                        <button
+                          onClick={() =>
+                            updateQuantity(
+                              item.id,
+                              Math.max(1, item.quantity - 1)
+                            )
+                          }
+                          className="px-2 py-1 text-gray-500 hover:text-blue-600"
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <span className="px-2 text-gray-800">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity + 1)
+                          }
+                          className="px-2 py-1 text-gray-500 hover:text-blue-600"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-gray-100 p-4">
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-semibold">₹{calculateTotal()}</span>
+                </div>
+                <div className="flex justify-between mb-4">
+                  <span className="text-gray-600">Delivery</span>
+                  <span className="font-semibold">₹40</span>
+                </div>
+                <div className="flex justify-between mb-4 pb-4 border-b border-gray-100">
+                  <span className="text-gray-600">Discount</span>
+                  <span className="font-semibold text-green-600">-₹0</span>
+                </div>
+                <div className="flex justify-between mb-6">
+                  <span className="text-lg font-semibold">Total</span>
+                  <span className="text-lg font-bold">
+                    ₹{calculateTotal() + 40}
+                  </span>
+                </div>
+                <button
+                  onClick={() => navigate("/order-confirm")}
+                  className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200"
+                >
+                  Proceed to Checkout
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (

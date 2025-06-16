@@ -24,6 +24,7 @@ import {
   arrayUnion,
   arrayRemove,
   getDoc,
+  onSnapshot 
 } from "firebase/firestore";
 import { db } from "../Firebase";
 import { optimizeProductData } from "../utils/imageCompression";
@@ -70,7 +71,7 @@ const ProductCategoryView = () => {
   // const { subcategoryName } = useParams();
   console.log("URL parameter:", subcategoryName);
   console.log("Decoded subcategory:", decodeURIComponent(subcategoryName));
- 
+
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % words.length);
@@ -91,6 +92,7 @@ const ProductCategoryView = () => {
   //   };
   //   fetchProducts();
   // }, []);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [selectedSubcategory]);
@@ -292,18 +294,48 @@ const ProductCategoryView = () => {
   }, []);
 
   // Load cart and wishlist when user changes
-  useEffect(() => {
-    if (currentUser?.cartItems) {
-      setCartItems(currentUser.cartItems);
-    } else {
-      setCartItems([]);
-    }
-    if (currentUser?.wishlist) {
-      setWishlist(currentUser.wishlist);
-    } else {
-      setWishlist([]);
-    }
-  }, [currentUser]);
+  // useEffect(() => {
+  //   if (currentUser?.cartItems) {
+  //     setCartItems(currentUser.cartItems);
+  //   } else {
+  //     setCartItems([]);
+  //   }
+  //   if (currentUser?.wishlist) {
+  //     setWishlist(currentUser.wishlist);
+  //   } else {
+  //     setWishlist([]);
+  //   }
+  // }, [currentUser]);
+
+    useEffect(() => {
+      let unsubscribe = null;
+  
+      if (currentUser?.uid) {
+        // Set up real-time listener for user document
+        unsubscribe = onSnapshot(
+          doc(db, "users", currentUser.uid),
+          (doc) => {
+            if (doc.exists()) {
+              const userData = doc.data();
+              setCartItems(userData.cartItems || []);
+              setWishlist(userData.wishlist || []);
+            }
+          },
+          (error) => {
+            console.error("Error listening to user data:", error);
+          }
+        );
+      } else {
+        // Clear cart and wishlist when user logs out
+        setCartItems([]);
+        setWishlist([]);
+      }
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+        }
+      };
+    }, [currentUser?.uid]);
 
   const handleGoogleSignIn = async () => {
     try {
@@ -321,66 +353,66 @@ const ProductCategoryView = () => {
     setWishlist([]);
   };
 
-  // Cart functions - Updated to match ProductViewAll.jsx
-  const addToCart = async (product) => {
-    if (!currentUser) {
-      setShowLoginModal(true);
-      return;
+// Cart functions - Updated with toggle functionality (add/remove)
+const addToCart = async (product) => {
+  if (!currentUser) {
+    setShowLoginModal(true);
+    return;
+  }
+
+  try {
+    const updatedItems = [...cartItems];
+    const existingItemIndex = updatedItems.findIndex(
+      (item) => item.id === product.id
+    );
+
+    if (existingItemIndex >= 0) {
+      // If item exists, remove it from cart (toggle functionality)
+      updatedItems.splice(existingItemIndex, 1);
+    } else {
+      // Create a new product object with only necessary data
+      const productToAdd = {
+        id: product.id,
+        name: product.name,
+        originalPrice: product.originalPrice,
+        salePrice: product.salePrice,
+        offer: product.offer,
+        category: product.category,
+        imageBase64: product.imageBase64,
+        quantity: 1,
+        addedAt: new Date().toISOString(),
+      };
+
+      // Optimize the product data by compressing images
+      const optimizedProduct = await optimizeProductData(productToAdd);
+      updatedItems.push(optimizedProduct);
     }
 
-    try {
-      const updatedItems = [...cartItems];
-      const existingItemIndex = updatedItems.findIndex(
-        (item) => item.id === product.id
-      );
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      cartItems: updatedItems,
+    });
 
-      if (existingItemIndex >= 0) {
-        updatedItems[existingItemIndex].quantity += 1;
-      } else {
-        // Create a new product object with only necessary data
-        const productToAdd = {
-          id: product.id,
-          name: product.name,
-          originalPrice: product.originalPrice,
-          salePrice: product.salePrice,
-          offer: product.offer,
-          category: product.category,
-          imageBase64: product.imageBase64,
-          quantity: 1,
-          addedAt: new Date().toISOString(),
-        };
+    setCartItems(updatedItems);
+  } catch (error) {
+    console.error("Error updating cart:", error);
+  }
+};
 
-        // Optimize the product data by compressing images
-        const optimizedProduct = await optimizeProductData(productToAdd);
-        updatedItems.push(optimizedProduct);
-      }
+const removeFromCart = async (productId) => {
+  if (!currentUser) return;
 
-      await updateDoc(doc(db, "users", currentUser.uid), {
-        cartItems: updatedItems,
-      });
+  try {
+    const updatedItems = cartItems.filter((item) => item.id !== productId);
 
-      setCartItems(updatedItems);
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-    }
-  };
+    await updateDoc(doc(db, "users", currentUser.uid), {
+      cartItems: updatedItems,
+    });
 
-  const removeFromCart = async (productId) => {
-    if (!currentUser) return;
-
-    try {
-      const updatedItems = cartItems.filter((item) => item.id !== productId);
-
-      await updateDoc(doc(db, "users", currentUser.uid), {
-        cartItems: updatedItems,
-      });
-
-      setCartItems(updatedItems);
-    } catch (error) {
-      console.error("Error removing from cart:", error);
-    }
-  };
-
+    setCartItems(updatedItems);
+  } catch (error) {
+    console.error("Error removing from cart:", error);
+  }
+};
   const updateQuantity = async (id, quantity) => {
     if (!currentUser?.uid) return;
 
@@ -416,54 +448,55 @@ const ProductCategoryView = () => {
   };
 
   // Wishlist functions - Updated to match ProductViewAll.jsx
-const toggleWishlist = async (product) => {
-  if (!currentUser) {
-    setShowLoginModal(true);
-    return;
-  }
-
-  try {
-    setLoading(true);
-
-    const userRef = doc(db, "users", currentUser.uid);
-    const userSnap = await getDoc(userRef);
-    const userData = userSnap.exists() ? userSnap.data() : {};
-    const wishlistFromDB = userData.wishlist || [];
-
-    const existingItem = wishlistFromDB.find((item) => item.id === product.id);
-
-    if (existingItem) {
-      // REMOVE (must match the exact object in Firestore)
-      await updateDoc(userRef, {
-        wishlist: arrayRemove(existingItem),
-      });
-      setWishlist((prev) => prev.filter((item) => item.id !== product.id));
-    } else {
-      // ADD
-      const productToAdd = {
-        id: product.id,
-        name: product.name,
-        originalPrice: product.originalPrice,
-        salePrice: product.salePrice,
-        offer: product.offer,
-        category: product.category,
-        imageBase64: product.imageBase64,
-      };
-
-      const optimizedProduct = await optimizeProductData(productToAdd);
-
-      await updateDoc(userRef, {
-        wishlist: arrayUnion(optimizedProduct),
-      });
-      setWishlist((prev) => [...prev, optimizedProduct]);
+  const toggleWishlist = async (product) => {
+    if (!currentUser) {
+      setShowLoginModal(true);
+      return;
     }
-  } catch (error) {
-    console.error("Error toggling wishlist:", error);
-  } finally {
-    setLoading(false);
-  }
-};
 
+    try {
+      setLoading(true);
+
+      const userRef = doc(db, "users", currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      const userData = userSnap.exists() ? userSnap.data() : {};
+      const wishlistFromDB = userData.wishlist || [];
+
+      const existingItem = wishlistFromDB.find(
+        (item) => item.id === product.id
+      );
+
+      if (existingItem) {
+        // REMOVE (must match the exact object in Firestore)
+        await updateDoc(userRef, {
+          wishlist: arrayRemove(existingItem),
+        });
+        setWishlist((prev) => prev.filter((item) => item.id !== product.id));
+      } else {
+        // ADD
+        const productToAdd = {
+          id: product.id,
+          name: product.name,
+          originalPrice: product.originalPrice,
+          salePrice: product.salePrice,
+          offer: product.offer,
+          category: product.category,
+          imageBase64: product.imageBase64,
+        };
+
+        const optimizedProduct = await optimizeProductData(productToAdd);
+
+        await updateDoc(userRef, {
+          wishlist: arrayUnion(optimizedProduct),
+        });
+        setWishlist((prev) => [...prev, optimizedProduct]);
+      }
+    } catch (error) {
+      console.error("Error toggling wishlist:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Render stars based on rating
   const renderRating = (rating) => {
@@ -504,6 +537,8 @@ const toggleWishlist = async (product) => {
       setShowCart(true);
     }
   };
+
+  // fetchcurrentlocation
   const fetchCurrentLocation = () => {
     setIsLoadingLocation(true);
 
@@ -577,7 +612,7 @@ const toggleWishlist = async (product) => {
 
     fetchUserLocation();
   }, [currentUser]);
-  
+
   // User Profile Component
   const UserProfile = () => (
     <div className="relative">
@@ -1129,29 +1164,28 @@ const toggleWishlist = async (product) => {
                         {product.offer}% off
                       </div>
                     )}
-                    
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleWishlist(product);
-                        }}
-                        disabled={loading}
-                        className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(product);
+                      }}
+                      disabled={loading}
+                      className={`absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center shadow-md transition-colors ${
+                        wishlist.some((item) => item.id === product.id)
+                          ? "bg-red-100 text-red-500"
+                          : "bg-white text-gray-600 hover:text-red-500"
+                      }`}
+                    >
+                      <Heart
+                        size={16}
+                        fill={
                           wishlist.some((item) => item.id === product.id)
-                            ? "bg-red-100 text-red-500"
-                            : "bg-white text-gray-600 hover:text-red-500"
-                        }`}
-                      >
-                        <Heart
-                          size={16}
-                          fill={
-                            wishlist.some((item) => item.id === product.id)
-                              ? "currentColor"
-                              : "none"
-                          }
-                        />
-                      </button>
-                    
+                            ? "currentColor"
+                            : "none"
+                        }
+                      />
+                    </button>
                   </div>
                 </div>
 
