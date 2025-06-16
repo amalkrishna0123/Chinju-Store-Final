@@ -45,6 +45,8 @@ const AddProduct = () => {
     brand: '',
     shelfLife: '',
     category: '',
+    subCategory: '',
+    subSubCategory: ''
   });
 
   const [productImage, setProductImage] = useState(null);
@@ -53,6 +55,8 @@ const AddProduct = () => {
   const [subPreviews, setSubPreviews] = useState([]);
   const [error, setError] = useState('');
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [subSubCategories, setSubSubCategories] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [unreadOrderCount, setUnreadOrderCount] = useState(0);
 
@@ -79,19 +83,44 @@ const AddProduct = () => {
         const snapshot = await getDocs(collection(db, 'categories'));
         const allCategories = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   
-        const subCats = allCategories.filter(cat => cat.type === 'sub');
+        // Separate categories by type
         const mainCats = allCategories.filter(cat => cat.type === 'main');
+        const subCats = allCategories.filter(cat => cat.type === 'sub');
+        const subSubCats = allCategories.filter(cat => cat.type === 'subsub');
   
-        // Join subcategory with main category name
-        const subWithParent = subCats.map(sub => {
+        // Format categories for display
+        const formattedMainCats = mainCats.map(cat => ({
+          ...cat,
+          label: cat.name
+        }));
+        
+        const formattedSubCats = subCats.map(sub => {
           const parent = mainCats.find(main => main.id === sub.parentId);
           return {
             ...sub,
             label: parent ? `${parent.name} → ${sub.name}` : sub.name,
+            parentName: parent?.name || ''
           };
         });
-  
-        setCategories(subWithParent);
+        
+        const formattedSubSubCats = subSubCats.map(subsub => {
+          const parent = subCats.find(sub => sub.id === subsub.parentId);
+          const grandparent = parent ? mainCats.find(main => main.id === parent.parentId) : null;
+          return {
+            ...subsub,
+            label: grandparent && parent 
+              ? `${grandparent.name} → ${parent.name} → ${subsub.name}` 
+              : parent 
+                ? `${parent.name} → ${subsub.name}` 
+                : subsub.name,
+            parentName: parent?.name || '',
+            grandparentName: grandparent?.name || ''
+          };
+        });
+
+        setCategories(formattedMainCats);
+        setSubCategories(formattedSubCats);
+        setSubSubCategories(formattedSubSubCats);
       } catch (err) {
         console.error("Error fetching categories:", err);
         setError('Failed to fetch categories: ' + err.message);
@@ -105,7 +134,6 @@ const AddProduct = () => {
       subPreviews.forEach(url => URL.revokeObjectURL(url));
     };
   }, [productPreview, subPreviews]);
-  
 
   const handleMainImageChange = (e) => {
     const file = e.target.files[0];
@@ -124,6 +152,14 @@ const AddProduct = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     let updatedData = { ...formData, [name]: value };
+
+    // Reset dependent category fields when parent changes
+    if (name === 'category') {
+      updatedData.subCategory = '';
+      updatedData.subSubCategory = '';
+    } else if (name === 'subCategory') {
+      updatedData.subSubCategory = '';
+    }
 
     if (name === 'offer' || name === 'originalPrice') {
       const price = parseFloat(updatedData.originalPrice);
@@ -160,6 +196,11 @@ const AddProduct = () => {
       const imageBase64 = await getBase64(productImage);
       const subImagesBase64 = await Promise.all(subImages.map(getBase64));
 
+      // Get the full category hierarchy names
+      const mainCategory = categories.find(cat => cat.name === formData.category);
+      const subCategory = subCategories.find(sub => sub.name === formData.subCategory);
+      const subSubCategory = subSubCategories.find(subsub => subsub.name === formData.subSubCategory);
+
       // Create product data object
       const productData = {
         ...formData,
@@ -169,6 +210,16 @@ const AddProduct = () => {
         imageBase64,
         subImagesBase64,
         createdAt: new Date().toISOString(),
+        categoryHierarchy: {
+          main: formData.category,
+          sub: formData.subCategory,
+          subsub: formData.subSubCategory
+        },
+        fullCategoryPath: [
+          formData.category,
+          formData.subCategory,
+          formData.subSubCategory
+        ].filter(Boolean).join(' → ')
       };
       
       // Optimize product data by compressing images before storing
@@ -183,125 +234,101 @@ const AddProduct = () => {
       setIsSubmitting(false);
     }
   };
+
   const handleNotificationClick = () => {
     navigate('/dashboard/orderdetails');
   };
+
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Enhanced Sidebar */}
+      {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
           sidebarOpen  ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
         } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
       >
-      {/* Brand Logo */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="text-xl font-bold text-white">AdminPanel</div>
-        <button
-          onClick={() => setSidebarOpen(false)}
-          className="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 text-white transition-colors"
-        >
-          <FiX size={20} />
-        </button>
-      </div>
-  
-      {/* Menu */}
-      <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item, index) => (
-          <Link
-            key={index}
-            to={item.path}
-            onClick={() => setSidebarOpen(false)}
-            className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
-              isActive(item.path)
-                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
-              {item.icon}
-            </div>
-            <span className="ml-3 text-sm font-medium">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-  
-      {/* Logout */}
-      <div className="p-3 border-t border-gray-100">
-        <button
-          onClick={handleLogout}
-          className="flex items-center w-full p-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
-        >
-          <FiLogOut size={18} />
-          <span className="ml-3 text-sm">Logout</span>
-        </button>
-      </div>
-    </div>
-
-      {/* Enhanced Main content */}
-      <div className="flex flex-col flex-1 overflow-hidden md:ml-[300px]">
-        {/* Enhanced Top header */}
-        <header className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white shadow-sm border-b border-gray-100">
-        <div className="flex items-center gap-4">
-          {/* Menu Button - Now always visible to open the sidebar */}
+        {/* Brand Logo */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
+          <div className="text-xl font-bold text-white">AdminPanel</div>
           <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+            onClick={() => setSidebarOpen(false)}
+            className="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 text-white transition-colors"
           >
-            <FiMenu size={20} />
+            <FiX size={20} />
           </button>
-          <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Products</h2>
         </div>
-  
-        <div className="flex items-center gap-3 sm:gap-6">
-          {/* Search input */}
-      {/* <div className="relative w-full sm:w-80">
-        <input
-          type="text"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Search anything..."
-          className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
-        />
-        <FiSearch className="absolute left-3 top-2.5 text-gray-400" size={16} />
-      </div> */}
-  
-          {/* Notifications */}
-          <div className="relative">
-            <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
-              <FiBell size={20} className="text-gray-600" />
-              {unreadOrderCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
-                  {unreadOrderCount}
-                </span>
-              )}
-            </button>
-          </div>
-  
-          {/* Profile */}
-          <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
-              <FiUser size={16} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">Admin User</span>
-              <span className="text-xs text-gray-500">Administrator</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-        {/* Main Content */}
-        <main className="flex-1 bg-gray-50 p-6 overflow-y-auto">
-          {/* Header with Back Button and Title */}
-          {/* <div className="flex items-center mb-6">
-            <Link to="/dashboard/view-product" className="mr-4 text-gray-500 hover:text-gray-700">
-              <FiArrowLeft size={20} />
+    
+        {/* Menu */}
+        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+          {menuItems.map((item, index) => (
+            <Link
+              key={index}
+              to={item.path}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
+                isActive(item.path)
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
+                {item.icon}
+              </div>
+              <span className="ml-3 text-sm font-medium">{item.label}</span>
             </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Add New Product</h1>
-          </div> */}
+          ))}
+        </nav>
+    
+        {/* Logout */}
+        <div className="p-3 border-t border-gray-100">
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full p-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+          >
+            <FiLogOut size={18} />
+            <span className="ml-3 text-sm">Logout</span>
+          </button>
+        </div>
+      </div>
 
-          {/* Error Message */}
+      {/* Main content */}
+      <div className="flex flex-col flex-1 overflow-hidden md:ml-[300px]">
+        <header className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white shadow-sm border-b border-gray-100">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+            >
+              <FiMenu size={20} />
+            </button>
+            <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Products</h2>
+          </div>
+    
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="relative">
+              <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                <FiBell size={20} className="text-gray-600" />
+                {unreadOrderCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
+                    {unreadOrderCount}
+                  </span>
+                )}
+              </button>
+            </div>
+    
+            <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                <FiUser size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-gray-800">Admin User</span>
+                <span className="text-xs text-gray-500">Administrator</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="flex-1 bg-gray-50 p-6 overflow-y-auto">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
               <div className="flex">
@@ -315,29 +342,16 @@ const AddProduct = () => {
             </div>
           )}
 
-          {/* Main Form Container */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <form onSubmit={handleSubmit}>
-              {/* Form Header */}
               <div className="p-4 border-b border-gray-200">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="text-sm text-gray-700">
                     Fill in the details to add a new product
                   </div>
-                  {/* <div className="flex items-center gap-2">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                    >
-                      <Save size={16} className="mr-2" />
-                      {isSubmitting ? 'Saving...' : 'Save Product'}
-                    </button>
-                  </div> */}
                 </div>
               </div>
 
-              {/* Form Content */}
               <div className="p-6 grid gap-6">
                 {/* Product Images Section */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -463,27 +477,76 @@ const AddProduct = () => {
                 </div>
 
                 {/* Category Selection */}
-                <div>
-  <label htmlFor="category" className="block font-medium text-gray-700 mb-1">
-    Subcategory *
-  </label>
-  <select
-    id="category"
-    name="category"
-    required
-    value={formData.category}
-    onChange={handleChange}
-    className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-  >
-    <option value="">Select Subcategory</option>
-    {categories.map((cat) => (
-      <option key={cat.id} value={cat.name}> {/* Save the name instead of ID */}
-      {cat.label}
-    </option>
-    ))}
-  </select>
-</div>
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="category" className="block font-medium text-gray-700 mb-1">
+                      Main Category *
+                    </label>
+                    <select
+                      id="category"
+                      name="category"
+                      required
+                      value={formData.category}
+                      onChange={handleChange}
+                      className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    >
+                      <option value="">Select Main Category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.name}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
+                  {formData.category && (
+                    <div>
+                      <label htmlFor="subCategory" className="block font-medium text-gray-700 mb-1">
+                        Subcategory
+                      </label>
+                      <select
+                        id="subCategory"
+                        name="subCategory"
+                        value={formData.subCategory}
+                        onChange={handleChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="">Select Subcategory (Optional)</option>
+                        {subCategories
+                          .filter(sub => sub.parentName === formData.category)
+                          .map(sub => (
+                            <option key={sub.id} value={sub.name}>
+                              {sub.label}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {formData.subCategory && (
+                    <div>
+                      <label htmlFor="subSubCategory" className="block font-medium text-gray-700 mb-1">
+                        Sub-subcategory
+                      </label>
+                      <select
+                        id="subSubCategory"
+                        name="subSubCategory"
+                        value={formData.subSubCategory}
+                        onChange={handleChange}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      >
+                        <option value="">Select Sub-subcategory (Optional)</option>
+                        {subSubCategories
+                          .filter(subsub => subsub.parentName === formData.subCategory)
+                          .map(subsub => (
+                            <option key={subsub.id} value={subsub.name}>
+                              {subsub.label}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
 
                 {/* Pricing Section */}
                 <div>

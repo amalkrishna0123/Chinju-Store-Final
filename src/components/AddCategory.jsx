@@ -32,31 +32,67 @@ const AddCategory = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [categoryType, setCategoryType] = useState('main');
-  const [parentCategory, setParentCategory] = useState('');
-  const [availableParentCategories, setAvailableParentCategories] = useState([]);
+  const [categoryLevel, setCategoryLevel] = useState('main'); // 'main', 'sub', 'subsub'
+  const [mainCategory, setMainCategory] = useState(''); // For main category selection
+  const [subCategory, setSubCategory] = useState(''); // For subcategory selection
+  const [availableMainCategories, setAvailableMainCategories] = useState([]);
+  const [availableSubCategories, setAvailableSubCategories] = useState([]);
   const [unreadOrderCount, setUnreadOrderCount] = useState(0);
 
+  // Fetch categories based on the selected level
   useEffect(() => {
-    const fetchParentCategories = async () => {
+    const fetchCategories = async () => {
       try {
-        const q = query(collection(db, 'categories'), where('type', '==', 'main'));
-        const querySnapshot = await getDocs(q);
-        const mainCategories = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setAvailableParentCategories(mainCategories);
+        if (categoryLevel === 'sub') {
+          // For subcategories, fetch only main categories
+          const q = query(collection(db, 'categories'), where('type', '==', 'main'));
+          const querySnapshot = await getDocs(q);
+          const categories = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setAvailableMainCategories(categories);
+          setAvailableSubCategories([]);
+        } else if (categoryLevel === 'subsub') {
+          // For sub-subcategories, fetch both main and subcategories
+          const mainQuery = query(collection(db, 'categories'), where('type', '==', 'main'));
+          const subQuery = query(collection(db, 'categories'), where('type', '==', 'sub'));
+          
+          const [mainSnapshot, subSnapshot] = await Promise.all([getDocs(mainQuery), getDocs(subQuery)]);
+          
+          setAvailableMainCategories(mainSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })));
+          
+          setAvailableSubCategories(subSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })));
+        } else {
+          // For main categories, clear all parent options
+          setAvailableMainCategories([]);
+          setAvailableSubCategories([]);
+        }
       } catch (err) {
-        console.error("Error fetching parent categories:", err);
+        console.error("Error fetching categories:", err);
+        setError('Failed to fetch categories');
       }
     };
-    fetchParentCategories();
-  }, []);
+    fetchCategories();
+  }, [categoryLevel]);
+
+  // When main category changes for sub-subcategories, reset subcategory selection
+  useEffect(() => {
+    if (categoryLevel === 'subsub') {
+      setSubCategory('');
+    }
+  }, [mainCategory, categoryLevel]);
 
   const handleNotificationClick = () => {
     navigate('/dashboard/orderdetails');
   };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -80,13 +116,18 @@ const AddCategory = () => {
         throw new Error('Category name is required');
       }
 
-      if (categoryType === 'sub' && !parentCategory) {
-        throw new Error('Parent category is required for subcategories');
+      // Validate parent selections
+      if (categoryLevel === 'sub' && !mainCategory) {
+        throw new Error('Main category is required');
       }
 
+      if (categoryLevel === 'subsub' && (!mainCategory || !subCategory)) {
+        throw new Error('Both main category and subcategory are required');
+      }
+
+      // Convert image to base64 if exists
       let imageBase64 = '';
-      
-      if (categoryType === 'sub' && categoryImage) {
+      if (categoryLevel !== 'main' && categoryImage) {
         const reader = new FileReader();
         const base64Promise = new Promise((resolve, reject) => {
           reader.onload = () => resolve(reader.result);
@@ -96,13 +137,22 @@ const AddCategory = () => {
         imageBase64 = await base64Promise;
       }
 
+      // Prepare category data
       const categoryData = {
         name: categoryName.trim(),
-        ...(categoryType === 'sub' && { imageBase64 }),
-        type: categoryType,
-        ...(categoryType === 'sub' && { parentId: parentCategory }),
-        createdAt: new Date().toISOString()
+        type: categoryLevel,
+        level: categoryLevel,
+        createdAt: new Date().toISOString(),
+        ...(categoryLevel !== 'main' && { imageBase64 }),
       };
+
+      // Set parent relationships
+      if (categoryLevel === 'sub') {
+        categoryData.parentId = mainCategory;
+      } else if (categoryLevel === 'subsub') {
+        categoryData.parentId = subCategory;
+        categoryData.mainCategoryId = mainCategory; // Optional: store main category reference
+      }
 
       await addDoc(collection(db, 'categories'), categoryData);
       navigate('/dashboard/view-category');
@@ -130,8 +180,8 @@ const AddCategory = () => {
 
   const isActive = (path) => path === '/dashboard/view-category';
 
-
-  React.useEffect(() => {
+  // Clean up image preview URL
+  useEffect(() => {
     return () => {
       if (imagePreview) {
         URL.revokeObjectURL(imagePreview);
@@ -141,117 +191,94 @@ const AddCategory = () => {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      
-           {/* Sidebar - Now a slide-out menu */}
-           <div
+      {/* Sidebar */}
+      <div
         className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
           sidebarOpen  ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
         } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
       >
-      {/* Brand Logo */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="text-xl font-bold text-white">AdminPanel</div>
-        <button
-          onClick={() => setSidebarOpen(false)}
-          className="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 text-white transition-colors"
-        >
-          <FiX size={20} />
-        </button>
-      </div>
-  
-      {/* Menu */}
-      <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item, index) => (
-          <Link
-            key={index}
-            to={item.path}
+        {/* Brand Logo */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
+          <div className="text-xl font-bold text-white">AdminPanel</div>
+          <button
             onClick={() => setSidebarOpen(false)}
-            className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
-              isActive(item.path)
-                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
+            className="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 text-white transition-colors"
           >
-            <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
-              {item.icon}
-            </div>
-            <span className="ml-3 text-sm font-medium">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-  
-      {/* Logout */}
-      <div className="p-3 border-t border-gray-100">
-        <button
-          onClick={handleLogout}
-          className="flex items-center w-full p-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
-        >
-          <FiLogOut size={18} />
-          <span className="ml-3 text-sm">Logout</span>
-        </button>
+            <FiX size={20} />
+          </button>
+        </div>
+    
+        {/* Menu */}
+        <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+          {menuItems.map((item, index) => (
+            <Link
+              key={index}
+              to={item.path}
+              onClick={() => setSidebarOpen(false)}
+              className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
+                isActive(item.path)
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
+              <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
+                {item.icon}
+              </div>
+              <span className="ml-3 text-sm font-medium">{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+    
+        {/* Logout */}
+        <div className="p-3 border-t border-gray-100">
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full p-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+          >
+            <FiLogOut size={18} />
+            <span className="ml-3 text-sm">Logout</span>
+          </button>
+        </div>
       </div>
-    </div>
 
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden md:ml-[300px]">
-      <header className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white shadow-sm border-b border-gray-100">
-        <div className="flex items-center gap-4">
-          {/* Menu Button - Now always visible to open the sidebar */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
-          >
-            <FiMenu size={20} />
-          </button>
-          <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Categories</h2>
-        </div>
-  
-        <div className="flex items-center gap-3 sm:gap-6">
-          {/* Search input */}
-      {/* <div className="relative w-full sm:w-80">
-        <input
-          type="text"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Search anything..."
-          className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
-        />
-        <FiSearch className="absolute left-3 top-2.5 text-gray-400" size={16} />
-      </div> */}
-  
-          {/* Notifications */}
-          <div className="relative">
-            <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
-              <FiBell size={20} className="text-gray-600" />
-              {unreadOrderCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
-                  {unreadOrderCount}
-                </span>
-              )}
+        <header className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white shadow-sm border-b border-gray-100">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+            >
+              <FiMenu size={20} />
             </button>
+            <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Categories</h2>
           </div>
-  
-          {/* Profile */}
-          <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
-              <FiUser size={16} />
+    
+          <div className="flex items-center gap-3 sm:gap-6">
+            <div className="relative">
+              <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                <FiBell size={20} className="text-gray-600" />
+                {unreadOrderCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
+                    {unreadOrderCount}
+                  </span>
+                )}
+              </button>
             </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">Admin User</span>
-              <span className="text-xs text-gray-500">Administrator</span>
+    
+            <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                <FiUser size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-gray-800">Admin User</span>
+                <span className="text-xs text-gray-500">Administrator</span>
+              </div>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
         <main className="flex-1 bg-gray-50 p-6 overflow-y-auto">
-          {/* <div className="flex items-center mb-6">
-            <Link to="/dashboard/view-category" className="mr-4 text-gray-500 hover:text-gray-700">
-              <FiArrowLeft size={20} />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Add New Category</h1>
-          </div> */}
-
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
               <div className="flex">
@@ -286,17 +313,21 @@ const AddCategory = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Category Type
+                    Category Level
                   </label>
-                  <div className="flex space-x-4">
+                  <div className="flex flex-wrap gap-4">
                     <label className="inline-flex items-center">
                       <input
                         type="radio"
                         className="form-radio h-4 w-4 text-blue-600"
-                        name="categoryType"
+                        name="categoryLevel"
                         value="main"
-                        checked={categoryType === 'main'}
-                        onChange={() => setCategoryType('main')}
+                        checked={categoryLevel === 'main'}
+                        onChange={() => {
+                          setCategoryLevel('main');
+                          setMainCategory('');
+                          setSubCategory('');
+                        }}
                         disabled={loading}
                       />
                       <span className="ml-2">Main Category</span>
@@ -305,44 +336,124 @@ const AddCategory = () => {
                       <input
                         type="radio"
                         className="form-radio h-4 w-4 text-blue-600"
-                        name="categoryType"
+                        name="categoryLevel"
                         value="sub"
-                        checked={categoryType === 'sub'}
-                        onChange={() => setCategoryType('sub')}
+                        checked={categoryLevel === 'sub'}
+                        onChange={() => {
+                          setCategoryLevel('sub');
+                          setMainCategory('');
+                          setSubCategory('');
+                        }}
                         disabled={loading}
                       />
                       <span className="ml-2">Subcategory</span>
                     </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio h-4 w-4 text-blue-600"
+                        name="categoryLevel"
+                        value="subsub"
+                        checked={categoryLevel === 'subsub'}
+                        onChange={() => {
+                          setCategoryLevel('subsub');
+                          setMainCategory('');
+                          setSubCategory('');
+                        }}
+                        disabled={loading}
+                      />
+                      <span className="ml-2">Sub-subcategory</span>
+                    </label>
                   </div>
                 </div>
 
-                {categoryType === 'sub' && (
+                {categoryLevel === 'sub' && (
                   <div>
-                    <label htmlFor="parentCategory" className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent Category
+                    <label htmlFor="mainCategory" className="block text-sm font-medium text-gray-700 mb-1">
+                      Main Category
                     </label>
                     <select
-                      id="parentCategory"
-                      value={parentCategory}
-                      onChange={(e) => setParentCategory(e.target.value)}
+                      id="mainCategory"
+                      value={mainCategory}
+                      onChange={(e) => setMainCategory(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       required
-                      disabled={loading || availableParentCategories.length === 0}
+                      disabled={loading || availableMainCategories.length === 0}
                     >
-                      <option value="">Select a parent category</option>
-                      {availableParentCategories.map((category) => (
+                      <option value="">Select a main category</option>
+                      {availableMainCategories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
                         </option>
                       ))}
                     </select>
-                    {availableParentCategories.length === 0 && (
-                      <p className="mt-1 text-sm text-red-600">No main categories available. Please create a main category first.</p>
+                    {availableMainCategories.length === 0 && (
+                      <p className="mt-1 text-sm text-red-600">
+                        No main categories available. Please create a main category first.
+                      </p>
                     )}
                   </div>
                 )}
 
-                {categoryType === 'sub' && (
+                {categoryLevel === 'subsub' && (
+                  <>
+                    <div>
+                      <label htmlFor="mainCategory" className="block text-sm font-medium text-gray-700 mb-1">
+                        Main Category
+                      </label>
+                      <select
+                        id="mainCategory"
+                        value={mainCategory}
+                        onChange={(e) => setMainCategory(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                        disabled={loading || availableMainCategories.length === 0}
+                      >
+                        <option value="">Select a main category</option>
+                        {availableMainCategories.map((category) => (
+                          <option key={category.id} value={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      {availableMainCategories.length === 0 && (
+                        <p className="mt-1 text-sm text-red-600">
+                          No main categories available. Please create a main category first.
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label htmlFor="subCategory" className="block text-sm font-medium text-gray-700 mb-1">
+                        Subcategory
+                      </label>
+                      <select
+                        id="subCategory"
+                        value={subCategory}
+                        onChange={(e) => setSubCategory(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                        disabled={loading || !mainCategory || availableSubCategories.filter(cat => cat.parentId === mainCategory).length === 0}
+                      >
+                        <option value="">Select a subcategory</option>
+                        {availableSubCategories
+                          .filter(cat => cat.parentId === mainCategory)
+                          .map((category) => (
+                            <option key={category.id} value={category.id}>
+                              {category.name}
+                            </option>
+                          ))}
+                      </select>
+                      {mainCategory && availableSubCategories.filter(cat => cat.parentId === mainCategory).length === 0 && (
+                        <p className="mt-1 text-sm text-red-600">
+                          No subcategories available for the selected main category.
+                        </p>
+                      )}
+                    </div>
+                  </>
+                )}
+
+                {categoryLevel !== 'main' && (
                   <div>
                     <label htmlFor="categoryImage" className="block text-sm font-medium text-gray-700 mb-1">
                       Category Image

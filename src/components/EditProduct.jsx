@@ -7,8 +7,9 @@ import {
   updateDoc,
   collection,
   getDocs,
+  query,
+  where
 } from "firebase/firestore";
-import { ArrowLeft, Save, X, Upload, AlertCircle, Image } from "lucide-react";
 import {
   FiArrowLeft,
   FiImage,
@@ -27,12 +28,7 @@ import {
   FiShoppingCart,
   FiStar
 } from "react-icons/fi";
-import { MdDeliveryDining, MdReviews } from "react-icons/md";
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
-import "swiper/css";
-import "swiper/css/navigation";
-import { query, where } from "firebase/firestore";
+import { MdDeliveryDining } from "react-icons/md";
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -55,13 +51,23 @@ const EditProduct = () => {
     expiryDate: "",
     imported: false,
     organic: false,
-    stock: '',
+    stock: 'Available',
     weight: '',
     shelfLife: "",
     category: "",
+    subCategory: "",
+    subSubCategory: ""
   });
 
+  // const [categories, setCategories] = useState({
+  //   main: [],
+  //   sub: [],
+  //   subsub: []
+  // });
+  // Replace the current categories state with:
   const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [subSubCategories, setSubSubCategories] = useState([]);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -69,41 +75,62 @@ const EditProduct = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [saving, setSaving] = useState(false);
 
+
   useEffect(() => {
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
+        // 1. Fetch Categories
         const snapshot = await getDocs(collection(db, "categories"));
-        const allCats = snapshot.docs.map((doc) => ({
+        const allCategories = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }));
 
-        const mainCats = allCats.filter((cat) => cat.type === "main");
-        const subCats = allCats.filter((cat) => cat.type === "sub");
+        const mainCats = allCategories.filter((cat) => cat.type === "main");
+        const subCats = allCategories.filter((cat) => cat.type === "sub");
+        const subSubCats = allCategories.filter((cat) => cat.type === "subsub");
 
-        const subWithMainLabel = subCats.map((sub) => {
+        const formattedMainCats = mainCats.map((cat) => ({
+          ...cat,
+          label: cat.name,
+        }));
+        const formattedSubCats = subCats.map((sub) => {
           const parent = mainCats.find((main) => main.id === sub.parentId);
           return {
-            id: sub.id,
-            name: sub.name,
+            ...sub,
             label: parent ? `${parent.name} → ${sub.name}` : sub.name,
+            parentName: parent?.name || "",
+          };
+        });
+        const formattedSubSubCats = subSubCats.map((subsub) => {
+          const parent = subCats.find((sub) => sub.id === subsub.parentId);
+          const grandparent = parent
+            ? mainCats.find((main) => main.id === parent.parentId)
+            : null;
+          return {
+            ...subsub,
+            label:
+              grandparent && parent
+                ? `${grandparent.name} → ${parent.name} → ${subsub.name}`
+                : parent
+                ? `${parent.name} → ${subsub.name}`
+                : subsub.name,
+            parentName: parent?.name || "",
+            grandparentName: grandparent?.name || "",
           };
         });
 
-        setCategories(subWithMainLabel);
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-        setError("Failed to load categories. Please try again.");
-      }
-    };
+        setCategories(formattedMainCats);
+        setSubCategories(formattedSubCats);
+        setSubSubCategories(formattedSubSubCats);
 
-    const fetchProduct = async () => {
-      try {
+        // 2. Now Fetch Product after categories are set
         const docRef = doc(db, "products", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setProduct({
+
+          const productData = {
             ...data,
             subImagesBase64: data.subImagesBase64 || [],
             packedDate: data.packedDate || "",
@@ -111,35 +138,47 @@ const EditProduct = () => {
             imported: data.imported || false,
             organic: data.organic === true || data.organic === "Yes",
             shelfLife: data.shelfLife || "",
-          });
+            stock: data.stock || "Available",
+            weight: data.weight || "",
+            category: "",
+            subCategory: "",
+            subSubCategory: "",
+          };
+
+          if (data.categoryHierarchy) {
+            const mainCat = formattedMainCats.find(
+              (cat) => cat.name === data.categoryHierarchy.main
+            );
+            const subCat = formattedSubCats.find(
+              (sub) => sub.name === data.categoryHierarchy.sub
+            );
+            const subSubCat = formattedSubSubCats.find(
+              (subsub) => subsub.name === data.categoryHierarchy.subsub
+            );
+
+            if (mainCat) productData.category = mainCat.id;
+            if (subCat) productData.subCategory = subCat.id;
+            if (subSubCat) productData.subSubCategory = subSubCat.id;
+          }
+
+          setProduct(productData);
           setPreview(data.imageBase64 || null);
         } else {
           setError("Product not found.");
         }
       } catch (err) {
-        setError("Failed to fetch product: " + err.message);
+        setError("Failed to fetch data: " + err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCategories();
-    fetchProduct();
+    fetchData();
   }, [id]);
+
+
   const handleNotificationClick = () => {
     navigate('/dashboard/orderdetails');
-  };
-  const fetchProductsByCategory = async (categoryName) => {
-    const q = query(
-      collection(db, "products"),
-      where("category", "==", categoryName)
-    );
-    const snapshot = await getDocs(q);
-    const products = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    return products;
   };
 
   const handleInputChange = (e) => {
@@ -220,10 +259,37 @@ const EditProduct = () => {
     try {
       setSaving(true);
       const docRef = doc(db, "products", id);
-      await updateDoc(docRef, product);
+
+      // Get category names from IDs
+      const mainCategory = categories.find(
+        (cat) => cat.id === product.category
+      );
+      const subCategory = subCategories.find(
+        (sub) => sub.id === product.subCategory
+      );
+      const subSubCategory = subSubCategories.find(
+        (subsub) => subsub.id === product.subSubCategory
+      );
+
+      const productData = {
+        ...product,
+        categoryHierarchy: {
+          main: mainCategory?.name || "",
+          sub: subCategory?.name || "",
+          subsub: subSubCategory?.name || "",
+        },
+        fullCategoryPath: [
+          mainCategory?.name,
+          subCategory?.name,
+          subSubCategory?.name,
+        ]
+          .filter(Boolean)
+          .join(" → "),
+      };
+
+      await updateDoc(docRef, productData);
       setSuccess("Product updated successfully!");
 
-      // Show success message briefly before navigating
       setTimeout(() => {
         navigate("/dashboard/view-product");
       }, 1500);
@@ -241,138 +307,118 @@ const EditProduct = () => {
 
   const menuItems = [
     { label: "Dashboard", path: "/dashboard", icon: <FiGrid /> },
-    {
-      label: "Categories",
-      path: "/dashboard/view-category",
-      icon: <FiLayers />,
-    },
-    {
-      label: "Products",
-      path: "/dashboard/view-product",
-      icon: <FiShoppingBag />,
-    },
+    { label: "Categories", path: "/dashboard/view-category", icon: <FiLayers /> },
+    { label: "Products", path: "/dashboard/view-product", icon: <FiShoppingBag /> },
     { label: "Banners", path: "/dashboard/view-banner", icon: <FiImage /> },
-    {
-      label: "Orders",
-      path: "/dashboard/orderdetails",
-      icon: <FiShoppingCart />,
-    },
+    { label: "Orders", path: "/dashboard/orderdetails", icon: <FiShoppingCart /> },
     { label: "Users", path: "/dashboard/users", icon: <FiUsers /> },
-    {
-      label: "Delivery Boys",
-      path: "/dashboard/delivery-boys",
-      icon: <MdDeliveryDining />,
-    },
+    { label: "Delivery Boys", path: "/dashboard/delivery-boys", icon: <MdDeliveryDining /> },
     { label: "Reviews", path: "/dashboard/reviewmanagement", icon: <FiStar /> },
   ];
 
   const isActive = (path) => path === '/dashboard/view-product';
+
+  // Get subcategories based on selected main category
+  const getSubCategories = () => {
+    if (!product.category) return [];
+    return categories.sub.filter(sub => sub.parentId === product.category);
+  };
+
+  // Get sub-subcategories based on selected subcategory
+  const getSubSubCategories = () => {
+    if (!product.subCategory) return [];
+    return categories.subsub.filter(subsub => subsub.parentId === product.subCategory);
+  };
 
   if (loading) {
     return (
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Sidebar */}
         <div 
-      className={`fixed z-40 inset-y-0 left-0 transform transition-all duration-300 ease-in-out 
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-        w-64 bg-white shadow-2xl flex flex-col border-r border-gray-100`}
-    >
-      {/* Brand Logo */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="text-xl font-bold text-white">AdminPanel</div>
-        <button
-          onClick={() => setSidebarOpen(false)}
-          className="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 text-white transition-colors"
+          className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
+            sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
+          } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
         >
-          <FiX size={20} />
-        </button>
-      </div>
-  
-      {/* Menu */}
-      <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
-        {menuItems.map((item, index) => (
-          <Link
-            key={index}
-            to={item.path}
-            onClick={() => setSidebarOpen(false)}
-            className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
-              isActive(item.path)
-                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-            }`}
-          >
-            <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
-              {item.icon}
-            </div>
-            <span className="ml-3 text-sm font-medium">{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-  
-      {/* Logout */}
-      <div className="p-3 border-t border-gray-100">
-        <button
-          onClick={handleLogout}
-          className="flex items-center w-full p-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
-        >
-          <FiLogOut size={18} />
-          <span className="ml-3 text-sm">Logout</span>
-        </button>
-      </div>
-    </div>
-
-        {/* Main content */}
-        <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Top header */}
-          <header className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white shadow-sm border-b border-gray-100">
-        <div className="flex items-center gap-4">
-          {/* Menu Button - Now always visible to open the sidebar */}
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
-          >
-            <FiMenu size={20} />
-          </button>
-          <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Categories</h2>
-        </div>
-  
-        <div className="flex items-center gap-3 sm:gap-6">
-          {/* Search input */}
-      {/* <div className="relative w-full sm:w-80">
-        <input
-          type="text"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Search anything..."
-          className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
-        />
-        <FiSearch className="absolute left-3 top-2.5 text-gray-400" size={16} />
-      </div> */}
-  
-          {/* Notifications */}
-          <div className="relative">
-            <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
-              <FiBell size={20} className="text-gray-600" />
-              {unreadOrderCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
-                  {unreadOrderCount}
-                </span>
-              )}
+          {/* Brand Logo */}
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
+            <div className="text-xl font-bold text-white">AdminPanel</div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 text-white transition-colors"
+            >
+              <FiX size={20} />
             </button>
           </div>
-  
-          {/* Profile */}
-          <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
-              <FiUser size={16} />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">Admin User</span>
-              <span className="text-xs text-gray-500">Administrator</span>
-            </div>
+      
+          {/* Menu */}
+          <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
+            {menuItems.map((item, index) => (
+              <Link
+                key={index}
+                to={item.path}
+                onClick={() => setSidebarOpen(false)}
+                className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
+                  isActive(item.path)
+                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
+                  {item.icon}
+                </div>
+                <span className="ml-3 text-sm font-medium">{item.label}</span>
+              </Link>
+            ))}
+          </nav>
+      
+          {/* Logout */}
+          <div className="p-3 border-t border-gray-100">
+            <button
+              onClick={handleLogout}
+              className="flex items-center w-full p-3 rounded-xl text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+            >
+              <FiLogOut size={18} />
+              <span className="ml-3 text-sm">Logout</span>
+            </button>
           </div>
         </div>
-      </header>
+
+        {/* Main content */}
+        <div className="flex flex-col flex-1 overflow-hidden md:ml-[300px]">
+          <header className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white shadow-sm border-b border-gray-100">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
+              >
+                <FiMenu size={20} />
+              </button>
+              <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Products</h2>
+            </div>
+      
+            <div className="flex items-center gap-3 sm:gap-6">
+              <div className="relative">
+                <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                  <FiBell size={20} className="text-gray-600" />
+                  {unreadOrderCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
+                      {unreadOrderCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+      
+              <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                  <FiUser size={16} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-gray-800">Admin User</span>
+                  <span className="text-xs text-gray-500">Administrator</span>
+                </div>
+              </div>
+            </div>
+          </header>
 
           {/* Loading Content */}
           <div className="flex-1 bg-gray-50 p-6 flex items-center justify-center">
@@ -388,7 +434,7 @@ const EditProduct = () => {
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Enhanced Sidebar */}
+      {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
           sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
@@ -444,12 +490,10 @@ const EditProduct = () => {
         </div>
       </div>
 
-      {/* Enhanced Main content */}
+      {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden md:ml-[300px]">
-        {/* Enhanced Top header */}
         <header className="flex items-center justify-between px-4 sm:px-6 h-16 bg-white shadow-sm border-b border-gray-100">
           <div className="flex items-center gap-4">
-            {/* Menu Button - Now always visible to open the sidebar */}
             <button
               onClick={() => setSidebarOpen(true)}
               className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
@@ -462,19 +506,6 @@ const EditProduct = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-6">
-            {/* Search input */}
-            {/* <div className="relative w-full sm:w-80">
-        <input
-          type="text"
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Search anything..."
-          className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
-        />
-        <FiSearch className="absolute left-3 top-2.5 text-gray-400" size={16} />
-      </div> */}
-
-            {/* Notifications */}
             <div className="relative">
               <button
                 onClick={handleNotificationClick}
@@ -489,7 +520,6 @@ const EditProduct = () => {
               </button>
             </div>
 
-            {/* Profile */}
             <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
                 <FiUser size={16} />
@@ -506,17 +536,6 @@ const EditProduct = () => {
 
         {/* Main Content */}
         <main className="flex-1 bg-gray-50 p-6 overflow-y-auto">
-          {/* Header */}
-          {/* <div className="flex items-center mb-6">
-            <Link
-              to="/dashboard/view-product"
-              className="mr-4 text-gray-500 hover:text-gray-700"
-            >
-              <FiArrowLeft size={20} />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Edit Product</h1>
-          </div> */}
-
           {/* Messages */}
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
@@ -616,30 +635,87 @@ const EditProduct = () => {
                   </div>
                 </div>
 
-                {/* Category */}
-                <div>
-                  <label
-                    htmlFor="category"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Category <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="category"
-                    name="category"
-                    required
-                    value={product.category || ""}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    disabled={saving}
-                  >
-                    <option value="">Select Subcategory</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.name}>
-                        {cat.label}
-                      </option>
-                    ))}
-                  </select>
+                {/* Category Hierarchy */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Main Category <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="category"
+                      value={product.category || ""}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        setProduct((prev) => ({
+                          ...prev,
+                          subCategory: "",
+                          subSubCategory: "",
+                        }));
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                      disabled={saving}
+                    >
+                      <option value="">Select Main Category</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Subcategory
+                    </label>
+                    <select
+                      name="subCategory"
+                      value={product.subCategory || ""}
+                      onChange={(e) => {
+                        handleInputChange(e);
+                        setProduct((prev) => ({
+                          ...prev,
+                          subSubCategory: "",
+                        }));
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={saving || !product.category}
+                    >
+                      <option value="">Select Subcategory</option>
+                      {subCategories
+                        .filter((sub) => sub.parentId === product.category)
+                        .map((sub) => (
+                          <option key={sub.id} value={sub.id}>
+                            {sub.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Sub-subcategory
+                    </label>
+                    <select
+                      name="subSubCategory"
+                      value={product.subSubCategory || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={saving || !product.subCategory}
+                    >
+                      <option value="">Select Sub-subcategory</option>
+                      {subSubCategories
+                        .filter(
+                          (subsub) => subsub.parentId === product.subCategory
+                        )
+                        .map((subsub) => (
+                          <option key={subsub.id} value={subsub.id}>
+                            {subsub.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Description */}
@@ -697,7 +773,7 @@ const EditProduct = () => {
                           }}
                           disabled={saving}
                         >
-                          <X size={14} />
+                          <FiX size={14} />
                         </button>
                       </div>
                     ) : (

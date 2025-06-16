@@ -952,9 +952,9 @@ const Home = () => {
           {/* Desktop View */}
           <div className="flex items-center bg-gray-50 px-4 py-2 rounded-lg">
             <div className="mr-3">
-              <div className="text-blue-600 font-bold commonFont">
+              {/* <div className="text-blue-600 font-bold commonFont">
                 Delivery in {userLocation.deliveryTime}
-              </div>
+              </div> */}
               <div className="flex items-center text-sm text-gray-600">
                 <span>{userLocation.address}</span>
                 <ChevronDown size={16} className="ml-1" />
@@ -1039,7 +1039,7 @@ const Home = () => {
                 </span>
               </div>
             </div>
-            <div className="flex items-center space-x-2 cursor-pointer group">
+            {/* <div className="flex items-center space-x-2 cursor-pointer group">
               <Link
                 to="/login"
                 className="flex items-center space-x-2 px-4 py-2 text-sm font-medium transition-all"
@@ -1052,7 +1052,7 @@ const Home = () => {
                   Login
                 </span>
               </Link>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -1170,11 +1170,11 @@ const Home = () => {
           <div className="bg-white bg-opacity-80 rounded-lg p-4 mb-5 shadow-md backdrop-blur-md flex items-center justify-between">
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
-                <span className="text-gray-800 text-sm commonFont">
+                {/* <span className="text-gray-800 text-sm commonFont">
                   Delivery in {userLocation.deliveryTime}
-                </span>
+                </span> */}
                 <span className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">
-                  FAST
+                  FAST DELIVERY
                 </span>
               </div>
               <div className="flex items-center mt-1 text-sm text-gray-600">
