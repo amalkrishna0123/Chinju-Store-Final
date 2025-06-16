@@ -1428,7 +1428,7 @@ const Home = () => {
                     <h2 className="text-xl text-gray-800 md:mb-2 CategoryTitle lg:text-3xl">
                       {main.name}
                     </h2>
-                    <div className="grid md:grid-cols-6 lg:grid-cols-5 grid-cols-4 gap-x-2 md:gap-4 lg:gap-5">
+                    <div className="grid xl:grid-cols-6 lg:grid-cols-6 grid-cols-4 gap-x-2 md:gap-4 lg:gap-5">
                       {main.subcategories.map((sub) => (
                         <Link
                           to={`/category/${encodeURIComponent(sub.name)}`}
@@ -1436,11 +1436,11 @@ const Home = () => {
                           className="rounded-lg p-4 flex flex-col items-center transition-all cursor-pointer overflow-hidden hover:bg-gray-50"
                           onClick={() => setSelectedCategory(sub.name)}
                         >
-                          <div className="w-20 h-20 lg:rounded-3xl lg:w-[300px] lg:h-[300px] mb-3 bg-white rounded-lg shadow-sm flex items-center justify-center overflow-hidden">
+                          <div className="w-20 h-20 lg:rounded-3xl lg:w-[300px] lg:h-[200px] xl:w-[250px] xl:h-[250px] mb-3 bg-white rounded-lg shadow-sm flex items-center justify-center overflow-hidden">
                             <img
                               src={sub.imageBase64 || allproduct}
                               alt={sub.name}
-                              className="w-20 h-20 lg:w-full lg:h-full object-contain lg:rounded-3xl"
+                              className="w-20 h-20 lg:w-full lg:h-full object-contain lg:rounded-3xl xl:w-full xl:h-full xl:p-6 lg:p-8"
                             />
                           </div>
                           <span className="text-[11px] lg:text-base font-bold text-center text-gray-800 leading-tight">
