@@ -6,6 +6,8 @@ import {
   getDocs,
   collection,
   onSnapshot,
+  query,          // ✅ Add this
+  where           // ✅ And this
 } from "firebase/firestore";
 import { db } from "../Firebase";
 import { Swiper, SwiperSlide } from "swiper/react";
