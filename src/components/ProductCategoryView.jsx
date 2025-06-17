@@ -37,6 +37,7 @@ import allproduct from "../assets/allproduct.jpeg";
 import { useNavigate } from "react-router-dom";
 import { HiStar } from "react-icons/hi";
 import { FaWeight } from "react-icons/fa";
+import Footer from "./Footer";
 
 const ProductCategoryView = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
@@ -913,7 +914,7 @@ const removeFromCart = async (productId) => {
   const filteredProducts = getFilteredProducts();
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-16">
+    <div className="bg-gray-50 min-h-screen">
       {/* Gradient top bar */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1"></div>
 
@@ -1428,6 +1429,9 @@ ${product.stock === "Available" ? "bg-green-600" : "bg-red-600"}`}
       )}
     </div>
   </div>
+</div>
+<div>
+  <Footer/>
 </div>
     </div>
   );

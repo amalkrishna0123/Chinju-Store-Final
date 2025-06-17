@@ -52,6 +52,7 @@ const ProductDetail = () => {
   const [allProducts, setAllProducts] = useState([]);
   const [selectedImage, setSelectedImage] = useState(null);
   const [subImages, setSubImages] = useState([]);
+  const [reviewRatings, setReviewRatings] = useState({});
   const [userLocation, setUserLocation] = useState({
     address: "Round North, Kodaly, Kerala", // Default address
     deliveryTime: "9 mins",
@@ -178,6 +179,39 @@ const ProductDetail = () => {
 
     fetchAllProducts();
   }, []);
+
+
+  useEffect(() => {
+    const fetchRatings = async () => {
+      try {
+        const ratingsMap = {};
+        for (const product of allProducts) {
+          const q = query(
+            collection(db, "reviews"),
+            where("productId", "==", product.id)
+          );
+          const snapshot = await getDocs(q);
+          const reviews = snapshot.docs.map((doc) => doc.data());
+          if (reviews.length > 0) {
+            const avg =
+              reviews.reduce((sum, r) => sum + Number(r.rating || 0), 0) /
+              reviews.length;
+            ratingsMap[product.id] = Number(avg.toFixed(1));
+          } else {
+            ratingsMap[product.id] = 0;
+          }
+        }
+        setReviewRatings(ratingsMap);
+      } catch (err) {
+        console.error("Error fetching ratings:", err);
+      }
+    };
+
+    if (allProducts.length > 0) {
+      fetchRatings();
+    }
+  }, [allProducts]);
+
 
   // Handle quantity change
   const decreaseQuantity = () => {
@@ -423,40 +457,62 @@ const ProductDetail = () => {
 
   
   // Render stars based on rating
-  const renderRating = (rating) => {
+  // const renderRating = (rating) => {
+  //   const stars = [];
+  //   const fullStars = Math.floor(rating);
+  //   const hasHalfStar = rating % 1 >= 0.5;
+
+  //   for (let i = 0; i < 5; i++) {
+  //     if (i < fullStars) {
+  //       stars.push(
+  //         <span key={i} className="text-yellow-400">
+  //           ★
+  //         </span>
+  //       );
+  //     } else if (i === fullStars && hasHalfStar) {
+  //       stars.push(
+  //         <span key={i} className="text-yellow-400">
+  //           ★
+  //         </span>
+  //       );
+  //     } else {
+  //       stars.push(
+  //         <span key={i} className="text-gray-300">
+  //           ★
+  //         </span>
+  //       );
+  //     }
+  //   }
+
+  //   return <div className="flex text-sm">{stars}</div>;
+  // };
+
+
+  const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 >= 0.5;
 
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
-        stars.push(
-          <span key={i} className="text-yellow-400">
-            ★
-          </span>
-        );
+        stars.push(<FaStar key={i} className="text-yellow-400" />);
       } else if (i === fullStars && hasHalfStar) {
-        stars.push(
-          <span key={i} className="text-yellow-400">
-            ★
-          </span>
-        );
+        stars.push(<FaStar key={i} className="text-yellow-300" />);
       } else {
-        stars.push(
-          <span key={i} className="text-gray-300">
-            ★
-          </span>
-        );
+        stars.push(<FaStar key={i} className="text-gray-300" />);
       }
     }
 
-    return <div className="flex text-sm">{stars}</div>;
+    return <div className="flex items-center text-sm">{stars}</div>;
   };
+
 
   // Get related products
   const relatedProducts = allProducts.filter(
     (p) => p.category === product?.category && p.id !== product?.id
   );
+
+  console.log("related product is",relatedProducts)
 
   // User Profile Component
   const UserProfile = () => (
@@ -946,10 +1002,10 @@ const ProductDetail = () => {
           </Link>
           <span className="mx-2 text-gray-400">/</span>
           <Link
-            to={`/category/${product.category}`}
+            to={`/category/${product.subCategory}`}
             className="text-gray-500 hover:text-blue-600"
           >
-            {product.category}
+            {product.subCategory}
           </Link>
           <span className="mx-2 text-gray-400">/</span>
           <span className="text-gray-800 font-medium truncate max-w-[150px]">
@@ -1158,7 +1214,7 @@ const ProductDetail = () => {
                       <div className="flex justify-between">
                         <span className="text-gray-500">Category</span>
                         <span className="font-medium">
-                          {product.category || "Groceries"}
+                          {product.subCategory || "Groceries"}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -1195,25 +1251,25 @@ const ProductDetail = () => {
                   <div>
                     <h3 className="mb-3 commonFont">Delivery Information</h3>
                     <div className="space-y-2">
-                      <div className="flex justify-between">
+                      {/* <div className="flex justify-between">
                         <span className="text-gray-500">Delivery Time</span>
                         <span className="font-medium text-green-600">
-                          9 minutes
+                          
                         </span>
-                      </div>
-                      <div className="flex justify-between">
+                      </div> */}
+                      {/* <div className="flex justify-between">
                         <span className="text-gray-500">Delivery Fee</span>
                         <span className="font-medium">₹40</span>
-                      </div>
+                      </div> */}
                       <div className="flex justify-between">
                         <span className="text-gray-500">Free Delivery</span>
                         <span className="font-medium">
                           On orders above ₹200
                         </span>
                       </div>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between w-full">
                         <span className="text-gray-500">Return Policy</span>
-                        <span className="font-medium">
+                        <span className="font-medium flex justify-end items-start w-full">
                           Easy returns within 24 hours
                         </span>
                       </div>
@@ -1260,11 +1316,9 @@ const ProductDetail = () => {
                           >
                             {item.stock}
                           </p>
-                          <div className="flex items-center gap-0.5">
-                            <div className="font-medium">4</div>
-                            <span className="text-sm text-[#ffea00]">
-                              <FaStar />
-                            </span>
+                          <div className="flex items-center text-xs text-yellow-500 font-semibold">
+                            {reviewRatings[item.id]?.toFixed(1) || 0}
+                            <FaStar className="ml-1 text-[12px]" />
                           </div>
                         </div>
                         <p className="text-xs text-gray-500 font-semibold">
