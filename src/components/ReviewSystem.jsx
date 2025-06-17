@@ -337,25 +337,25 @@ const ReviewSystem = ({ productId, showTitle = true }) => {
                     <img
                       src={review.userPhoto}
                       alt={review.userName}
-                      className="w-10 h-10 rounded-full"
+                      className="w-7 h-7 rounded-full"
                     />
                   ) : (
-                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                      <span className="text-gray-500 text-lg clamp-text">
+                    <div className="w-5 h-5 bg-gray-200 rounded-full flex items-center justify-center">
+                      <span className="text-gray-500 text-sm clamp-text">
                         {review.userName.charAt(0).toUpperCase()}
                       </span>
                     </div>
                   )}
                   <div>
-                    <h4 className="font-medium text-gray-900 clamp-text">
+                    <h4 className="font-medium text-gray-900 clamp-text text-sm">
                       {review.userName}
                     </h4>
-                    <p className="text-sm text-gray-500">{review.createdAt}</p>
+                    <p className="text-xs text-gray-500">{review.createdAt}</p>
                   </div>
                 </div>
-                <div className="flex">{renderStars(review.rating)}</div>
+                <div className="flex size-20 justify-end h-full">{renderStars(review.rating)}</div>
               </div>
-              <p className="text-gray-700 clamp-text">{review.text}</p>
+              <p className="text-gray-700 clamp-text text-sm">{review.text}</p>
               {review.image && (
                 <img
                   src={review.image}

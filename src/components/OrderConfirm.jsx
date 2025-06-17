@@ -96,6 +96,12 @@ const OrderConfirm = () => {
     });
   };
 
+
+  // Navigate Profile -> Address
+  const navigateAddress = () => {
+    navigate("/addresses")
+  }
+
   // Calculate total amount
   const totalAmount = cartItems.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
 
@@ -164,19 +170,19 @@ const OrderConfirm = () => {
               </div>
             ) : (
               <>
-                <AddressManager
+                {/* <AddressManager
                   onSelectAddress={handleSelectAddress}
                   selectedAddressId={selectedAddress?.id}
                   hideAddressForm={false}
                   onAddressAdded={(newAddress) => {
-                    setSelectedAddress(newAddress); // ✅ Select the new address
-                    setShowAddressForm(false); // ✅ Close the form
+                    setSelectedAddress(newAddress);
+                    setShowAddressForm(false);
                   }}
-                />
+                /> */}
                 {!selectedAddress && (
                   <button
                     type="button"
-                    onClick={() => setShowAddressForm(true)}
+                    onClick={navigateAddress}
                     className="w-full py-2 px-4 border border-dashed border-gray-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-300"
                   >
                     + Add New Address

@@ -1344,14 +1344,14 @@ const removeFromCart = async (productId) => {
 
                   <div className="flex justify-between">
                     <p
-                      className={`text-xs mb-1 mt-1 lg:mt-3 px-2 py-1 rounded-sm text-white shadow-sm flex justify-start items-center 
-${product.stock === "Available" ? "bg-green-600" : "bg-red-600"}`}
+                      className={`mb-1 mt-1 lg:mt-3 px-2 py-1 rounded-sm text-white shadow-sm flex justify-start items-center 
+${product.stock === "Available" ? "bg-green-600 text-xs" : "bg-red-600 text-[10px]"}`}
                     >
                       {product.stock}
                     </p>
                     {/* Rating */}
-                    <div className="flex items-center mt-1 lg:mt-3 bg-[#ebf0ef] px-2 rounded-sm shadow-sm">
-                      <div className="font-medium commonFont">
+                    <div className="flex h-full py-[3px] items-center justify-start mt-1 lg:mt-3 border border-[#00000020]  bg-[#ffffff] px-2 rounded-sm shadow-sm">
+                      <div className="font-medium text-xs commonFont">
                         {averageRatings[product.id] ?? "0.0"}
                       </div>
                       <span className="text-[#ffdd00]">
@@ -1383,44 +1383,66 @@ ${product.stock === "Available" ? "bg-green-600" : "bg-red-600"}`}
                     )}
                   </div>
                   <button
-                    onClick={() => {
-                      const isInCart = cartItems.some(
-                        (item) => item.id === product.id
-                      );
-                      isInCart
-                        ? removeFromCart(product.id)
-                        : addToCart(product);
-                    }}
-                    className={`w-full rounded-lg py-2 mt-2 text-sm font-medium transition-colors flex items-center justify-center ${
-                      cartItems.some((item) => item.id === product.id)
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "bg-blue-600 hover:bg-blue-700 text-white"
-                    }`}
-                  >
-                    {cartItems.some((item) => item.id === product.id) ? (
-                      <>
-                        <svg
-                          className="w-4 h-4 mr-2"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M5 13l4 4L19 7"
-                          ></path>
-                        </svg>
-                        Added to Cart
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart size={16} className="mr-2" />
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
+  onClick={() => {
+    const isInCart = cartItems.some(
+      (item) => item.id === product.id
+    );
+    if (product.stock === "Available") {
+      isInCart ? removeFromCart(product.id) : addToCart(product);
+    }
+  }}
+  disabled={product.stock !== "Available"}
+  className={`w-full rounded-lg py-2 mt-2 text-sm font-medium transition-colors flex items-center justify-center 
+    ${
+      product.stock !== "Available"
+        ? "bg-gray-400 text-white cursor-not-allowed"
+        : cartItems.some((item) => item.id === product.id)
+        ? "bg-green-600 hover:bg-green-700 text-white"
+        : "bg-blue-600 hover:bg-blue-700 text-white"
+    }`}
+>
+  {product.stock !== "Available" ? (
+    <>
+      <svg
+        className="w-4 h-4 mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"
+        />
+      </svg>
+      Out of Stock
+    </>
+  ) : cartItems.some((item) => item.id === product.id) ? (
+    <>
+      <svg
+        className="w-4 h-4 mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      Added to Cart
+    </>
+  ) : (
+    <>
+      <ShoppingCart size={16} className="mr-2" />
+      Add to Cart
+    </>
+  )}
+</button>
+
                 </div>
               </div>
             </div>

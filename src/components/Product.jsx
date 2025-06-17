@@ -34,6 +34,7 @@ import apple from "../assets/apple.jpeg";
 import { updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { optimizeProductData } from "../utils/imageCompression";
+import { IoCloseCircle } from "react-icons/io5";
 import ReviewSystem from "./ReviewSystem";
 
 const ProductDetail = () => {
@@ -582,17 +583,17 @@ const ProductDetail = () => {
     if (!showLoginModal) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-[#39B2A7] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border-t-4 border-[#2e978e]">
+      <div className="fixed inset-0 bg-[#fff] bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-[#fff] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border border-[#00000019]">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-white commonFont">
+            <h2 className="text-xl commonFont">
               Sign in to Chinju Store
             </h2>
             <button
               onClick={() => setShowLoginModal(false)}
-              className="text-white hover:text-gray-700 bg-gray-100 rounded-full p-2 w-8 h-8 flex items-center justify-center transition-colors"
+              className="text-[#39B2A7] rounded-full p-2 w-8 h-8 flex items-center justify-center transition-colors"
             >
-              ✖
+              <IoCloseCircle className=""/>
             </button>
           </div>
 
@@ -601,13 +602,13 @@ const ProductDetail = () => {
               <VscAccount className="text-white text-3xl" />
             </div>
 
-            <p className="text-center text-white mb-6">
+            <p className="text-center mb-6">
               Sign in to access your cart, save favorites, and check out faster!
             </p>
 
             <button
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-2 border hover:text-black border-white rounded-lg py-3.5 px-4 text-white hover:bg-white transition duration-200 mb-4 shadow-sm"
+              className="w-full flex items-center justify-center gap-2 border hover:text-black border-[#00000015] rounded-lg py-3.5 px-4 hover:bg-white transition duration-200 mb-4 shadow-sm"
             >
               <FcGoogle size={24} />
               <span className="font-medium">Continue with Google</span>
@@ -615,7 +616,7 @@ const ProductDetail = () => {
 
             <button
               onClick={() => setShowLoginModal(false)}
-              className="w-full text-white border border-white py-3 rounded-lg hover:bg-white hover:text-black hover:bg-opacity-10 transition duration-200 font-medium"
+              className="w-full border border-[#00000015] shadow-sm py-3 rounded-lg hover:bg-white hover:text-black hover:bg-opacity-10 transition duration-200 font-medium"
             >
               Cancel
             </button>
@@ -1144,41 +1145,64 @@ const ProductDetail = () => {
               {/* Actions */}
               <div className="flex flex-col md:flex-row gap-4">
                 <button
-                  onClick={() => {
-                    const isInCart = cartItems.some(
-                      (item) => item.id === product.id
-                    );
-                    isInCart ? removeFromCart(product.id) : addToCart(product);
-                  }}
-                  className={`w-full md:w-auto flex-1 rounded-lg py-3 px-6 flex items-center justify-center ${
-                    cartItems.some((item) => item.id === product.id)
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  }`}
-                >
-                  {cartItems.some((item) => item.id === product.id) ? (
-                    <>
-                      <svg
-                        className="w-4 h-4 mr-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      Added to Cart
-                    </>
-                  ) : (
-                    <>
-                      <ShoppingCart size={16} className="mr-2" /> Add to Cart
-                    </>
-                  )}
-                </button>
+  onClick={() => {
+    const isInCart = cartItems.some((item) => item.id === product.id);
+    if (product.stock === "Available") {
+      isInCart ? removeFromCart(product.id) : addToCart(product);
+    }
+  }}
+  disabled={product.stock !== "Available"}
+  className={`w-full md:w-auto flex-1 rounded-lg py-3 px-6 flex items-center justify-center transition-all
+    ${
+      product.stock !== "Available"
+        ? "bg-gray-400 text-white cursor-not-allowed"
+        : cartItems.some((item) => item.id === product.id)
+        ? "bg-green-600 hover:bg-green-700 text-white"
+        : "bg-blue-600 hover:bg-blue-700 text-white"
+    }`}
+>
+  {product.stock !== "Available" ? (
+    <>
+      <svg
+        className="w-4 h-4 mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"
+        />
+      </svg>
+      Out of Stock
+    </>
+  ) : cartItems.some((item) => item.id === product.id) ? (
+    <>
+      <svg
+        className="w-4 h-4 mr-2"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+      Added to Cart
+    </>
+  ) : (
+    <>
+      <ShoppingCart size={16} className="mr-2" />
+      Add to Cart
+    </>
+  )}
+</button>
+
 
                 <button
                   onClick={() => toggleWishlist(product)}
@@ -1227,14 +1251,15 @@ const ProductDetail = () => {
                         <span className="text-gray-500">Stock</span>
                         <span
                           className={`font-medium ${
-                            product.stock > 10
+                            product.stock === "Available"
                               ? "text-green-600"
                               : "text-red-600"
                           }`}
                         >
-                          {product.stock > 0
+                          {/* {product.stock > 0
                             ? `${product.stock} available`
-                            : "Out of stock"}
+                            : "Out of stock"} */}
+                            {product.stock}
                         </span>
                       </div>
                       <div className="flex justify-between">

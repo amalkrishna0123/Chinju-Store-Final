@@ -156,9 +156,9 @@ const EditProduct = () => {
               (subsub) => subsub.name === data.categoryHierarchy.subsub
             );
 
-            if (mainCat) productData.category = mainCat.id;
-            if (subCat) productData.subCategory = subCat.id;
-            if (subSubCat) productData.subSubCategory = subSubCat.id;
+            if (mainCat) productData.category = mainCat.name;
+            if (subCat) productData.subCategory = subCat.name;
+            if (subSubCat) productData.subSubCategory = subSubCat.name;
           }
 
           setProduct(productData);
@@ -658,7 +658,7 @@ const EditProduct = () => {
                     >
                       <option value="">Select Main Category</option>
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
+                        <option key={cat.id} value={cat.name}>
                           {cat.name}
                         </option>
                       ))}
@@ -686,7 +686,7 @@ const EditProduct = () => {
                       {subCategories
                         .filter((sub) => sub.parentId === product.category)
                         .map((sub) => (
-                          <option key={sub.id} value={sub.id}>
+                          <option key={sub.id} value={sub.name}>
                             {sub.name}
                           </option>
                         ))}
@@ -710,7 +710,7 @@ const EditProduct = () => {
                           (subsub) => subsub.parentId === product.subCategory
                         )
                         .map((subsub) => (
-                          <option key={subsub.id} value={subsub.id}>
+                          <option key={subsub.id} value={subsub.name}>
                             {subsub.name}
                           </option>
                         ))}
