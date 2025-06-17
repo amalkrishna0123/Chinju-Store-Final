@@ -837,7 +837,7 @@ const ReviewManagement = () => {
       {/* Overlay for when sidebar is open */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-transparent bg-opacity-50 backdrop-blur-sm"
+          className="fixed inset-0 bg-transparent bg-opacity-50 backdrop-blur-sm md:backdrop-blur-none"
           onClick={() => setSidebarOpen(false)}
         />
       )}

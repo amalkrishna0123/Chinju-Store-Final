@@ -598,7 +598,7 @@ const Dashboard = () => {
       {/* Overlay for when sidebar is open */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-transparent bg-opacity-50 backdrop-blur-sm"
+          className="fixed inset-0 bg-transparent bg-opacity-50 backdrop-blur-sm md:backdrop-blur-none"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -616,7 +616,7 @@ const getStatusColor = (status) => {
       return 'bg-amber-100 text-amber-700 border border-amber-200';
     case 'shipped':
       return 'bg-blue-100 text-blue-700 border border-blue-200';
-    case 'cancelled':
+    case 'cancelled': 
       return 'bg-red-100 text-red-700 border border-red-200';
     case 'accept':
       return 'bg-green-100 text-green-700 border border-green-200';
