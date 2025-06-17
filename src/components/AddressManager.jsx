@@ -3,8 +3,9 @@ import { useAuth } from './AuthContext';
 import { db } from '../Firebase';
 import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { MapPin, Plus, Trash, Navigation } from 'lucide-react';
+import { BiCurrentLocation } from "react-icons/bi";
 
-const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = false }) => {
+const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = false, onAddressAdded }) => {
   const { currentUser } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -100,41 +101,71 @@ const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = 
   };
 
   const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const { latitude, longitude } = position.coords;
-          
-          try {
-            // Here you would typically call a reverse geocoding API
-            // For now we'll just use the coordinates
-            const locationAddress = `Lat: ${latitude.toFixed(4)}, Long: ${longitude.toFixed(4)}`;
-            
-            setNewAddress({
-              fullName: currentUser?.displayName || '',
-              phone: '',
-              address: locationAddress,
-              city: '',
-              pincode: '',
-              type: 'location',
-              coordinates: { latitude, longitude }
-            });
-            
-            setShowAddForm(true);
-          } catch (error) {
-            console.error('Error getting address from coordinates:', error);
-            alert('Could not get your address. Please enter manually.');
-          }
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          alert('Could not get your location. Please try again or enter manually.');
-        }
-      );
-    } else {
-      alert('Geolocation is not supported by your browser. Please enter manually.');
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+
+      const apiKey = "0f026c32f1ac42d58b4afc31e690a961"; // Replace with your real key if needed
+      const apiUrl = `https://api.opencagedata.com/geocode/v1/json?q=${latitude}+${longitude}&key=${apiKey}`;
+
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        const components = data.results[0]?.components || {};
+        const parts = [
+          components.road,
+          components.suburb,
+          components.village,
+          components.county,
+          components.state
+        ];
+
+        const formattedAddress = parts.filter(Boolean).join(", ");
+        const city = components.city || components.town || components.village || "";
+        const pincode = components.postcode || "";
+
+        setNewAddress({
+          fullName: currentUser?.displayName || '',
+          phone: '',
+          address: formattedAddress || `Lat: ${latitude.toFixed(4)}, Long: ${longitude.toFixed(4)}`,
+          city,
+          pincode,
+          type: 'location',
+          coordinates: { latitude, longitude }
+        });
+
+        setShowAddForm(true);
+      } catch (error) {
+        console.error("Error fetching address from OpenCage:", error);
+        alert("Could not determine address. Showing coordinates instead.");
+
+        setNewAddress({
+          fullName: currentUser?.displayName || '',
+          phone: '',
+          address: `Lat: ${latitude.toFixed(4)}, Long: ${longitude.toFixed(4)}`,
+          city: '',
+          pincode: '',
+          type: 'location',
+          coordinates: { latitude, longitude }
+        });
+
+        setShowAddForm(true);
+      }
+    },
+    (error) => {
+      console.error("Error getting location:", error);
+      alert("Could not get your location. Please try again or enter manually.");
     }
-  };
+  );
+};
+
 
   // Add new address
   const handleAddAddress = async (e) => {
@@ -161,6 +192,10 @@ const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = 
         pincode: '',
         type: 'manual'
       });
+      // ✅ Notify parent (OrderConfirm) about the new address
+      if (onAddressAdded) {
+        onAddressAdded(newAddressWithId); // Send new address back to OrderConfirm
+      }
     } catch (error) {
       console.error('Error adding address:', error);
     } finally {
@@ -227,20 +262,20 @@ const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = 
       {/* Add New Address Form */}
       {!hideAddressForm && (
         !showAddForm ? (
-          <div className="flex gap-2">
+          <div className="flex justify-between gap-2">
             <button
               onClick={getCurrentLocation}
-              className="flex items-center gap-2 text-green-600 hover:text-green-700"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#fff] shadow-sm border border-[#0000000a] text-green-600 hover:text-green-700"
             >
-              <Navigation size={20} />
-              Use Current Location
+              <BiCurrentLocation size={20} />
+              Current
             </button>
             <button
               onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#fff] shadow-sm border border-[#0000000a] text-blue-600 hover:text-blue-700"
             >
               <Plus size={20} />
-              Add New Address
+              Add New
             </button>
           </div>
         ) : (

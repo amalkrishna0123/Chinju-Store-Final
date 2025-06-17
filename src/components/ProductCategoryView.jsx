@@ -1192,26 +1192,26 @@ const removeFromCart = async (productId) => {
 
       {/* Main Content - Product Listing */}
 <div className="max-w-7xl mx-auto px-2 mt-3 commonFont">
-  <div className="flex items-center gap-2 text-sm">
+  <div className="flex items-center gap-2 text-sm text-nowrap flex-wrap">
     <div className="hover:text-blue-500">
       <Link to="/">Home</Link>
     </div>
     <div>
-      <IoIosArrowRoundForward className="text-lg" />
+      <IoIosArrowRoundForward className="" />
     </div>
     <div>{selectedSubcategory}</div>
     {selectedSubSubCategory && selectedSubSubCategory !== "All" && (
       <>
         <div>
-          <IoIosArrowRoundForward className="text-lg" />
+          <IoIosArrowRoundForward className="" />
         </div>
         <div>{selectedSubSubCategory}</div>
       </>
     )}
   </div>
   
-  <div className="flex justify-between items-center mb-5 mt-2">
-    <h2 className="text-2xl font-bold text-gray-800">
+  <div className="flex justify-between items-center mb-3 mt-2">
+    <h2 className="text-lg font-bold text-gray-800">
       {selectedSubcategory}
     </h2>
   </div>
@@ -1220,8 +1220,8 @@ const removeFromCart = async (productId) => {
   <div className="flex gap-2 md:gap-4">
     {/* Left Sidebar - Categories */}
    {subSubCategories.length > 0 && (
-  <div className="w-20  md:w-35 flex-shrink-0 ">
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden sticky top-4">
+  <div className="w-20 md:w-35 flex-shrink-0">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
       {/* Header */}
       {/* <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-3 border-b border-gray-100">
         <h3 className="text-base font-medium text-gray-800">
@@ -1230,7 +1230,7 @@ const removeFromCart = async (productId) => {
       </div> */}
       
       {/* Category List */}
-     <div className="py-2">
+     <div>
         {subSubCategories.map((category) => (
           <div
             key={category.id}
@@ -1256,7 +1256,7 @@ const removeFromCart = async (productId) => {
             
             {/* Category Name */}
             <div className="text-center">
-              <span className={`text-xs font-medium block md:text-md ${
+              <span className={`text-xs font-medium block md:text-md clamp-text  ${
                 selectedSubSubCategory === category.name
                   ? "text-purple-700"
                   : "text-gray-700"

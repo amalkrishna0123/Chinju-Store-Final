@@ -13,6 +13,7 @@ const OrderConfirm = () => {
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddressForm, setShowAddressForm] = useState(false);
 
   // Fetch cart items with real-time listener (same as BottomNav)
   useEffect(() => {
@@ -60,8 +61,10 @@ const OrderConfirm = () => {
     };
   }, [currentUser?.uid]);
 
+
   const handleSelectAddress = (address) => {
     setSelectedAddress(address);
+    setShowAddressForm(false);
   };
 
   const handleSubmit = async (e) => {
@@ -120,16 +123,21 @@ const OrderConfirm = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center mb-6">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate("/")}
             className="flex items-center text-gray-600 commonFont text-sm hover:text-gray-900"
           >
             <ArrowLeft size={20} className="mr-2" />
             Back to Home
           </button>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center commonFont">Order Confirmation</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-8 text-center commonFont">
+          Order Confirmation
+        </h1>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-lg overflow-hidden p-6 space-y-6">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-white rounded-2xl shadow-lg overflow-hidden p-6 space-y-6"
+        >
           {/* Shipping Details */}
           <div className="space-y-4">
             <h2 className="commonFont text-gray-900 flex items-center gap-2 font-semibold">
@@ -137,29 +145,76 @@ const OrderConfirm = () => {
               Shipping Details
             </h2>
 
-            <AddressManager
-              onSelectAddress={handleSelectAddress}
-              selectedAddressId={selectedAddress?.id}
-              hideAddressForm={true}
-            />
+            {showAddressForm ? (
+              <div className="border rounded-lg p-4">
+                <AddressManager
+                  onSelectAddress={handleSelectAddress}
+                  selectedAddressId={selectedAddress?.id}
+                  hideAddressForm={false}
+                />
+                <div className="mt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressForm(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <AddressManager
+                  onSelectAddress={handleSelectAddress}
+                  selectedAddressId={selectedAddress?.id}
+                  hideAddressForm={false}
+                  onAddressAdded={(newAddress) => {
+                    setSelectedAddress(newAddress); // ✅ Select the new address
+                    setShowAddressForm(false); // ✅ Close the form
+                  }}
+                />
+                {!selectedAddress && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddressForm(true)}
+                    className="w-full py-2 px-4 border border-dashed border-gray-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                  >
+                    + Add New Address
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           {/* Order Summary */}
           <div className="space-y-4">
-            <h2 className="font-semibold text-gray-900 commonFont">Order Summary</h2>
+            <h2 className="font-semibold text-gray-900 commonFont">
+              Order Summary
+            </h2>
             <div className="space-y-2">
               {cartItems?.length > 0 ? (
                 cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between py-2 border-b">
+                  <div
+                    key={item.id}
+                    className="flex justify-between py-2 border-b"
+                  >
                     <div>
-                      <p className="font-medium commonFont text-sm">{item.name}</p>
-                      <p className="text-sm text-gray-500 commonFont">Quantity: {item.quantity}</p>
+                      <p className="font-medium commonFont text-sm">
+                        {item.name}
+                      </p>
+                      <p className="text-sm text-gray-500 commonFont">
+                        Quantity: {item.quantity}
+                      </p>
                     </div>
-                    <p className="font-medium commonFont text-[15px]">₹{item.salePrice * item.quantity}</p>
+                    <p className="font-medium commonFont text-[15px]">
+                      ₹{item.salePrice * item.quantity}
+                    </p>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-4 text-gray-500">Your cart is empty</div>
+                <div className="text-center py-4 text-gray-500">
+                  Your cart is empty
+                </div>
               )}
               <div className="flex justify-between pt-4 font-semibold text-lg commonFont">
                 <span>Total Amount</span>
@@ -173,9 +228,13 @@ const OrderConfirm = () => {
             <button
               type="submit"
               disabled={loading || !selectedAddress || !cartItems?.length}
-              className={`w-full py-3 px-4 text-white font-medium rounded-lg ${loading || !selectedAddress || !cartItems?.length ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
+              className={`w-full py-3 px-4 text-white font-medium rounded-lg ${
+                loading || !selectedAddress || !cartItems?.length
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
+              }`}
             >
-              {loading ? 'Processing...' : 'Proceed to Payment'}
+              {loading ? "Processing..." : "Proceed to Payment"}
             </button>
           </div>
         </form>

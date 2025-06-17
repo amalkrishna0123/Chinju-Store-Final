@@ -8,6 +8,7 @@ import { db } from "../Firebase";
 import apple from "../assets/apple.jpeg";
 import { FcGoogle } from "react-icons/fc";
 import { VscAccount } from "react-icons/vsc";
+import { IoCloseCircle } from "react-icons/io5";
 
 const BottomNav = () => {
   const location = useLocation();
@@ -243,17 +244,17 @@ const BottomNav = () => {
     if (!showLoginModal) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-        <div className="bg-[#39B2A7] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border-t-4 border-[#2e978e]">
+      <div className="fixed inset-0 bg-[#fff] bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div className="bg-[#fff] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border border-[#0000000e]">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-white">
+            <h2 className="text-xl font-semibold">
               Sign in to Chinju Store
             </h2>
             <button
               onClick={() => setShowLoginModal(false)}
-              className="text-white hover:text-gray-700 bg-gray-100 rounded-full p-2 w-8 h-8 flex items-center justify-center transition-colors"
+              className="text-[#39B2A7] text-2xl rounded-full p-2 w-8 h-8 flex items-center justify-center transition-colors"
             >
-              ✖
+              <IoCloseCircle className="text-2xl"/>
             </button>
           </div>
 
@@ -262,13 +263,13 @@ const BottomNav = () => {
               <VscAccount className="text-white text-3xl" />
             </div>
 
-            <p className="text-center text-white mb-6">
+            <p className="text-center mb-6">
               Sign in to access your cart, save favorites, and check out faster!
             </p>
 
             <button
               onClick={handleGoogleSignIn}
-              className="w-full flex items-center justify-center gap-2 border hover:text-black border-white rounded-lg py-3.5 px-4 text-white hover:bg-[#fff] transition duration-200 mb-4 shadow-sm"
+              className="w-full flex items-center justify-center gap-2 border border-[#00000014] hover:text-black  rounded-lg py-3.5 px-4  hover:bg-[#fff] transition duration-200 mb-4 shadow-sm"
             >
               <FcGoogle size={24} />
               <span className="font-medium">Continue with Google</span>
@@ -276,7 +277,7 @@ const BottomNav = () => {
 
             <button
               onClick={() => setShowLoginModal(false)}
-              className="w-full text-[#fff] border border-[#fff] py-3 rounded-lg hover:bg-[#fff] hover:text-black hover:bg-opacity-10 hover:border-[#fff] transition duration-200 font-medium"
+              className="w-full  border border-[#00000014] py-3 rounded-lg hover:bg-[#fff] hover:text-black hover:bg-opacity-10 hover:border-[#fff] transition duration-200 font-medium"
             >
               Cancel
             </button>
