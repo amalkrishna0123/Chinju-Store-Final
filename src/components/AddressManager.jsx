@@ -5,7 +5,7 @@ import { collection, query, where, getDocs, addDoc, doc, updateDoc, deleteDoc, g
 import { MapPin, Plus, Trash, Navigation } from 'lucide-react';
 import { BiCurrentLocation } from "react-icons/bi";
 
-const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = false, onAddressAdded }) => {
+const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = false, onAddressAdded, hideButtons = false }) => {
   const { currentUser } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -260,7 +260,7 @@ const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = 
       </div>
 
       {/* Add New Address Form */}
-      {!hideAddressForm && (
+      {!hideAddressForm && !hideButtons && (
         !showAddForm ? (
           <div className="flex justify-between gap-2">
             <button

@@ -96,10 +96,15 @@ const OrderConfirm = () => {
     });
   };
 
+  useEffect(() => {
+    if (location.state?.selectedAddress) {
+      setSelectedAddress(location.state.selectedAddress);
+    }
+  }, [location.state]);
 
   // Navigate Profile -> Address
   const navigateAddress = () => {
-    navigate("/addresses")
+    navigate("/addresses", { state: { returnTo: "/order-confirm" } });
   }
 
   // Calculate total amount
@@ -170,23 +175,26 @@ const OrderConfirm = () => {
               </div>
             ) : (
               <>
-                {/* <AddressManager
+                <AddressManager
                   onSelectAddress={handleSelectAddress}
                   selectedAddressId={selectedAddress?.id}
                   hideAddressForm={false}
+                  hideButtons={true}
                   onAddressAdded={(newAddress) => {
                     setSelectedAddress(newAddress);
                     setShowAddressForm(false);
                   }}
-                /> */}
+                />
                 {!selectedAddress && (
-                  <button
-                    type="button"
-                    onClick={navigateAddress}
-                    className="w-full py-2 px-4 border border-dashed border-gray-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-300"
-                  >
-                    + Add New Address
-                  </button>
+                  <a href="/addressManager">
+                    <button
+                      type="button"
+                      // onClick={navigateAddress}
+                      className="w-full py-2 px-4 border border-dashed border-gray-300 rounded-lg text-blue-600 hover:text-blue-700 hover:border-blue-300"
+                    >
+                      + Add New Address
+                    </button>
+                  </a>
                 )}
               </>
             )}

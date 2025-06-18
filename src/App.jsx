@@ -50,6 +50,7 @@ import CancellationRefundPolicy from "./components/CancellationRefundPolicy";
 import LocationSetup from "./components/LocationSetup";
 import AdminLogin from "./components/AdminLogin";
 import DeliveryLogin from "./components/DeliveryLogin";
+import AddressManager from "./components/AddressManager";
 // Protected Route Component
 
 const ProtectedRoute = ({ children }) => {
@@ -145,6 +146,7 @@ function AppRoutes() {
           <Route path="/termsandconditions" element={<TermsAndConditions />} />
           <Route path="/cancellationRefundpolicy" element={<CancellationRefundPolicy />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/addressManager" element={<AddressManager/>} />
           <Route path="/deliveryLogin" element={<DeliveryLogin />} />
           <Route path="/Admin@9400361911" element={<AdminLogin />} />
 

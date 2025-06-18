@@ -1360,92 +1360,100 @@ const UserProfile = () => {
               </div>
             )}
 
-        {activePage === "wishlist" && (
-  <div className="bg-white rounded-lg shadow-sm p-6">
-    <h2 className="text-2xl font-semibold mb-6">My Wishlist</h2>
+            {activePage === "wishlist" && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-2xl font-semibold mb-6">My Wishlist</h2>
 
-    {loading ? (
-      <div className="flex justify-center items-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    ) : wishlistItems.length === 0 ? (
-      <div className="text-center py-12">
-        <Heart size={48} className="mx-auto text-gray-300 mb-4" />
-        <p className="text-gray-500 mb-4">Your wishlist is empty</p>
-        <Link
-          to="/"
-          className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Continue Shopping
-        </Link>
-      </div>
-    ) : (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {wishlistItems.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative"
-            onClick={(e) => {
-              // Prevent navigation when clicking on buttons
-              if (e.target.closest("button")) return;
-              navigate(`/product/${item.id}`);
-            }}
-          >
-            <div className="aspect-w-1 aspect-h-1">
-              <img
-                src={item.imageBase64 || apple}
-                alt={item.name}
-                className="w-full h-52 object-contain"
-              />
-            </div>
-            <div className="p-4">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {item.name}
-              </h3>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold text-gray-900">
-                    ₹{item.salePrice || item.price}
-                  </span>
-                  {item.originalPrice && (
-                    <span className="text-sm text-gray-500 line-through">
-                      ₹{item.originalPrice}
-                    </span>
-                  )}
-                </div>
+                {loading ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : wishlistItems.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Heart size={48} className="mx-auto text-gray-300 mb-4" />
+                    <p className="text-gray-500 mb-4">Your wishlist is empty</p>
+                    <Link
+                      to="/"
+                      className="inline-block px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Continue Shopping
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {wishlistItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative"
+                        onClick={(e) => {
+                          // Prevent navigation when clicking on buttons
+                          if (e.target.closest("button")) return;
+                          navigate(`/product/${item.id}`);
+                        }}
+                      >
+                        <div className="aspect-w-1 aspect-h-1">
+                          <img
+                            src={item.imageBase64 || apple}
+                            alt={item.name}
+                            className="w-full h-52 object-contain"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            {item.name}
+                          </h3>
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg font-bold text-gray-900">
+                                ₹{item.salePrice || item.price}
+                              </span>
+                              {item.originalPrice && (
+                                <span className="text-sm text-gray-500 line-through">
+                                  ₹{item.originalPrice}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleMoveToCart(item);
+                              }}
+                              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <ShoppingCart size={16} />
+                              Add to Cart
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemoveFromWishlist(item.id);
+                              }}
+                              className="p-2 text-gray-500 hover:text-red-500 border border-gray-200 rounded-lg transition-colors"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="flex space-x-2">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMoveToCart(item);
-                  }}
-                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                >
-                  <ShoppingCart size={16} />
-                  Add to Cart
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveFromWishlist(item.id);
-                  }}
-                  className="p-2 text-gray-500 hover:text-red-500 border border-gray-200 rounded-lg transition-colors"
-                >
-                  <Trash size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-)}
+            )}
 
             {activePage === "addresses" && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <AddressManager />
+                <AddressManager
+                  onSelectAddress={(address) => {
+                    if (location.state?.returnTo) {
+                      navigate(location.state.returnTo, {
+                        state: { selectedAddress: address },
+                      });
+                    }
+                  }}
+                />
               </div>
             )}
 
