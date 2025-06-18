@@ -14,6 +14,8 @@ const OrderConfirm = () => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  // Add delivery charge constant at the top
+  const DELIVERY_CHARGE = 40;
 
   // Fetch cart items with real-time listener (same as BottomNav)
   useEffect(() => {
@@ -108,7 +110,7 @@ const OrderConfirm = () => {
   }
 
   // Calculate total amount
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0);
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0) + DELIVERY_CHARGE;
 
   // Show loading while fetching cart data
   if (isLoading) {
@@ -210,7 +212,7 @@ const OrderConfirm = () => {
                 cartItems.map((item) => (
                   <div
                     key={item.id}
-                    className="flex justify-between py-2 border-b"
+                    className="flex flex-col justify-between py-2 border-b"
                   >
                     <div>
                       <p className="font-medium commonFont text-sm">
@@ -223,6 +225,11 @@ const OrderConfirm = () => {
                     <p className="font-medium commonFont text-[15px]">
                       ₹{item.salePrice * item.quantity}
                     </p>
+                    {/* Add this before the total amount */}
+                    <div className="flex justify-between pt-2">
+                      <span className="text-gray-600">Delivery Charge</span>
+                      <span className="font-medium">₹{DELIVERY_CHARGE}</span>
+                    </div>
                   </div>
                 ))
               ) : (
