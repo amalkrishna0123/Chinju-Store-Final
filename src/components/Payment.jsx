@@ -33,40 +33,93 @@ const Payment = () => {
   };
 
   const handleRazorpayPayment = async () => {
-    const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+    try {
+      setLoading(true);
+      
+      const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
 
-    if (!res) {
-      alert("Failed to load Razorpay SDK. Check your internet connection.");
-      return;
+      if (!res) {
+        alert("Failed to load Razorpay SDK. Check your internet connection.");
+        setLoading(false);
+        return;
+      }
+
+      // Validate order details
+      if (!orderDetails.total || orderDetails.total <= 0) {
+        alert("Invalid order amount");
+        setLoading(false);
+        return;
+      }
+
+      const options = {
+        key: "rzp_live_6D2pAOoOcVdAop", // Make sure this is your correct key
+        amount: Math.round(orderDetails.total * 100), // Ensure integer
+        currency: "INR",
+        name: "Chinju Store",
+        description: "Order Payment",
+        order_id: undefined, // Let Razorpay generate this
+        handler: async function (response) {
+          try {
+            console.log("Payment successful:", response);
+            await createOrder('razorpay', response.razorpay_payment_id);
+          } catch (error) {
+            console.error("Error in payment handler:", error);
+            alert("Payment completed but order creation failed. Please contact support.");
+          }
+        },
+        prefill: {
+          name: orderDetails.shippingDetails?.fullName || "",
+          email: currentUser?.email || "",
+          contact: orderDetails.shippingDetails?.phone || "",
+        },
+        theme: {
+          color: "#528FF0",
+        },
+        modal: {
+          ondismiss: function() {
+            console.log('Payment modal closed');
+            setLoading(false);
+          }
+        },
+        // Enhanced error handling
+        error: function(error) {
+          console.error('Razorpay error:', error);
+          alert('Payment failed. Please try again.');
+          setLoading(false);
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      
+      // Handle payment failure
+      rzp.on('payment.failed', function (response){
+        console.error('Payment failed:', response.error);
+        alert(`Payment failed: ${response.error.description}`);
+        setLoading(false);
+      });
+
+      rzp.open();
+      
+    } catch (error) {
+      console.error("Error in handleRazorpayPayment:", error);
+      alert("Failed to initialize payment. Please try again.");
+      setLoading(false);
     }
-
-    const options = {
-      key: "rzp_live_6D2pAOoOcVdAop",
-      amount: orderDetails.total * 100,
-      currency: "INR",
-      name: "Chinju Store",
-      description: "Order Payment",
-      handler: async function (response) {
-        await createOrder('razorpay', response.razorpay_payment_id);
-      },
-      prefill: {
-        name: orderDetails.shippingDetails.fullName,
-        email: currentUser.email,
-        contact: orderDetails.shippingDetails.phone,
-      },
-      theme: {
-        color: "#528FF0",
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-    rzp.open();
   };
 
   const createOrder = async (paymentMethod, paymentId = null) => {
     try {
       setLoading(true);
       
+      // Validate required data
+      if (!currentUser?.uid) {
+        throw new Error("User not authenticated");
+      }
+
+      if (!orderDetails.items || orderDetails.items.length === 0) {
+        throw new Error("No items in order");
+      }
+
       const orderData = {
         userId: currentUser.uid,
         items: orderDetails.items,
@@ -78,15 +131,21 @@ const Payment = () => {
         createdAt: serverTimestamp()
       };
 
+      console.log("Creating order with data:", orderData);
+
       await addDoc(collection(db, 'orders'), orderData);
+      
+      // Clear cart
       await updateDoc(doc(db, 'users', currentUser.uid), {
         cartItems: []
       });
 
+      console.log("Order created successfully");
       navigate('/orders');
+      
     } catch (error) {
       console.error('Error creating order:', error);
-      alert('Failed to create order. Please try again.');
+      alert(`Failed to create order: ${error.message}. Please try again.`);
     } finally {
       setLoading(false);
     }
@@ -97,6 +156,8 @@ const Payment = () => {
       alert('Please select a payment method');
       return;
     }
+
+    console.log("Processing payment with method:", paymentMethod);
 
     if (paymentMethod === 'razorpay') {
       await handleRazorpayPayment();
@@ -158,7 +219,7 @@ const Payment = () => {
           <div className="border-t border-gray-200 pt-4">
             <h3 className="text-lg font-semibold mb-4 commonFont">Order Summary</h3>
             <div className="space-y-2">
-              {orderDetails.items.map((item) => (
+              {orderDetails.items?.map((item) => (
                 <div key={item.id} className="flex justify-between py-2 border-b">
                   <div>
                     <p className="font-medium commonFont">{item.name}</p>
