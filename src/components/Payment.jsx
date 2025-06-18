@@ -37,8 +37,10 @@ const Payment = () => {
   const handleRazorpayPayment = async () => {
     try {
       setLoading(true);
-      
-      const res = await loadScript("https://checkout.razorpay.com/v1/checkout.js");
+
+      const res = await loadScript(
+        "https://checkout.razorpay.com/v1/checkout.js"
+      );
 
       if (!res) {
         alert("Failed to load Razorpay SDK. Check your internet connection.");
@@ -46,27 +48,25 @@ const Payment = () => {
         return;
       }
 
-      // Validate order details
-      if (!orderDetails.total || orderDetails.total <= 0) {
-        alert("Invalid order amount");
-        setLoading(false);
-        return;
-      }
+      // Calculate total with delivery
+      const totalWithDelivery = orderDetails.total + DELIVERY_CHARGE;
 
       const options = {
-        key: "rzp_live_6D2pAOoOcVdAop", // Make sure this is your correct key
-        amount: Math.round(orderDetails.total * 100), // Ensure integer
+        key: "rzp_live_6D2pAOoOcVdAop",
+        amount: Math.round(totalWithDelivery * 100), // Include delivery in amount
         currency: "INR",
-        name: "Chinju Store",
+        name: "Your Store Name",
         description: "Order Payment",
-        order_id: undefined, // Let Razorpay generate this
+        order_id: undefined,
         handler: async function (response) {
           try {
             console.log("Payment successful:", response);
-            await createOrder('razorpay', response.razorpay_payment_id);
+            await createOrder("razorpay", response.razorpay_payment_id);
           } catch (error) {
             console.error("Error in payment handler:", error);
-            alert("Payment completed but order creation failed. Please contact support.");
+            alert(
+              "Payment completed but order creation failed. Please contact support."
+            );
           }
         },
         prefill: {
@@ -74,34 +74,17 @@ const Payment = () => {
           email: currentUser?.email || "",
           contact: orderDetails.shippingDetails?.phone || "",
         },
+        notes: {
+          deliveryCharge: DELIVERY_CHARGE.toString(),
+          subtotal: orderDetails.total.toString(),
+        },
         theme: {
           color: "#528FF0",
         },
-        modal: {
-          ondismiss: function() {
-            console.log('Payment modal closed');
-            setLoading(false);
-          }
-        },
-        // Enhanced error handling
-        error: function(error) {
-          console.error('Razorpay error:', error);
-          alert('Payment failed. Please try again.');
-          setLoading(false);
-        }
       };
 
       const rzp = new window.Razorpay(options);
-      
-      // Handle payment failure
-      rzp.on('payment.failed', function (response){
-        console.error('Payment failed:', response.error);
-        alert(`Payment failed: ${response.error.description}`);
-        setLoading(false);
-      });
-
       rzp.open();
-      
     } catch (error) {
       console.error("Error in handleRazorpayPayment:", error);
       alert("Failed to initialize payment. Please try again.");
