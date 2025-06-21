@@ -38,6 +38,7 @@ import { IoIosCloseCircle } from "react-icons/io";
 import Footer from "./Footer";
 import logo from "../assets/logo.png"
 import logowhite from "../assets/logowhite.png"
+import noLocation from "../assets/nolocation.jpg"
 
 // Utility: Haversine Distance Calculation
 const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
@@ -587,7 +588,7 @@ const Home = () => {
             });
           }
         } catch (error) {
-          console.error("Error fetching address from OpenCage API:", error);
+          // console.error("Error fetching address from OpenCage API:", error);
           setUserLocation({
             address: `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
             deliveryTime: "9 mins",
@@ -597,7 +598,7 @@ const Home = () => {
         }
       },
       (error) => {
-        console.error("Error getting location:", error);
+        // console.error("Error getting location:", error);
         alert("Location permission denied. Please allow location access.");
         setIsLoadingLocation(false);
       }
@@ -615,7 +616,7 @@ const Home = () => {
             setUserLocation(userDoc.data().location);
           }
         } catch (error) {
-          console.error("Error fetching user location:", error);
+          // console.error("Error fetching user location:", error);
         } finally {
           setIsLoadingLocation(false);
         }
@@ -708,7 +709,7 @@ const Home = () => {
           setDeliveryCharge(40); // fallback if no location saved
         }
       } catch (error) {
-        console.error("Error fetching location for delivery charge:", error);
+        // console.error("Error fetching location for delivery charge:", error);
         setDeliveryCharge(40); // default fallback
       }
 
@@ -1538,8 +1539,11 @@ const Home = () => {
             </div>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto px-6 py-24 text-center">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="max-w-2xl mx-auto px-6 py-5 text-center">
+            <div>
+               <img src={noLocation} alt="" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 commonFont">
               Sit Tight! We're coming soon!
             </h2>
             <p className="text-gray-600 text-lg">

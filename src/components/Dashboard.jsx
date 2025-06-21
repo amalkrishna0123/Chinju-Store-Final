@@ -434,7 +434,7 @@ const Dashboard = () => {
       await Promise.all(updatePromises);
       navigate('/dashboard/orderdetails');
     } catch (err) {
-      console.error('Error marking orders as read:', err);
+      // console.error('Error marking orders as read:', err);
     }
   };
 

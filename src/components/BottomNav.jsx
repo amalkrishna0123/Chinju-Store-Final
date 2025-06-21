@@ -51,7 +51,7 @@ const BottomNav = () => {
         }
       },
       (error) => {
-        console.error("Error listening to cart changes:", error);
+        // console.error("Error listening to cart changes:", error);
         setCartItems(currentUser.cartItems || []);
       }
     );
@@ -100,7 +100,7 @@ const BottomNav = () => {
           }
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        // console.error("Error fetching user data:", error);
       } finally {
         setLoading(false);
       }
@@ -124,7 +124,7 @@ const BottomNav = () => {
       await signInWithGoogle();
       setShowLoginModal(false);
     } catch (error) {
-      console.error("Google Sign-In Error:", error);
+      // console.error("Google Sign-In Error:", error);
     }
   };
 
@@ -146,7 +146,7 @@ const BottomNav = () => {
         });
       }
     } catch (error) {
-      console.error("Error updating quantity:", error);
+      // console.error("Error updating quantity:", error);
     }
   };
 
@@ -160,7 +160,7 @@ const BottomNav = () => {
         });
       }
     } catch (error) {
-      console.error("Error removing item:", error);
+      // console.error("Error removing item:", error);
     }
   };
 

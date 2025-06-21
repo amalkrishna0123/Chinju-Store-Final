@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
       return result.user;
     } catch (error) {
       setError('Failed to sign in: ' + error.message);
-      console.error("Email sign in error:", error);
+      // console.error("Email sign in error:", error);
       throw error;
     }
   };
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
       return result.user;
     } catch (error) {
       setError('Failed to create account: ' + error.message);
-      console.error("Email sign up error:", error);
+      // console.error("Email sign up error:", error);
       throw error;
     }
   };
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         setError('Failed to sign in with Google: ' + error.message);
       }
-      console.error("Google sign in error:", error);
+      // console.error("Google sign in error:", error);
       throw error;
     }
   };
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
       await signOut(auth);
     } catch (error) {
       setError('Failed to log out: ' + error.message);
-      console.error("Logout error:", error);
+      // console.error("Logout error:", error);
       throw error;
     }
   };

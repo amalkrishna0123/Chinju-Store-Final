@@ -61,7 +61,7 @@ const Orders = () => {
             createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || new Date().toLocaleDateString()
           }));
         } catch (indexError) {
-          console.log("Index not yet ready, falling back to basic query");
+          // console.log("Index not yet ready, falling back to basic query");
           
           const basicQuery = query(
             ordersRef,
@@ -84,7 +84,7 @@ const Orders = () => {
 
         setOrders(ordersData);
       } catch (err) {
-        console.error('Error fetching orders:', err);
+        // console.error('Error fetching orders:', err);
         setError('Failed to load orders. Please try again.');
       } finally {
         setLoading(false);
@@ -139,7 +139,7 @@ const Orders = () => {
 
       setCartItems(updatedItems);
     } catch (error) {
-      console.error("Error updating cart:", error);
+      // console.error("Error updating cart:", error);
     }
   };
 
@@ -153,7 +153,7 @@ const Orders = () => {
       });
       setCartItems(updatedItems);
     } catch (error) {
-      console.error("Error removing from cart:", error);
+      // console.error("Error removing from cart:", error);
     }
   };
 
@@ -171,7 +171,7 @@ const Orders = () => {
       
       setCartItems(updatedItems);
     } catch (error) {
-      console.error("Error updating quantity:", error);
+      // console.error("Error updating quantity:", error);
     }
   };
 
@@ -215,7 +215,7 @@ const Orders = () => {
       setSelectedOrder(null);
       alert("Thank you for your review!");
     } catch (error) {
-      console.error("Error submitting review:", error);
+      // console.error("Error submitting review:", error);
       alert("Failed to submit review. Please try again.");
     }
   };
@@ -247,14 +247,14 @@ const Orders = () => {
               });
             }
           } catch (error) {
-            console.error('Error setting location:', error);
+            // console.error('Error setting location:', error);
             alert("Could not detect your precise location. Using default address.");
           } finally {
             setIsLoadingLocation(false);
           }
         },
         (error) => {
-          console.error('Error getting location:', error);
+          // console.error('Error getting location:', error);
           alert("Location permission denied. Please allow location access to use this feature.");
           setIsLoadingLocation(false);
         }
@@ -280,7 +280,7 @@ const Orders = () => {
       await signInWithGoogle();
       setShowLoginModal(false);
     } catch (error) {
-      console.error("Google Sign-In Error:", error);
+      // console.error("Google Sign-In Error:", error);
     }
   };
   

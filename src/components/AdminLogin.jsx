@@ -28,7 +28,7 @@ const AdminLogin = () => {
   };
 
   return (
-    <form onSubmit={handleAdminLogin} className="space-y-6 min-h-screen flex flex-col justify-center items-center w-full px-2">
+    <form onSubmit={handleAdminLogin} className="space-y-6 min-h-screen flex flex-col justify-center items-center w-full mx-auto max-w-[600px] px-2">
       <div className="space-y-4 w-full">
         <div className="relative w-full">
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />

@@ -76,7 +76,7 @@ const ProductDetail = () => {
             setWishlist(data.wishlist || []);
           }
         } catch (error) {
-          console.error("Error fetching wishlist from Firestore:", error);
+          // console.error("Error fetching wishlist from Firestore:", error);
         }
       }
     };
@@ -101,7 +101,7 @@ const ProductDetail = () => {
           setError("Product not found");
         }
       } catch (err) {
-        console.error("Error fetching product:", err);
+        // console.error("Error fetching product:", err);
         setError("Failed to load product details");
       } finally {
         setLoading(false);
@@ -110,7 +110,7 @@ const ProductDetail = () => {
 
     if (productId) {
       fetchProduct();
-      console.log("productId is", productId);
+      // console.log("productId is", productId);
     }
   }, [productId]);
 
@@ -153,7 +153,7 @@ const ProductDetail = () => {
           }
         },
         (error) => {
-          console.error("Error listening to user data:", error);
+          // console.error("Error listening to user data:", error);
         }
       );
     } else {
@@ -179,7 +179,7 @@ const ProductDetail = () => {
         }));
         setAllProducts(productList);
       } catch (err) {
-        console.error("Error fetching all products:", err);
+        // console.error("Error fetching all products:", err);
       }
     };
 
@@ -209,7 +209,7 @@ const ProductDetail = () => {
         }
         setReviewRatings(ratingsMap);
       } catch (err) {
-        console.error("Error fetching ratings:", err);
+        // console.error("Error fetching ratings:", err);
       }
     };
 
@@ -297,7 +297,7 @@ const ProductDetail = () => {
       // Note: We don't need to manually update state here because
       // the real-time listener will handle it
     } catch (error) {
-      console.error("Error updating cart:", error);
+      // console.error("Error updating cart:", error);
     }
   };
 
@@ -315,7 +315,7 @@ const ProductDetail = () => {
       // Note: We don't need to manually update state here because
       // the real-time listener will handle it
     } catch (error) {
-      console.error("Error removing from cart:", error);
+      // console.error("Error removing from cart:", error);
     }
   };
 
@@ -362,7 +362,7 @@ const ProductDetail = () => {
         setWishlist((prev) => [...prev, optimizedProduct]);
       }
     } catch (error) {
-      console.error("Error toggling wishlist:", error);
+      // console.error("Error toggling wishlist:", error);
     } finally {
       setLoading(false);
     }
@@ -387,7 +387,7 @@ const ProductDetail = () => {
       });
       setCartItems(updatedItems);
     } catch (error) {
-      console.error("Error removing item:", error);
+      // console.error("Error removing item:", error);
     }
   };
 
@@ -397,7 +397,7 @@ const ProductDetail = () => {
       await signInWithGoogle();
       setShowLoginModal(false);
     } catch (error) {
-      console.error("Google Sign-In Error:", error);
+      // console.error("Google Sign-In Error:", error);
     }
   };
 
@@ -434,7 +434,7 @@ const ProductDetail = () => {
               });
             }
           } catch (error) {
-            console.error("Error setting location:", error);
+            // console.error("Error setting location:", error);
             alert(
               "Could not detect your precise location. Using default address."
             );
@@ -443,7 +443,7 @@ const ProductDetail = () => {
           }
         },
         (error) => {
-          console.error("Error getting location:", error);
+          // console.error("Error getting location:", error);
           alert(
             "Location permission denied. Please allow location access to use this feature."
           );
@@ -467,7 +467,7 @@ const ProductDetail = () => {
             setUserLocation(userDoc.data().location);
           }
         } catch (error) {
-          console.error("Error fetching user location:", error);
+          // console.error("Error fetching user location:", error);
         } finally {
           setIsLoadingLocation(false);
         }
@@ -542,7 +542,7 @@ const ProductDetail = () => {
     (p) => p.category === product?.category && p.id !== product?.id
   );
 
-  console.log("related product is",relatedProducts)
+  // console.log("related product is",relatedProducts)
 
   // User Profile Component
   const UserProfile = () => (

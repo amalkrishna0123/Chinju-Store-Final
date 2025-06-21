@@ -60,7 +60,7 @@ const LocationSetup = ({ onClose, onLocationSet }) => {
 
         setSearchResults(results);
       } catch (error) {
-        console.error("Error fetching search results from OpenCage:", error);
+        // console.error("Error fetching search results from OpenCage:", error);
         setSearchResults([]);
       } finally {
         setIsSearching(false);
@@ -122,7 +122,7 @@ const LocationSetup = ({ onClose, onLocationSet }) => {
           if (onLocationSet) onLocationSet(locationData);
           if (onClose) onClose();
         } catch (error) {
-          console.error("Error fetching address from OpenCage API:", error);
+          // console.error("Error fetching address from OpenCage API:", error);
           const fallbackLocation = {
             address: `(${latitude.toFixed(4)}, ${longitude.toFixed(4)})`,
             deliveryTime: "9 mins",
@@ -144,7 +144,7 @@ const LocationSetup = ({ onClose, onLocationSet }) => {
         }
       },
       (error) => {
-        console.error("Error getting location:", error);
+        // console.error("Error getting location:", error);
         alert("Location permission denied. Please allow location access.");
         setIsLoadingLocation(false);
       }
@@ -160,7 +160,7 @@ const LocationSetup = ({ onClose, onLocationSet }) => {
         },
       });
     } catch (error) {
-      console.error("Error saving location:", error);
+      // console.error("Error saving location:", error);
     }
   };
 

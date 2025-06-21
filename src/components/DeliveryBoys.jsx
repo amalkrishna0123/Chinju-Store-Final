@@ -108,7 +108,7 @@ const DeliveryBoys = () => {
     navigate('/dashboard/orderdetails');
   };
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50 mx-auto max-w-[1300px]">
       
         {/* Sidebar - Now a slide-out menu */}
         <div

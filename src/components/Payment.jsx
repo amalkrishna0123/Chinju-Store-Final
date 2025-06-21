@@ -55,7 +55,7 @@ const Payment = () => {
           setDeliveryCharge(distance <= 5 ? 0 : 40);
         }
       } catch (error) {
-        console.error("Error fetching location:", error);
+        // console.error("Error fetching location:", error);
       }
     };
 
@@ -105,10 +105,10 @@ const Payment = () => {
         order_id: undefined,
         handler: async function (response) {
           try {
-            console.log("Payment successful:", response);
+            // console.log("Payment successful:", response);
             await createOrder("razorpay", response.razorpay_payment_id);
           } catch (error) {
-            console.error("Error in payment handler:", error);
+            // console.error("Error in payment handler:", error);
             alert(
               "Payment completed but order creation failed. Please contact support."
             );
@@ -131,7 +131,7 @@ const Payment = () => {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      console.error("Error in handleRazorpayPayment:", error);
+      // console.error("Error in handleRazorpayPayment:", error);
       alert("Failed to initialize payment. Please try again.");
       setLoading(false);
     }
@@ -161,7 +161,7 @@ const Payment = () => {
         createdAt: serverTimestamp()
       };
 
-      console.log("Creating order with data:", orderData);
+      // console.log("Creating order with data:", orderData);
 
       await addDoc(collection(db, 'orders'), orderData);
       
@@ -170,11 +170,11 @@ const Payment = () => {
         cartItems: []
       });
 
-      console.log("Order created successfully");
+      // console.log("Order created successfully");
       navigate('/orders');
       
     } catch (error) {
-      console.error('Error creating order:', error);
+      // console.error('Error creating order:', error);
       alert(`Failed to create order: ${error.message}. Please try again.`);
     } finally {
       setLoading(false);
@@ -187,7 +187,7 @@ const Payment = () => {
       return;
     }
 
-    console.log("Processing payment with method:", paymentMethod);
+    // console.log("Processing payment with method:", paymentMethod);
 
     if (paymentMethod === 'razorpay') {
       await handleRazorpayPayment();

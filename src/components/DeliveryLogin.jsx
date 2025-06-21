@@ -47,7 +47,7 @@ const DeliveryLogin = () => {
   };
 
   return (
-    <form onSubmit={handleDeliveryLogin} className="space-y-6 w-full flex flex-col justify-center items-center px-2 min-h-screen">
+    <form onSubmit={handleDeliveryLogin} className="space-y-6 mx-auto max-w-[600px] w-full flex flex-col justify-center items-center px-2 min-h-screen">
       <div className="space-y-4 w-full">
         <div className="relative w-full">
           <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />

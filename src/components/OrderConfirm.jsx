@@ -41,7 +41,7 @@ const OrderConfirm = () => {
       return;
     }
 
-    console.log('Setting up real-time listener for user:', currentUser.uid);
+    // console.log('Setting up real-time listener for user:', currentUser.uid);
 
     // Set up real-time listener for the user document
     const unsubscribe = onSnapshot(
@@ -49,17 +49,17 @@ const OrderConfirm = () => {
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const userData = docSnapshot.data();
-          console.log('Real-time data received:', userData);
-          console.log('Cart items from Firestore:', userData.cartItems);
+          // console.log('Real-time data received:', userData);
+          // console.log('Cart items from Firestore:', userData.cartItems);
           setCartItems(userData.cartItems || []);
         } else {
-          console.log('User document does not exist');
+          // console.log('User document does not exist');
           setCartItems([]);
         }
         setIsLoading(false);
       },
       (error) => {
-        console.error("Error listening to cart changes:", error);
+        // console.error("Error listening to cart changes:", error);
         // Fallback to currentUser.cartItems if listener fails
         setCartItems(currentUser.cartItems || []);
         setIsLoading(false);
@@ -68,13 +68,13 @@ const OrderConfirm = () => {
 
     // Initial load from currentUser if available
     if (currentUser.cartItems) {
-      console.log('Initial load from currentUser:', currentUser.cartItems);
+      // console.log('Initial load from currentUser:', currentUser.cartItems);
       setCartItems(currentUser.cartItems);
     }
 
     // Cleanup listener on unmount
     return () => {
-      console.log('Cleaning up listener');
+      // console.log('Cleaning up listener');
       unsubscribe();
     };
   }, [currentUser?.uid]);
@@ -116,7 +116,7 @@ const OrderConfirm = () => {
           }
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        // console.error("Error fetching user data:", error);
       } finally {
         setLoading(false);
       }
@@ -192,8 +192,8 @@ const OrderConfirm = () => {
     );
   }
 
-  console.log('Rendering with cart items:', cartItems);
-  console.log('Cart items count:', cartItems.length);
+  // console.log('Rendering with cart items:', cartItems);
+  // console.log('Cart items count:', cartItems.length);
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">

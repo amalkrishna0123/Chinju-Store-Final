@@ -79,8 +79,8 @@ const [selectedSubSubCategory, setSelectedSubSubCategory] = useState("All");
 
 
   // const { subcategoryName } = useParams();
-  console.log("URL parameter:", subcategoryName);
-  console.log("Decoded subcategory:", decodeURIComponent(subcategoryName));
+  // console.log("URL parameter:", subcategoryName);
+  // console.log("Decoded subcategory:", decodeURIComponent(subcategoryName));
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -90,18 +90,6 @@ const [selectedSubSubCategory, setSelectedSubSubCategory] = useState("All");
     return () => clearInterval(interval);
   }, []);
 
-  // useEffect(() => {
-  //   const fetchProducts = async () => {
-  //     const snapshot = await getDocs(collection(db, "products"));
-  //     const productList = snapshot.docs.map(doc => ({
-  //       id: doc.id,
-  //       ...doc.data(),
-  //     }));
-  //     console.log("First few products:", productList.slice(0, 3));
-  //     setProducts(productList);
-  //   };
-  //   fetchProducts();
-  // }, []);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -117,7 +105,7 @@ const [selectedSubSubCategory, setSelectedSubSubCategory] = useState("All");
             setWishlist(data.wishlist || []);
           }
         } catch (error) {
-          console.error("Error fetching wishlist from Firestore:", error);
+          // console.error("Error fetching wishlist from Firestore:", error);
         }
       }
     };
@@ -137,7 +125,7 @@ const [selectedSubSubCategory, setSelectedSubSubCategory] = useState("All");
         }));
         setProducts(productList);
       } catch (err) {
-        console.error("Error fetching products:", err);
+        // console.error("Error fetching products:", err);
       } finally {
         setLoading(false);
       }
@@ -171,7 +159,7 @@ const [selectedSubSubCategory, setSelectedSubSubCategory] = useState("All");
         }
         setAverageRatings(averages);
       } catch (error) {
-        console.error("Error fetching average ratings:", error);
+        // console.error("Error fetching average ratings:", error);
       }
     };
 
@@ -205,7 +193,7 @@ const getFilteredProducts = () => {
   if (!products || !products.length) return [];
 
   let filtered = [...products];
-  console.log("filtered product isssss", filtered);
+  // console.log("filtered product isssss", filtered);
 
   // If "All Products" is selected, show all products
   if (selectedSubcategory === "All Products") {
@@ -277,33 +265,6 @@ const getFilteredProducts = () => {
 };
 
 
-
-  //   const debugProductData = () => {
-  //   if (products.length > 0) {
-  //     console.log("=== PRODUCT DATA DEBUG ===");
-  //     console.log("Total products:", products.length);
-  //     console.log("First product:", products[0]);
-  //     console.log("All category fields in first product:");
-
-  //     const firstProduct = products[0];
-  //     Object.keys(firstProduct).forEach(key => {
-  //       if (key.toLowerCase().includes('categ') || key.toLowerCase().includes('type')) {
-  //         console.log(`${key}:`, firstProduct[key]);
-  //       }
-  //     });
-
-  //     console.log("Categories found in all products:");
-  //     const allCategories = new Set();
-  //     products.forEach(product => {
-  //       if (product.category) allCategories.add(product.category);
-  //       if (product.subcategory) allCategories.add(product.subcategory);
-  //       if (product.categoryName) allCategories.add(product.categoryName);
-  //       if (product.subCategoryName) allCategories.add(product.subCategoryName);
-  //     });
-  //     console.log(Array.from(allCategories));
-  //   }
-  // };
-
   useEffect(() => {
     console.log(
       "Current products with categories:",
@@ -356,7 +317,7 @@ const getFilteredProducts = () => {
         ...subCategories,
       ]);
     } catch (err) {
-      console.error("Error fetching categories:", err);
+      // console.error("Error fetching categories:", err);
     }
   };
 
@@ -393,7 +354,7 @@ const getFilteredProducts = () => {
             }
           },
           (error) => {
-            console.error("Error listening to user data:", error);
+            // console.error("Error listening to user data:", error);
           }
         );
       } else {
@@ -413,7 +374,7 @@ const getFilteredProducts = () => {
       await signInWithGoogle();
       setShowLoginModal(false);
     } catch (error) {
-      console.error("Google Sign-In Error:", error);
+      // console.error("Google Sign-In Error:", error);
     }
   };
 
@@ -465,7 +426,7 @@ const addToCart = async (product) => {
 
     setCartItems(updatedItems);
   } catch (error) {
-    console.error("Error updating cart:", error);
+    // console.error("Error updating cart:", error);
   }
 };
 
@@ -481,7 +442,7 @@ const removeFromCart = async (productId) => {
 
     setCartItems(updatedItems);
   } catch (error) {
-    console.error("Error removing from cart:", error);
+    // console.error("Error removing from cart:", error);
   }
 };
   const updateQuantity = async (id, quantity) => {
@@ -498,7 +459,7 @@ const removeFromCart = async (productId) => {
 
       setCartItems(updatedItems);
     } catch (error) {
-      console.error("Error updating quantity:", error);
+      // console.error("Error updating quantity:", error);
     }
   };
 
@@ -514,7 +475,7 @@ const removeFromCart = async (productId) => {
 
       setCartItems(updatedItems);
     } catch (error) {
-      console.error("Error removing item:", error);
+      // console.error("Error removing item:", error);
     }
   };
 
@@ -563,7 +524,7 @@ const removeFromCart = async (productId) => {
         setWishlist((prev) => [...prev, optimizedProduct]);
       }
     } catch (error) {
-      console.error("Error toggling wishlist:", error);
+      // console.error("Error toggling wishlist:", error);
     } finally {
       setLoading(false);
     }
@@ -642,7 +603,7 @@ const removeFromCart = async (productId) => {
               });
             }
           } catch (error) {
-            console.error("Error setting location:", error);
+            // console.error("Error setting location:", error);
             alert(
               "Could not detect your precise location. Using default address."
             );
@@ -651,7 +612,7 @@ const removeFromCart = async (productId) => {
           }
         },
         (error) => {
-          console.error("Error getting location:", error);
+          // console.error("Error getting location:", error);
           alert(
             "Location permission denied. Please allow location access to use this feature."
           );
@@ -674,7 +635,7 @@ const removeFromCart = async (productId) => {
             setUserLocation(userDoc.data().location);
           }
         } catch (error) {
-          console.error("Error fetching user location:", error);
+          // console.error("Error fetching user location:", error);
         } finally {
           setIsLoadingLocation(false);
         }
