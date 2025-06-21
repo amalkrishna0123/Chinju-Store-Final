@@ -39,6 +39,7 @@ import { optimizeProductData } from "../utils/imageCompression";
 import { IoCloseCircle } from "react-icons/io5";
 import ReviewSystem from "./ReviewSystem";
 import LocationSetup from "./LocationSetup"
+import logowhite from "../assets/logowhite.png"
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -844,7 +845,13 @@ const ProductDetail = () => {
               to="/"
               className="text-blue-600 text-3xl font-bold flex items-center LogoFont"
             >
-              Chinju Store
+              <div className=" text-[#1a7e74] rounded-lg font-bold LogoFont w-[60px]">
+                <img
+                  src={logowhite}
+                  alt=""
+                  className="w-full h-full object-contain"
+                />
+              </div>
               <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
                 SUPER SAVER
               </span>
@@ -949,9 +956,15 @@ const ProductDetail = () => {
         <div className="flex justify-between items-center">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-xl commonFont shadow-md"
+            className="font-bold text-xl commonFont"
           >
-            Chinju Store
+            <div className=" text-[#1a7e74] rounded-lg font-bold LogoFont w-[60px]">
+              <img
+                src={logowhite}
+                alt=""
+                className="w-full h-full object-contain"
+              />
+            </div>
           </Link>
           <div className="flex space-x-3">
             <div
@@ -1441,7 +1454,6 @@ const ProductDetail = () => {
       {/* Modals */}
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
-
 
       {showLocationSetupModal && (
         <LocationSetup

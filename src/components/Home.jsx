@@ -978,11 +978,12 @@ const Home = () => {
         <div className="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="text-blue-600 text-3xl font-bold flex items-center LogoFont">
-              <img src="" alt="" />
-              <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
-                SUPER SAVER
-              </span>
+            <div className=" text-[#1a7e74] rounded-lg font-bold LogoFont w-[60px]">
+              <img
+                src={logowhite}
+                alt=""
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
           {/* Delivery Info */}

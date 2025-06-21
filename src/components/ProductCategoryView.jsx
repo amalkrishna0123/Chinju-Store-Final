@@ -17,6 +17,7 @@ import { useAuth } from "./AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import LocationSetup from "./LocationSetup";
 import { MdLogin } from "react-icons/md";
+import logowhite from "../assets/logowhite.png"
 import {
   collection,
   getDocs,
@@ -951,10 +952,13 @@ const removeFromCart = async (productId) => {
               to="/"
               className="text-blue-600 text-3xl font-bold flex items-center LogoFont"
             >
-              Chinju Store
-              <span className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm font-medium ml-3">
-                SUPER SAVER
-              </span>
+              <div className=" text-[#1a7e74] rounded-lg font-bold LogoFont w-[60px]">
+                <img
+                  src={logowhite}
+                  alt=""
+                  className="w-full h-full object-contain"
+                />
+              </div>
             </Link>
           </div>
 
@@ -1035,9 +1039,15 @@ const removeFromCart = async (productId) => {
         <div className="flex justify-between items-center mb-4">
           <Link
             to="/"
-            className="bg-white text-[#1a7e74] px-4 py-2 rounded-lg font-bold text-md shadow-md LogoFont"
+            className="font-bold text-md LogoFont"
           >
-            Chinju Store
+            <div className=" text-[#1a7e74] rounded-lg font-bold LogoFont w-[60px]">
+              <img
+                src={logowhite}
+                alt=""
+                className="w-full h-full object-contain"
+              />
+            </div>
           </Link>
           <div className="flex space-x-3">
             <div
