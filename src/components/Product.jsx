@@ -38,6 +38,7 @@ import { Link } from "react-router-dom";
 import { optimizeProductData } from "../utils/imageCompression";
 import { IoCloseCircle } from "react-icons/io5";
 import ReviewSystem from "./ReviewSystem";
+import LocationSetup from "./LocationSetup"
 
 const ProductDetail = () => {
   const { productId } = useParams();
@@ -56,6 +57,7 @@ const ProductDetail = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [subImages, setSubImages] = useState([]);
   const [reviewRatings, setReviewRatings] = useState({});
+  const [showLocationSetupModal, setShowLocationSetupModal] = useState(false);
   const [userLocation, setUserLocation] = useState({
     address: "Round North, Kodaly, Kerala", // Default address
     deliveryTime: "9 mins",
@@ -214,6 +216,30 @@ const ProductDetail = () => {
       fetchRatings();
     }
   }, [allProducts]);
+
+
+
+  // Add this function to handle location check
+  const checkLocationBeforeAddToCart = (product) => {
+    // Check if user hasn't set their location
+    if (userLocation.address === "Round North, Kodaly, Kerala") {
+      setShowLocationSetupModal(true);
+    } else {
+      addToCart(product);
+    }
+  };
+
+
+
+  // Function to handle location setup button click
+  const handleSetLocationClick = () => {
+    if (!currentUser) {
+      setShowLocationSetupModal(false);
+      setShowLoginModal(true);
+    } else {
+      navigate("/locationSetup");
+    }
+  };
 
 
   // Handle quantity change
@@ -1147,14 +1173,18 @@ const ProductDetail = () => {
               {/* Actions */}
               <div className="flex flex-col md:flex-row gap-4">
                 <button
-  onClick={() => {
-    const isInCart = cartItems.some((item) => item.id === product.id);
-    if (product.stock === "Available") {
-      isInCart ? removeFromCart(product.id) : addToCart(product);
-    }
-  }}
-  disabled={product.stock !== "Available"}
-  className={`w-full md:w-auto flex-1 rounded-lg py-3 px-6 flex items-center justify-center transition-all
+                  onClick={() => {
+                    const isInCart = cartItems.some(
+                      (item) => item.id === product.id
+                    );
+                    if (product.stock === "Available") {
+                      isInCart
+                        ? removeFromCart(product.id)
+                        : checkLocationBeforeAddToCart(product);
+                    }
+                  }}
+                  disabled={product.stock !== "Available"}
+                  className={`w-full md:w-auto flex-1 rounded-lg py-3 px-6 flex items-center justify-center transition-all
     ${
       product.stock !== "Available"
         ? "bg-gray-400 text-white cursor-not-allowed"
@@ -1162,49 +1192,48 @@ const ProductDetail = () => {
         ? "bg-green-600 hover:bg-green-700 text-white"
         : "bg-blue-600 hover:bg-blue-700 text-white"
     }`}
->
-  {product.stock !== "Available" ? (
-    <>
-      <svg
-        className="w-4 h-4 mr-2"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"
-        />
-      </svg>
-      Out of Stock
-    </>
-  ) : cartItems.some((item) => item.id === product.id) ? (
-    <>
-      <svg
-        className="w-4 h-4 mr-2"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="2"
-          d="M5 13l4 4L19 7"
-        />
-      </svg>
-      Added to Cart
-    </>
-  ) : (
-    <>
-      <ShoppingCart size={16} className="mr-2" />
-      Add to Cart
-    </>
-  )}
-</button>
-
+                >
+                  {product.stock !== "Available" ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"
+                        />
+                      </svg>
+                      Out of Stock
+                    </>
+                  ) : cartItems.some((item) => item.id === product.id) ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      Added to Cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart size={16} className="mr-2" />
+                      Add to Cart
+                    </>
+                  )}
+                </button>
 
                 <button
                   onClick={() => toggleWishlist(product)}
@@ -1261,7 +1290,7 @@ const ProductDetail = () => {
                           {/* {product.stock > 0
                             ? `${product.stock} available`
                             : "Out of stock"} */}
-                            {product.stock}
+                          {product.stock}
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -1412,6 +1441,52 @@ const ProductDetail = () => {
       {/* Modals */}
       <LoginModal />
       <Cart isOpen={showCart} onClose={() => setShowCart(false)} />
+
+
+      {showLocationSetupModal && (
+        <LocationSetup
+          onClose={() => setShowLocationSetupModal(false)}
+          onLocationSet={(locationData) => {
+            setUserLocation(locationData);
+            setShowLocationSetupModal(false);
+          }}
+        />
+      )}
+
+      {showLocationSetupModal && (
+        <div className="fixed inset-0 bg-[#fff] bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg w-full max-w-md shadow-xl p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-800">
+                Location Required
+              </h2>
+              <button
+                onClick={() => setShowLocationSetupModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <p className="text-gray-600 mb-6">
+              Please set your location before adding items to your cart.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLocationSetupModal(false)}
+                className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSetLocationClick}
+                className="flex-1 py-2 px-4 bg-[#1a7e74] text-white rounded-lg hover:bg-[#145f5a]"
+              >
+                Set Location
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
