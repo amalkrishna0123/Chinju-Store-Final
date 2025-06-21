@@ -10,6 +10,22 @@ import { FcGoogle } from "react-icons/fc";
 import { VscAccount } from "react-icons/vsc";
 import { IoCloseCircle } from "react-icons/io5";
 
+// Utility: Haversine Distance Calculation
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -17,6 +33,7 @@ const BottomNav = () => {
   const [showCart, setShowCart] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState(40);
 
   // Fetch cart items when user changes - WITH REAL-TIME LISTENER
   useEffect(() => {
@@ -45,6 +62,54 @@ const BottomNav = () => {
 
     return () => unsubscribe();
   }, [currentUser?.uid, currentUser?.cartItems]);
+
+
+  useEffect(() => {
+    const fetchLocationAndCart = async () => {
+      if (!currentUser?.uid) {
+        setCartItems([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setCartItems(userData.cartItems || []);
+
+          // Store location
+          const storeLat = 10.52700579443476;
+          const storeLng = 76.08863395142001;
+
+          // User location
+          const userCoords = userData?.location?.coordinates;
+          if (userCoords) {
+            const dist = getDistanceFromLatLonInKm(
+              storeLat,
+              storeLng,
+              userCoords.lat,
+              userCoords.lng
+            );
+
+            if (dist <= 5) {
+              setDeliveryCharge(0);
+            } else {
+              setDeliveryCharge(40);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (showCart ) {
+      fetchLocationAndCart();
+    }
+  }, [showCart, currentUser]);
 
   const handleCartClick = () => {
     if (!currentUser) {
@@ -211,16 +276,16 @@ const BottomNav = () => {
                 </div>
                 <div className="flex justify-between mb-4">
                   <span className="text-gray-600">Delivery</span>
-                  <span className="font-semibold">₹40</span>
+                  <span className={`font-semibold ${deliveryCharge === 0 ? "text-[#00bb03]" : "" }`}>{deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}</span>
                 </div>
                 <div className="flex justify-between mb-4 pb-4 border-b border-gray-100">
                   <span className="text-gray-600">Discount</span>
-                  <span className="font-semibold text-green-600">-₹0</span>
+                  <span className="font-semibold text-[#00bb03]">-₹0</span>
                 </div>
                 <div className="flex justify-between mb-6">
                   <span className="text-lg font-semibold">Total</span>
                   <span className="text-lg font-bold">
-                    ₹{calculateTotal() + 40}
+                    ₹{calculateTotal() + deliveryCharge}
                   </span>
                 </div>
                 <button

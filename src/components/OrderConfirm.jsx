@@ -2,9 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext';
 import { db } from '../Firebase';
-import { doc, updateDoc, addDoc, collection, serverTimestamp, arrayUnion, onSnapshot } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, serverTimestamp, arrayUnion, onSnapshot, getDoc } from 'firebase/firestore';
 import { Phone, MapPin, CreditCard, Wallet, ArrowLeft } from 'lucide-react';
 import AddressManager from './AddressManager';
+
+// Utility: Haversine Distance Calculation
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const OrderConfirm = () => {
   const navigate = useNavigate();
@@ -14,8 +29,9 @@ const OrderConfirm = () => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState(40);
   // Add delivery charge constant at the top
-  const DELIVERY_CHARGE = 40;
+  // const DELIVERY_CHARGE = 40;
 
   // Fetch cart items with real-time listener (same as BottomNav)
   useEffect(() => {
@@ -64,6 +80,54 @@ const OrderConfirm = () => {
   }, [currentUser?.uid]);
 
 
+  useEffect(() => {
+    const fetchLocationAndCart = async () => {
+      if (!currentUser?.uid) {
+        setCartItems([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setCartItems(userData.cartItems || []);
+
+          // Store location
+          const storeLat = 10.52700579443476;
+          const storeLng = 76.08863395142001;
+
+          // User location
+          const userCoords = userData?.location?.coordinates;
+          if (userCoords) {
+            const dist = getDistanceFromLatLonInKm(
+              storeLat,
+              storeLng,
+              userCoords.lat,
+              userCoords.lng
+            );
+
+            if (dist <= 5) {
+              setDeliveryCharge(0);
+            } else {
+              setDeliveryCharge(40);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    
+      fetchLocationAndCart();
+    
+  }, [currentUser]);
+
+
   const handleSelectAddress = (address) => {
     setSelectedAddress(address);
     setShowAddressForm(false);
@@ -110,7 +174,7 @@ const OrderConfirm = () => {
   }
 
   // Calculate total amount
-  const totalAmount = cartItems.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0) + DELIVERY_CHARGE;
+  const totalAmount = cartItems.reduce((sum, item) => sum + (item.salePrice * item.quantity), 0) + deliveryCharge;
 
   // Show loading while fetching cart data
   if (isLoading) {
@@ -228,7 +292,9 @@ const OrderConfirm = () => {
                     {/* Add this before the total amount */}
                     <div className="flex justify-between pt-2">
                       <span className="text-gray-600">Delivery Charge</span>
-                      <span className="font-medium">₹{DELIVERY_CHARGE}</span>
+                      <span className={`font-medium ${deliveryCharge === 0 ? "text-[#00bc0d]" : "" }`}>
+                        {deliveryCharge === 0 ? "Free" : `₹${deliveryCharge}`}
+                      </span>
                     </div>
                   </div>
                 ))

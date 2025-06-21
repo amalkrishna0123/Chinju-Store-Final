@@ -1,6 +1,21 @@
 import { useState } from 'react';
 import { ShoppingCart, CreditCard, Truck, ChevronDown, ChevronUp, Check, X } from 'lucide-react';
 
+// Utility: Haversine Distance Calculation
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function ProductCheckout() {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState('Midnight Black');
@@ -9,6 +24,7 @@ export default function ProductCheckout() {
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoError, setPromoError] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState(40);
 
   const productPrice = 129.99;
   const shippingPrice = 4.99;
@@ -22,6 +38,55 @@ export default function ProductCheckout() {
     { name: 'Forest Green', hex: 'bg-green-700' },
     { name: 'Ruby Red', hex: 'bg-red-600' },
   ];
+
+
+  useEffect(() => {
+    const fetchLocationAndCart = async () => {
+      if (!currentUser?.uid) {
+        setCartItems([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setCartItems(userData.cartItems || []);
+
+          // Store location
+          const storeLat = 10.52700579443476;
+          const storeLng = 76.08863395142001;
+
+          // User location
+          const userCoords = userData?.location?.coordinates;
+          if (userCoords) {
+            const dist = getDistanceFromLatLonInKm(
+              storeLat,
+              storeLng,
+              userCoords.lat,
+              userCoords.lng
+            );
+
+            if (dist <= 5) {
+              setDeliveryCharge(0);
+            } else {
+              setDeliveryCharge(40);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (showCart) {
+      fetchLocationAndCart();
+    }
+  }, [showCart, currentUser]);
+
 
   const incrementQuantity = () => {
     if (quantity < 10) setQuantity(quantity + 1);
@@ -215,7 +280,7 @@ export default function ProductCheckout() {
                     </div>
                   )}
                   <div className="border-t border-gray-200 mt-4 pt-4 flex justify-between">
-                    <p className="text-lg font-semibold">Total</p>
+                    <p className="text-lg font-semibold">Tota</p>
                     <p className="text-lg font-semibold">${total.toFixed(2)}</p>
                   </div>
                 </div>

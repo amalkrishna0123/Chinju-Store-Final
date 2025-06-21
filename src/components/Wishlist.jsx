@@ -306,7 +306,7 @@ const Wishlist = () => {
                   <span className="font-semibold text-green-600">-₹0</span>
                 </div>
                 <div className="flex justify-between mb-6">
-                  <span className="text-lg font-semibold">Total</span>
+                  <span className="text-lg font-semibold">Tota</span>
                   <span className="text-lg font-bold">₹{calculateTotal() + 40}</span>
                 </div>
                 <button className="w-full bg-[#1a7e74] text-white py-3 rounded-lg hover:bg-[#145f5a] transition duration-200">

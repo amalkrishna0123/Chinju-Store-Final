@@ -37,6 +37,24 @@ import HomeLoader from "./cart animations/HomeLoader";
 import { IoIosCloseCircle } from "react-icons/io";
 import Footer from "./Footer";
 
+// Utility: Haversine Distance Calculation
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+
+
+
 const Home = () => {
   const [hoveredProduct, setHoveredProduct] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -55,6 +73,7 @@ const Home = () => {
   const navigate = useNavigate();
   const [productsLoader, setProductsLoader] = useState(true);
   const [index, setIndex] = useState(0);
+  const [deliveryCharge, setDeliveryCharge] = useState(40);
   const [userLocation, setUserLocation] = useState({
     address: "Select Your Location", // Default address
     deliveryTime: "Super fast",
@@ -671,13 +690,37 @@ const Home = () => {
   };
 
   // Handle cart click
-  const handleCartClick = () => {
+  const handleCartClick = async () => {
     if (!currentUser) {
       setShowLoginModal(true);
     } else {
+      // Fetch delivery charge based on user's saved location
+      try {
+        const docSnap = await getDoc(doc(db, "users", currentUser.uid));
+        const location = docSnap.data()?.location?.coordinates;
+        const storeCoords = { lat: 10.52700579443476, lng: 76.08863395142001 };
+
+        if (location) {
+          const distance = getDistanceFromLatLonInKm(
+            storeCoords.lat,
+            storeCoords.lng,
+            location.lat,
+            location.lng
+          );
+
+          setDeliveryCharge(distance <= 5 ? 0 : 40);
+        } else {
+          setDeliveryCharge(40); // fallback if no location saved
+        }
+      } catch (error) {
+        console.error("Error fetching location for delivery charge:", error);
+        setDeliveryCharge(40); // default fallback
+      }
+
       setShowCart(true);
     }
   };
+
 
   // User Profile Component
   const UserProfile = () => (
@@ -903,15 +946,15 @@ const Home = () => {
                   <span className="font-semibold">₹{calculateTotal()}</span>
                 </div>
                 <div className="flex justify-between mb-4">
-                  <span className="text-gray-600">Delivery</span>
-                  <span className="font-semibold">₹40</span>
+                  <span className="text-gray-600">Deliver</span>
+                  <span className="font-semibold">₹{deliveryCharge}</span>
                 </div>
                 <div className="flex justify-between mb-4 pb-4 border-b border-gray-100">
                   <span className="text-gray-600">Discount</span>
                   <span className="font-semibold text-green-600">-₹0</span>
                 </div>
                 <div className="flex justify-between mb-6">
-                  <span className="text-lg font-semibold">Total</span>
+                  <span className="text-lg font-semibold">Tota</span>
                   <span className="text-lg font-bold">
                     ₹{calculateTotal() + 40}
                   </span>

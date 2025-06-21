@@ -4,11 +4,28 @@ import { useAuth } from './AuthContext';
 import { doc, getDoc, updateDoc, arrayUnion, addDoc, collection } from 'firebase/firestore';
 import { db } from '../Firebase';
 
+// Utility: Haversine Distance Calculation
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // km
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
+
 const Cart = ({ isOpen, onClose }) => {
   const { currentUser } = useAuth();
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState(40);
 
   // Fetch cart items from Firestore
   useEffect(() => {
@@ -33,6 +50,54 @@ const Cart = ({ isOpen, onClose }) => {
 
     if (isOpen) {
       fetchCartItems();
+    }
+  }, [isOpen, currentUser]);
+
+
+  useEffect(() => {
+    const fetchLocationAndCart = async () => {
+      if (!currentUser?.uid) {
+        setCartItems([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setCartItems(userData.cartItems || []);
+
+          // Store location
+          const storeLat = 10.52700579443476;
+          const storeLng = 76.08863395142001;
+
+          // User location
+          const userCoords = userData?.location?.coordinates;
+          if (userCoords) {
+            const dist = getDistanceFromLatLonInKm(
+              storeLat,
+              storeLng,
+              userCoords.lat,
+              userCoords.lng
+            );
+
+            if (dist <= 5) {
+              setDeliveryCharge(0);
+            } else {
+              setDeliveryCharge(40);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchLocationAndCart();
     }
   }, [isOpen, currentUser]);
 
@@ -95,7 +160,7 @@ const Cart = ({ isOpen, onClose }) => {
         userId: currentUser.uid,
         date: new Date().toISOString(),
         items: cartItems,
-        total: calculateTotal() + 40, // Including delivery
+        total: calculateTotal() + deliveryCharge,
         status: 'Processing',
         shippingDetails: userShippingDetails,
         isRead: false
@@ -214,11 +279,11 @@ const Cart = ({ isOpen, onClose }) => {
               </div>
               <div className="flex justify-between mb-4">
                 <span className="text-gray-600">Delivery</span>
-                <span className="font-semibold">₹40</span>
+                <span className="font-semibold">₹</span>
               </div>
               <div className="flex justify-between mb-6">
-                <span className="text-lg font-semibold">Total</span>
-                <span className="text-lg font-bold">₹{calculateTotal() + 40}</span>
+                <span className="text-lg font-semibold">Tota</span>
+                <span className="text-lg font-bold">₹{calculateTotal()}</span>
               </div>
               <button 
                 onClick={handleCheckout}

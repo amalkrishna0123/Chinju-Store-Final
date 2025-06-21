@@ -1,12 +1,27 @@
 // src/Payment.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { CheckCircle, Wallet } from "lucide-react";
 import { TbCurrencyRupee } from "react-icons/tb";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from './AuthContext';
 import { db } from '../Firebase';
-import { doc, updateDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection, serverTimestamp, getDoc } from 'firebase/firestore';
 import { ArrowLeft } from 'lucide-react';
+
+// Haversine Distance Formula
+const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const Payment = () => {
   const navigate = useNavigate();
@@ -14,8 +29,38 @@ const Payment = () => {
   const { currentUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [deliveryCharge, setDeliveryCharge] = useState(40);
   // Add delivery charge constant at the top
-  const DELIVERY_CHARGE = 40;
+  // const DELIVERY_CHARGE = 40;
+
+
+  useEffect(() => {
+    const fetchDeliveryCharge = async () => {
+      if (!currentUser?.uid) return;
+
+      try {
+        const docSnap = await getDoc(doc(db, "users", currentUser.uid));
+        const storeLat = 10.52700579443476;
+        const storeLng = 76.08863395142001;
+
+        const userCoords = docSnap.data()?.location?.coordinates;
+        if (userCoords) {
+          const distance = getDistanceFromLatLonInKm(
+            storeLat,
+            storeLng,
+            userCoords.lat,
+            userCoords.lng
+          );
+
+          setDeliveryCharge(distance <= 5 ? 0 : 40);
+        }
+      } catch (error) {
+        console.error("Error fetching location:", error);
+      }
+    };
+
+    fetchDeliveryCharge();
+  }, [currentUser]);
   
   const orderDetails = location.state?.orderDetails;
 
@@ -49,7 +94,7 @@ const Payment = () => {
       }
 
       // Calculate total with delivery
-      const totalWithDelivery = orderDetails.total + DELIVERY_CHARGE;
+      const totalWithDelivery = orderDetails.total + deliveryCharge;
 
       const options = {
         key: "rzp_live_6D2pAOoOcVdAop",
@@ -75,7 +120,7 @@ const Payment = () => {
           contact: orderDetails.shippingDetails?.phone || "",
         },
         notes: {
-          deliveryCharge: DELIVERY_CHARGE.toString(),
+          deliveryCharge: deliveryCharge.toString(),
           subtotal: orderDetails.total.toString(),
         },
         theme: {
@@ -244,15 +289,24 @@ const Payment = () => {
                   <div className="flex justify-between pt-2">
                     <span className="text-gray-600">Delivery Charge</span>
                     <span className="font-medium flex items-center">
-                      <TbCurrencyRupee />
-                      {DELIVERY_CHARGE}
+                      {deliveryCharge === 0 ? (
+                        "Free"
+                      ) : (
+                        <>
+                          <TbCurrencyRupee />
+                          {deliveryCharge}
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>
               ))}
               <div className="flex justify-between pt-4 font-semibold text-lg commonFont">
                 <span>Total Amount</span>
-                <span className="flex items-center"><TbCurrencyRupee/>{orderDetails.total + DELIVERY_CHARGE}</span>
+                <span className="flex items-center">
+                  <TbCurrencyRupee />
+                  {orderDetails.total + deliveryCharge}
+                </span>
               </div>
             </div>
           </div>
