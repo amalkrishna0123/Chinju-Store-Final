@@ -140,9 +140,9 @@ const EditProduct = () => {
             shelfLife: data.shelfLife || "",
             stock: data.stock || "Available",
             weight: data.weight || "",
-            category: "",
-            subCategory: "",
-            subSubCategory: "",
+            category: data.categoryHierarchy?.main || "",
+            subCategory: data.categoryHierarchy?.sub || "",
+            subSubCategory: data.categoryHierarchy?.subsub || "",
           };
 
           if (data.categoryHierarchy) {
@@ -641,9 +641,10 @@ const EditProduct = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Main Category <span className="text-red-500">*</span>
                     </label>
+                    {/* Main Category Dropdown */}
                     <select
                       name="category"
-                      value={product.category || ""}
+                      value={product.category}
                       onChange={(e) => {
                         handleInputChange(e);
                         setProduct((prev) => ({
@@ -652,9 +653,6 @@ const EditProduct = () => {
                           subSubCategory: "",
                         }));
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                      disabled={saving}
                     >
                       <option value="">Select Main Category</option>
                       {categories.map((cat) => (
@@ -669,22 +667,19 @@ const EditProduct = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Subcategory
                     </label>
+                    {/* Subcategory Dropdown */}
                     <select
                       name="subCategory"
-                      value={product.subCategory || ""}
+                      value={product.subCategory}
                       onChange={(e) => {
                         handleInputChange(e);
-                        setProduct((prev) => ({
-                          ...prev,
-                          subSubCategory: "",
-                        }));
+                        setProduct((prev) => ({ ...prev, subSubCategory: "" }));
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={saving || !product.category}
+                      disabled={!product.category}
                     >
                       <option value="">Select Subcategory</option>
                       {subCategories
-                        .filter((sub) => sub.parentId === product.category)
+                        .filter((sub) => sub.parentName === product.category)
                         .map((sub) => (
                           <option key={sub.id} value={sub.name}>
                             {sub.name}
@@ -699,15 +694,14 @@ const EditProduct = () => {
                     </label>
                     <select
                       name="subSubCategory"
-                      value={product.subSubCategory || ""}
+                      value={product.subSubCategory}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      disabled={saving || !product.subCategory}
+                      disabled={!product.subCategory}
                     >
                       <option value="">Select Sub-subcategory</option>
                       {subSubCategories
                         .filter(
-                          (subsub) => subsub.parentId === product.subCategory
+                          (subsub) => subsub.parentName === product.subCategory
                         )
                         .map((subsub) => (
                           <option key={subsub.id} value={subsub.name}>
