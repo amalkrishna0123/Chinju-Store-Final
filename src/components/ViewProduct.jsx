@@ -34,12 +34,16 @@ import {
 import { MdDeliveryDining, MdReviews } from "react-icons/md";
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { db } from '../Firebase';
-import { collection, getDocs, deleteDoc, doc, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, getDocs, deleteDoc, doc, query, where, onSnapshot, addDoc, updateDoc } from 'firebase/firestore';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import { Navigation, Pagination } from 'swiper/modules';
+import * as XLSX from 'xlsx';
+import { PiMicrosoftExcelLogoBold } from "react-icons/pi";
+import { SiTicktick } from "react-icons/si";
+import { RxCross2 } from "react-icons/rx";
 
 const ViewProduct = () => {
   const navigate = useNavigate();
@@ -58,6 +62,167 @@ const ViewProduct = () => {
     sub: [],
     subsub: []
   });
+  const [excelData, setExcelData] = useState([]);
+  const [isUploadingExcel, setIsUploadingExcel] = useState(false);
+  const [isUploadingToFirebase, setIsUploadingToFirebase] = useState(false);
+  const [fileInputKey, setFileInputKey] = useState(Date.now());
+
+  const handleFileUploadClick = () => {
+    alert("Please make sure the Excel file follows this format:\n\n" + 
+          "1. Column 'Name' (required): The name of the product.\n" +
+          "2. Column 'Brand' (optional): The brand of the product.\n" +
+          "3. Column 'OriginalPrice' (required): The original price.\n" +
+          "4. Column 'Offer' (optional): The discount percentage.\n" +
+          "5. Column 'Description' (optional): Product description.\n" +
+          "6. Column 'Category' (optional): Main category.\n" +
+          "7. Column 'SubCategory' (optional): Subcategory.\n" +
+          "8. Column 'SubSubCategory' (optional): Sub-subcategory.\n" +
+          "9. Column 'Weight' (optional): Product weight/number.\n" +
+          "10. Column 'ShelfLife' (optional): Shelf life in days.\n" +
+          "11. Column 'Imported' (optional): 'Yes' or 'No'.\n" +
+          "12. Column 'Organic' (optional): 'Yes' or 'No'.\n" +
+          "13. Column 'Stock' (optional): 'Available' or 'Out of Stock'.");
+    document.getElementById('excel-file-input').click();
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const parsedData = XLSX.utils.sheet_to_json(sheet);
+
+      if (parsedData.length === 0) {
+        alert("No data in the Excel file.");
+        e.target.value = "";
+        return;
+      }
+
+      setExcelData(parsedData);
+      alert(`Successfully imported ${parsedData.length} products from Excel. Click "Upload to Database" to save them.`);
+      e.target.value = "";
+    };
+
+    reader.readAsArrayBuffer(file);
+    setIsUploadingExcel(true);
+  };
+
+  const uploadExcelDataToFirebase = async () => {
+    if (!excelData.length) {
+      alert("No data to upload");
+      return;
+    }
+
+    setIsUploadingToFirebase(true);
+    setError("");
+
+    try {
+      const productsCollection = collection(db, "products");
+      const existingSnapshot = await getDocs(productsCollection);
+      const existingProducts = existingSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      let successCount = 0;
+      let updatedCount = 0;
+      let skippedCount = 0;
+
+      for (const item of excelData) {
+        const name = (item.Name || item.name || "").trim().toLowerCase();
+        const weight = (item.Weight || item.weight || "").trim().toLowerCase();
+        const originalPrice = Number(
+          item.OriginalPrice || item.originalPrice || 0
+        );
+
+        if (!name || !weight || !originalPrice) {
+          console.warn(`Skipping invalid product: ${item.Name}`);
+          continue;
+        }
+
+        const existingProduct = existingProducts.find(
+          (prod) =>
+            prod.name.trim().toLowerCase() === name &&
+            prod.weight.trim().toLowerCase() === weight
+        );
+
+        const offer = Number(item.Offer || item.offer || 0);
+        const salePrice = originalPrice - (originalPrice * offer) / 100;
+
+        const productData = {
+          name: item.Name || item.name || "",
+          brand: item.Brand || item.brand || "",
+          originalPrice,
+          offer,
+          salePrice,
+          description: item.Description || item.description || "",
+          category: item.Category || item.category || "",
+          subCategory: item.SubCategory || item.subCategory || "",
+          subSubCategory: item.SubSubCategory || item.subSubCategory || "",
+          weight: item.Weight || item.weight || "",
+          shelfLife: item.ShelfLife || item.shelfLife || "",
+          imported: item.Imported || item.imported || "No",
+          organic: item.Organic || item.organic || "No",
+          stock: item.Stock || item.stock || "Available",
+          createdAt: new Date().toISOString(),
+          categoryHierarchy: {
+            main: item.Category || item.category || "",
+            sub: item.SubCategory || item.subCategory || "",
+            subsub: item.SubSubCategory || item.subSubCategory || "",
+          },
+          fullCategoryPath: [
+            item.Category || item.category,
+            item.SubCategory || item.subCategory,
+            item.SubSubCategory || item.subSubCategory,
+          ]
+            .filter(Boolean)
+            .join(" → "),
+        };
+
+        if (existingProduct) {
+          if (existingProduct.originalPrice !== originalPrice) {
+            await updateDoc(
+              doc(db, "products", existingProduct.id),
+              productData
+            );
+            updatedCount++;
+          } else {
+            skippedCount++;
+          }
+        } else {
+          await addDoc(productsCollection, productData);
+          successCount++;
+        }
+      }
+
+      alert(`Upload complete!
+✅ Added: ${successCount}
+🔁 Updated: ${updatedCount}
+⏭️ Skipped (no change): ${skippedCount}`);
+
+      await fetchProducts();
+      setExcelData([]);
+      setFileInputKey(Date.now());
+    } catch (err) {
+      console.error("Error uploading Excel data:", err);
+      setError("Failed to upload Excel data: " + err.message);
+    } finally {
+      setIsUploadingToFirebase(false);
+      setIsUploadingExcel(false);
+    }
+  };
+
+
+  const handleCancelExcelImport = () => {
+    setExcelData([]);
+    setFileInputKey(Date.now());
+    setIsUploadingExcel(false);
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -293,6 +458,7 @@ const ViewProduct = () => {
               Add New Product
             </Link>
           </div>
+          
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
@@ -316,6 +482,7 @@ const ViewProduct = () => {
               </div>
             </div>
           )}
+          
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-200">
@@ -332,6 +499,58 @@ const ViewProduct = () => {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleFileUploadClick}
+                    className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
+                  >
+                    <PiMicrosoftExcelLogoBold size={16} />
+                    Import from Excel
+                  </button>
+                  <input
+                    id="excel-file-input"
+                    key={fileInputKey}
+                    type="file"
+                    accept=".xlsx, .xls"
+                    style={{ display: "none" }}
+                    onChange={handleFileUpload}
+                  />
+                  {isUploadingExcel && (
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={uploadExcelDataToFirebase}
+                        disabled={isUploadingToFirebase}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-sm ${
+                          isUploadingToFirebase
+                            ? "bg-gray-100 text-gray-700 cursor-not-allowed"
+                            : "bg-green-100 text-green-700 hover:bg-green-200"
+                        }`}
+                      >
+                        {isUploadingToFirebase ? (
+                          <>
+                            <FiRefreshCw className="animate-spin" size={14} />
+                            Uploading...
+                          </>
+                        ) : (
+                          <>
+                            <SiTicktick size={14} />
+                            Upload to Database
+                          </>
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCancelExcelImport}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-red-100 text-red-700 rounded-md text-sm hover:bg-red-200"
+                      >
+                        <RxCross2 size={14} />
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button

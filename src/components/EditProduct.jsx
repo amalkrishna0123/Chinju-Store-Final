@@ -59,12 +59,6 @@ const EditProduct = () => {
     subSubCategory: ""
   });
 
-  // const [categories, setCategories] = useState({
-  //   main: [],
-  //   sub: [],
-  //   subsub: []
-  // });
-  // Replace the current categories state with:
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [subSubCategories, setSubSubCategories] = useState([]);
@@ -74,7 +68,6 @@ const EditProduct = () => {
   const [loading, setLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState(null);
   const [saving, setSaving] = useState(false);
-
 
   useEffect(() => {
     const fetchData = async () => {
@@ -140,25 +133,67 @@ const EditProduct = () => {
             shelfLife: data.shelfLife || "",
             stock: data.stock || "Available",
             weight: data.weight || "",
-            category: data.categoryHierarchy?.main || "",
-            subCategory: data.categoryHierarchy?.sub || "",
-            subSubCategory: data.categoryHierarchy?.subsub || "",
+            category: "",
+            subCategory: "",
+            subSubCategory: ""
           };
 
+          // FIXED: Handle both categoryHierarchy and direct category fields
           if (data.categoryHierarchy) {
+            // Find the main category by name and set its ID
             const mainCat = formattedMainCats.find(
               (cat) => cat.name === data.categoryHierarchy.main
             );
+            if (mainCat) {
+              productData.category = mainCat.id;
+            }
+
+            // Find the sub category by name and set its ID  
             const subCat = formattedSubCats.find(
               (sub) => sub.name === data.categoryHierarchy.sub
             );
+            if (subCat) {
+              productData.subCategory = subCat.id;
+            }
+
+            // Find the sub-sub category by name and set its ID
             const subSubCat = formattedSubSubCats.find(
               (subsub) => subsub.name === data.categoryHierarchy.subsub
             );
+            if (subSubCat) {
+              productData.subSubCategory = subSubCat.id;
+            }
+          } else {
+            // FIXED: Handle products imported from Excel with direct category fields
+            // Check if category field exists (from Excel import)
+            if (data.category) {
+              const mainCat = formattedMainCats.find(
+                (cat) => cat.name === data.category || cat.name.includes(data.category) || data.category.includes(cat.name)
+              );
+              if (mainCat) {
+                productData.category = mainCat.id;
+              }
+            }
 
-            if (mainCat) productData.category = mainCat.name;
-            if (subCat) productData.subCategory = subCat.name;
-            if (subSubCat) productData.subSubCategory = subSubCat.name;
+            // Check if subCategory field exists
+            if (data.subCategory) {
+              const subCat = formattedSubCats.find(
+                (sub) => sub.name === data.subCategory || sub.name.includes(data.subCategory) || data.subCategory.includes(sub.name)
+              );
+              if (subCat) {
+                productData.subCategory = subCat.id;
+              }
+            }
+
+            // Check if subSubCategory field exists
+            if (data.subSubCategory) {
+              const subSubCat = formattedSubSubCats.find(
+                (subsub) => subsub.name === data.subSubCategory || subsub.name.includes(data.subSubCategory) || data.subSubCategory.includes(subsub.name)
+              );
+              if (subSubCat) {
+                productData.subSubCategory = subSubCat.id;
+              }
+            }
           }
 
           setProduct(productData);
@@ -175,7 +210,6 @@ const EditProduct = () => {
 
     fetchData();
   }, [id]);
-
 
   const handleNotificationClick = () => {
     navigate('/dashboard/orderdetails');
@@ -317,18 +351,6 @@ const EditProduct = () => {
   ];
 
   const isActive = (path) => path === '/dashboard/view-product';
-
-  // Get subcategories based on selected main category
-  const getSubCategories = () => {
-    if (!product.category) return [];
-    return categories.sub.filter(sub => sub.parentId === product.category);
-  };
-
-  // Get sub-subcategories based on selected subcategory
-  const getSubSubCategories = () => {
-    if (!product.subCategory) return [];
-    return categories.subsub.filter(subsub => subsub.parentId === product.subCategory);
-  };
 
   if (loading) {
     return (
@@ -635,13 +657,12 @@ const EditProduct = () => {
                   </div>
                 </div>
 
-                {/* Category Hierarchy */}
+                {/* Category Hierarchy - FIXED */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Main Category <span className="text-red-500">*</span>
                     </label>
-                    {/* Main Category Dropdown */}
                     <select
                       name="category"
                       value={product.category}
@@ -653,10 +674,12 @@ const EditProduct = () => {
                           subSubCategory: "",
                         }));
                       }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={saving}
                     >
                       <option value="">Select Main Category</option>
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.name}>
+                        <option key={cat.id} value={cat.id}>
                           {cat.name}
                         </option>
                       ))}
@@ -667,7 +690,6 @@ const EditProduct = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Subcategory
                     </label>
-                    {/* Subcategory Dropdown */}
                     <select
                       name="subCategory"
                       value={product.subCategory}
@@ -676,12 +698,13 @@ const EditProduct = () => {
                         setProduct((prev) => ({ ...prev, subSubCategory: "" }));
                       }}
                       disabled={!product.category}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Subcategory</option>
                       {subCategories
-                        .filter((sub) => sub.parentName === product.category)
+                        .filter((sub) => sub.parentId === product.category)
                         .map((sub) => (
-                          <option key={sub.id} value={sub.name}>
+                          <option key={sub.id} value={sub.id}>
                             {sub.name}
                           </option>
                         ))}
@@ -697,14 +720,13 @@ const EditProduct = () => {
                       value={product.subSubCategory}
                       onChange={handleInputChange}
                       disabled={!product.subCategory}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Sub-subcategory</option>
                       {subSubCategories
-                        .filter(
-                          (subsub) => subsub.parentName === product.subCategory
-                        )
+                        .filter((subsub) => subsub.parentId === product.subCategory)
                         .map((subsub) => (
-                          <option key={subsub.id} value={subsub.name}>
+                          <option key={subsub.id} value={subsub.id}>
                             {subsub.name}
                           </option>
                         ))}

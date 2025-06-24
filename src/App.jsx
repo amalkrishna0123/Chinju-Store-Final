@@ -96,7 +96,9 @@ function AppRoutes() {
     location.pathname === "/dashboard/edit-product/:id" ||
     location.pathname === "/dashboard/edit-banner/:id" ||
     location.pathname === "/dashboard/add-delivery-boy" ||
-    location.pathname === "/dashboard/edit-delivery-boy/:id" 
+    location.pathname === "/dashboard/edit-delivery-boy/:id" ||
+    location.pathname === "/dashboard/edit-product/:id" ||
+    location.pathname === "/dashboard/edit-category/:id"
   return (
     <>
       <div className="min-h-screen pb-16 bg-[#f5f6fa]">

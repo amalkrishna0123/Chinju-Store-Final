@@ -21,7 +21,7 @@ import { MdDeliveryDining, MdReviews } from "react-icons/md";
 import { ArrowLeft, Plus, Save, Image, Camera, Upload } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { db } from '../Firebase';
-import { addDoc, collection, getDocs } from 'firebase/firestore';
+import { addDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { optimizeProductData } from '../utils/imageCompression';
 
 const AddProduct = () => {
@@ -197,9 +197,15 @@ const AddProduct = () => {
       const subImagesBase64 = await Promise.all(subImages.map(getBase64));
 
       // Get the full category hierarchy names
-      const mainCategory = categories.find(cat => cat.name === formData.category);
-      const subCategory = subCategories.find(sub => sub.name === formData.subCategory);
-      const subSubCategory = subSubCategories.find(subsub => subsub.name === formData.subSubCategory);
+      const mainCategory = categories.find(
+        (cat) => cat.name === formData.category
+      );
+      const subCategory = subCategories.find(
+        (sub) => sub.name === formData.subCategory
+      );
+      const subSubCategory = subSubCategories.find(
+        (subsub) => subsub.name === formData.subSubCategory
+      );
 
       // Create product data object
       const productData = {
@@ -213,21 +219,38 @@ const AddProduct = () => {
         categoryHierarchy: {
           main: formData.category,
           sub: formData.subCategory,
-          subsub: formData.subSubCategory
+          subsub: formData.subSubCategory,
         },
         fullCategoryPath: [
           formData.category,
           formData.subCategory,
-          formData.subSubCategory
-        ].filter(Boolean).join(' → ')
+          formData.subSubCategory,
+        ]
+          .filter(Boolean)
+          .join(" → "),
       };
-      
+
       // Optimize product data by compressing images before storing
       const optimizedData = await optimizeProductData(productData);
-      
-      await addDoc(collection(db, 'products'), optimizedData);
 
-      navigate('/dashboard/view-product');
+      // Inside handleSubmit function, before creating `productData`
+      const existingQuery = query(
+        collection(db, "products"),
+        where("name", "==", formData.name),
+        where("weight", "==", formData.weight)
+      );
+      const snapshot = await getDocs(existingQuery);
+      if (!snapshot.empty) {
+        setError(
+          `Product with name "${formData.name}" and weight "${formData.weight}" already exists.`
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      await addDoc(collection(db, "products"), optimizedData);
+
+      navigate("/dashboard/view-product");
     } catch (err) {
       setError('Failed to add product: ' + err.message);
     } finally {

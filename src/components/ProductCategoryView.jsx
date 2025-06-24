@@ -1202,7 +1202,7 @@ const removeFromCart = async (productId) => {
         </div>
 
         <div className="flex justify-between items-center mb-3 mt-2">
-          <h2 className="text-lg font-bold text-gray-800">
+          <h2 className="text-[#057a6f] font-medium">
             {selectedSubcategory}
           </h2>
         </div>
@@ -1212,7 +1212,7 @@ const removeFromCart = async (productId) => {
           {/* Left Sidebar - Categories */}
           {subSubCategories.length > 0 && (
             <div className="w-20 md:w-35 flex-shrink-0">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky min-h-[400px] top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 sticky min-h-[600px] top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
                 {/* Header */}
                 {/* <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-3 border-b border-gray-100">
         <h3 className="text-base font-medium text-gray-800">
@@ -1290,12 +1290,12 @@ const removeFromCart = async (productId) => {
                     onMouseLeave={() => setHoveredProduct(null)}
                     onClick={(e) => navigateToProduct(product.id, e)}
                   >
-                    <div className="p-1 rounded-[10px] bg-gradient-to-r from-[#2CAA9E] to-[#003832] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]">
-                      <div className="relative rounded-[8px] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]  overflow-hidden">
+                    <div className=" rounded-[10px] bg-gradient-to-r from-[#10867a] to-[#003832] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]">
+                      <div className="relative bg-[#fff] rounded-[8px] shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),0px_1px_0px_0px_rgba(25,28,33,0.02),0px_0px_0px_1px_rgba(25,28,33,0.08)]  overflow-hidden">
                         <img
                           src={product.imageBase64 || apple}
                           alt={product.name}
-                          className="w-full h-40 md:h-44 object-cover rounded-lg"
+                          className="w-full h-40 md:h-44 object-contain rounded-lg"
                         />
                         {product.offer > 0 && (
                           <div className="absolute z-20 top-3 left-3 bg-red-500 text-xs px-2 py-1 rounded-lg font-medium text-[#fff]">

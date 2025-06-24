@@ -29,7 +29,7 @@ import { collection, getDocs, deleteDoc, doc, query, where, onSnapshot } from 'f
 const ViewCategory = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [unreadOrderCount, setUnreadOrderCount] = useState(0);
   const [categories, setCategories] = useState([]);
@@ -141,7 +141,7 @@ const ViewCategory = () => {
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
           <div className="text-xl font-bold text-white">AdminPanel</div>
           <button
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 rounded-lg hover:bg-white hover:bg-opacity-20 text-white transition-colors"
           >
             <FiX size={20} />
@@ -154,7 +154,7 @@ const ViewCategory = () => {
             <Link
               key={index}
               to={item.path}
-              onClick={() => setSidebarOpen(false)}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
               className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
                 isActive(item.path)
                   ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
@@ -194,7 +194,7 @@ const ViewCategory = () => {
           <div className="flex items-center gap-4">
             {/* Menu Button - Now always visible to open the sidebar */}
             <button
-              onClick={() => setSidebarOpen(true)}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
               className="p-2 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
             >
               <FiMenu size={20} />
@@ -482,7 +482,7 @@ const ViewCategory = () => {
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-transparent bg-opacity-50 z-0 backdrop-blur-sm md:backdrop-blur-none"
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => setSidebarOpen(!sidebarOpen)}
         />
       )}
     </div>
