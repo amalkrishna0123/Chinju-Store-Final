@@ -178,7 +178,7 @@ const ProductDetail = () => {
           ...doc.data(),
         }));
         setAllProducts(productList);
-        console.log("All Product",productList)
+        // console.log("All Product",productList)
       } catch (err) {
         // console.error("Error fetching all products:", err);
       }
