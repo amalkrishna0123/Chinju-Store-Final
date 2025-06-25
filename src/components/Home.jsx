@@ -981,7 +981,7 @@ const Home = () => {
           <div className="flex items-center space-x-3">
             <div className=" text-[#1a7e74] rounded-lg font-bold LogoFont w-[60px]">
               <img
-                src={logowhite}
+                src={logo}
                 alt=""
                 className="w-full h-full object-contain"
               />

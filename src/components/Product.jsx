@@ -178,6 +178,7 @@ const ProductDetail = () => {
           ...doc.data(),
         }));
         setAllProducts(productList);
+        console.log("All Product",productList)
       } catch (err) {
         // console.error("Error fetching all products:", err);
       }
@@ -858,43 +859,6 @@ const ProductDetail = () => {
             </Link>
           </div>
 
-          {/* Delivery Info */}
-          {/* <div className="bg-white bg-opacity-20 rounded-lg p-3 mb-4 backdrop-blur-sm flex items-center">
-          <div className="flex flex-col flex-1">
-            <div className="text-black font-bold flex items-center">
-              <span className="mr-2">
-                Delivery in {userLocation.deliveryTime}
-              </span>
-              <span className="bg-white text-[#1a7e74] text-xs px-2 py-0.5 rounded-full">
-                FAST
-              </span>
-            </div>
-            <div className="flex items-center text-sm md:text-black text-black">
-              <span>{userLocation.address}</span>
-              <ChevronDown size={14} className="ml-1" />
-            </div>
-          </div>
-          <button
-            onClick={fetchCurrentLocation}
-            disabled={isLoadingLocation}
-            className="bg-white px-3 py-1 rounded-lg text-[#1a7e74] font-medium text-sm"
-          >
-            {isLoadingLocation ? "Loading..." : "Change"}
-          </button>
-        </div> */}
-
-          {/* Search Bar */}
-          {/* <div className="w-1/3">
-            <div className="bg-gray-50 flex items-center gap-2 px-4 py-3 rounded-lg border border-gray-200 focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-              <Search size={20} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for products..."
-                className="bg-transparent outline-none w-full text-gray-700"
-              />
-            </div>
-          </div> */}
-
           {/* Login and Cart */}
           <div className="flex items-center space-x-6">
             {currentUser ? (
@@ -954,10 +918,7 @@ const ProductDetail = () => {
       <div className="md:hidden bg-gradient-to-r from-[#65D2CD] to-[#2CAA9E] px-4 py-4">
         {/* Logo Section */}
         <div className="flex justify-between items-center">
-          <Link
-            to="/"
-            className="font-bold text-xl commonFont"
-          >
+          <Link to="/" className="font-bold text-xl commonFont">
             <div className=" text-[#1a7e74] rounded-lg font-bold LogoFont w-[60px]">
               <img
                 src={logowhite}
@@ -1312,6 +1273,30 @@ const ProductDetail = () => {
                           {product.storage || "Keep refrigerated"}
                         </span>
                       </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Brand</span>
+                        <span className="font-medium">
+                          {product.brand || "null"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Imported</span>
+                        <span className="font-medium">
+                          {product.imported || "null"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Organic</span>
+                        <span className="font-medium">
+                          {product.organic || "null"}
+                        </span>
+                      </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Shelf Life</span>
+                          <span className="font-medium">
+                            {product.shelfLife || "null"}
+                          </span>
+                        </div>
                     </div>
                   </div>
 
