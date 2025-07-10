@@ -133,37 +133,40 @@ const EditProduct = () => {
             shelfLife: data.shelfLife || "",
             stock: data.stock || "Available",
             weight: data.weight || "",
-            category: "",
-            subCategory: "",
-            subSubCategory: ""
-          };
+            // Set category names directly from the stored data
+            category: data.categoryHierarchy?.main || data.category || "",
+            subCategory: data.categoryHierarchy?.sub || data.subCategory || "",
+            subSubCategory: data.categoryHierarchy?.subsub || data.subSubCategory || "",
+            };
 
           // FIXED: Handle both categoryHierarchy and direct category fields
-          if (data.categoryHierarchy) {
-            // Find the main category by name and set its ID
+          if (data.categoryHierarchy || data.category) {
+            const mainName = data.categoryHierarchy?.main || data.category;
+            const subName = data.categoryHierarchy?.sub || data.subCategory;
+            const subSubName = data.categoryHierarchy?.subsub || data.subSubCategory;
+
             const mainCat = formattedMainCats.find(
-              (cat) => cat.name === data.categoryHierarchy.main
+              (cat) => cat.name === mainName || cat.name.includes(mainName) || mainName.includes(cat.name)
             );
             if (mainCat) {
-              productData.category = mainCat.id;
+              productData.category = mainCat.name;
             }
 
-            // Find the sub category by name and set its ID  
             const subCat = formattedSubCats.find(
-              (sub) => sub.name === data.categoryHierarchy.sub
+              (sub) => sub.name === subName || sub.name.includes(subName) || subName.includes(sub.name)
             );
             if (subCat) {
-              productData.subCategory = subCat.id;
+              productData.subCategory = subCat.name;
             }
 
-            // Find the sub-sub category by name and set its ID
             const subSubCat = formattedSubSubCats.find(
-              (subsub) => subsub.name === data.categoryHierarchy.subsub
+              (subsub) => subsub.name === subSubName || subsub.name.includes(subSubName) || subSubName.includes(subsub.name)
             );
             if (subSubCat) {
-              productData.subSubCategory = subSubCat.id;
+              productData.subSubCategory = subSubCat.name;
             }
-          } else {
+          }
+          else {
             // FIXED: Handle products imported from Excel with direct category fields
             // Check if category field exists (from Excel import)
             if (data.category) {
@@ -294,31 +297,19 @@ const EditProduct = () => {
       setSaving(true);
       const docRef = doc(db, "products", id);
 
-      // Get category names from IDs
-      const mainCategory = categories.find(
-        (cat) => cat.id === product.category
-      );
-      const subCategory = subCategories.find(
-        (sub) => sub.id === product.subCategory
-      );
-      const subSubCategory = subSubCategories.find(
-        (subsub) => subsub.id === product.subSubCategory
-      );
-
+      // Create the product data with names stored directly
       const productData = {
         ...product,
         categoryHierarchy: {
-          main: mainCategory?.name || "",
-          sub: subCategory?.name || "",
-          subsub: subSubCategory?.name || "",
+          main: product.category,
+          sub: product.subCategory,
+          subsub: product.subSubCategory,
         },
         fullCategoryPath: [
-          mainCategory?.name,
-          subCategory?.name,
-          subSubCategory?.name,
-        ]
-          .filter(Boolean)
-          .join(" → "),
+          product.category,
+          product.subCategory,
+          product.subSubCategory,
+        ].filter(Boolean).join(" → "),
       };
 
       await updateDoc(docRef, productData);
@@ -665,13 +656,13 @@ const EditProduct = () => {
                     </label>
                     <select
                       name="category"
-                      value={product.category}
+                      value={product.category} // Now using name directly
                       onChange={(e) => {
-                        handleInputChange(e);
                         setProduct((prev) => ({
                           ...prev,
-                          subCategory: "",
-                          subSubCategory: "",
+                          category: e.target.value, // Store name directly
+                          subCategory: "", // Reset subcategory
+                          subSubCategory: "", // Reset sub-subcategory
                         }));
                       }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -679,7 +670,7 @@ const EditProduct = () => {
                     >
                       <option value="">Select Main Category</option>
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
+                        <option key={cat.id} value={cat.name}>
                           {cat.name}
                         </option>
                       ))}
@@ -692,19 +683,29 @@ const EditProduct = () => {
                     </label>
                     <select
                       name="subCategory"
-                      value={product.subCategory}
+                      value={product.subCategory} // Now using name directly
                       onChange={(e) => {
-                        handleInputChange(e);
-                        setProduct((prev) => ({ ...prev, subSubCategory: "" }));
+                        setProduct((prev) => ({
+                          ...prev,
+                          subCategory: e.target.value, // Store name directly
+                          subSubCategory: "", // Reset sub-subcategory
+                        }));
                       }}
                       disabled={!product.category}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Subcategory</option>
                       {subCategories
-                        .filter((sub) => sub.parentId === product.category)
+                        .filter((sub) => {
+                          const parentCat = categories.find(
+                            (cat) => cat.name === product.category
+                          );
+                          return parentCat
+                            ? sub.parentId === parentCat.id
+                            : false;
+                        })
                         .map((sub) => (
-                          <option key={sub.id} value={sub.id}>
+                          <option key={sub.id} value={sub.name}>
                             {sub.name}
                           </option>
                         ))}
@@ -717,16 +718,28 @@ const EditProduct = () => {
                     </label>
                     <select
                       name="subSubCategory"
-                      value={product.subSubCategory}
-                      onChange={handleInputChange}
+                      value={product.subSubCategory} // Now using name directly
+                      onChange={(e) => {
+                        setProduct((prev) => ({
+                          ...prev,
+                          subSubCategory: e.target.value, // Store name directly
+                        }));
+                      }}
                       disabled={!product.subCategory}
                       className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="">Select Sub-subcategory</option>
                       {subSubCategories
-                        .filter((subsub) => subsub.parentId === product.subCategory)
+                        .filter((subsub) => {
+                          const parentSub = subCategories.find(
+                            (sub) => sub.name === product.subCategory
+                          );
+                          return parentSub
+                            ? subsub.parentId === parentSub.id
+                            : false;
+                        })
                         .map((subsub) => (
-                          <option key={subsub.id} value={subsub.id}>
+                          <option key={subsub.id} value={subsub.name}>
                             {subsub.name}
                           </option>
                         ))}
