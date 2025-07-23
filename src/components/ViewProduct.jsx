@@ -363,7 +363,7 @@ const ViewProduct = () => {
       {/* Sidebar */}
       <div
         className={`fixed top-0 left-0 h-screen bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
-          sidebarOpen  ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
+          sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
         } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
       >
         {/* Brand Logo */}
@@ -376,7 +376,7 @@ const ViewProduct = () => {
             <FiX size={20} />
           </button>
         </div>
-    
+
         {/* Menu */}
         <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
           {menuItems.map((item, index) => (
@@ -390,14 +390,20 @@ const ViewProduct = () => {
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
-              <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
+              <div
+                className={`text-lg ${
+                  isActive(item.path)
+                    ? "text-white"
+                    : "text-gray-500 group-hover:text-gray-700"
+                }`}
+              >
                 {item.icon}
               </div>
               <span className="ml-3 text-sm font-medium">{item.label}</span>
             </Link>
           ))}
         </nav>
-    
+
         {/* Logout */}
         <div className="p-3 border-t border-gray-100">
           <button
@@ -420,12 +426,17 @@ const ViewProduct = () => {
             >
               <FiMenu size={20} />
             </button>
-            <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Products</h2>
+            <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">
+              Products
+            </h2>
           </div>
-    
+
           <div className="flex items-center gap-3 sm:gap-6">
             <div className="relative">
-              <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
+              <button
+                onClick={handleNotificationClick}
+                className="p-2 rounded-xl hover:bg-gray-50 transition-colors"
+              >
                 <FiBell size={20} className="text-gray-600" />
                 {unreadOrderCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-4 h-4 text-xs font-bold text-white bg-red-500 rounded-full flex items-center justify-center">
@@ -434,13 +445,15 @@ const ViewProduct = () => {
                 )}
               </button>
             </div>
-    
+
             <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
                 <FiUser size={16} />
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-gray-800">Admin User</span>
+                <span className="text-sm font-semibold text-gray-800">
+                  Admin User
+                </span>
                 <span className="text-xs text-gray-500">Administrator</span>
               </div>
             </div>
@@ -458,7 +471,6 @@ const ViewProduct = () => {
               Add New Product
             </Link>
           </div>
-          
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
@@ -482,7 +494,6 @@ const ViewProduct = () => {
               </div>
             </div>
           )}
-          
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-200">
@@ -607,6 +618,9 @@ const ViewProduct = () => {
                         Price
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Weight/Quantity
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Details
                       </th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -684,6 +698,9 @@ const ViewProduct = () => {
                             </div>
                           )}
                         </td>
+                        <td className="px-4 py-4 text-sm text-gray-700">
+                          {product.weight || "—"}
+                        </td>
                         <td className="px-4 py-4">
                           <div className="text-sm text-gray-500">
                             {product.organic === "Yes" ||
@@ -691,13 +708,13 @@ const ViewProduct = () => {
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mr-1">
                                 Organic
                               </span>
-                            ) : null}
+                            ) : "-"}
                             {product.imported === "Yes" ||
                             product.imported === true ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                 Imported
                               </span>
-                            ) : null}
+                            ) : "-"}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
