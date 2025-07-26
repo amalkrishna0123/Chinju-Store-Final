@@ -673,7 +673,7 @@ const AddProduct = () => {
                       <input
                         id="shelfLife"
                         name="shelfLife"
-                        type="number"
+                        type="text"
                         value={formData.shelfLife}
                         onChange={handleChange}
                         placeholder="Enter shelf life in days"

@@ -53,36 +53,43 @@ const ViewProduct = () => {
   const [unreadOrderCount, setUnreadOrderCount] = useState(0);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [categories, setCategories] = useState({
     main: [],
     sub: [],
-    subsub: []
+    subsub: [],
   });
   const [excelData, setExcelData] = useState([]);
   const [isUploadingExcel, setIsUploadingExcel] = useState(false);
   const [isUploadingToFirebase, setIsUploadingToFirebase] = useState(false);
   const [fileInputKey, setFileInputKey] = useState(Date.now());
+  // In the state section, add filter state variables:
+  const [filterType, setFilterType] = useState("all");
+  const [filterValue, setFilterValue] = useState("");
+  const [brandFilter, setBrandFilter] = useState("all");
+  const [discountFilter, setDiscountFilter] = useState("all");
 
   const handleFileUploadClick = () => {
-    alert("Please make sure the Excel file follows this format:\n\n" + 
-          "1. Column 'Name' (required): The name of the product.\n" +
-          "2. Column 'Brand' (optional): The brand of the product.\n" +
-          "3. Column 'OriginalPrice' (required): The original price.\n" +
-          "4. Column 'Offer' (optional): The discount percentage.\n" +
-          "5. Column 'Description' (optional): Product description.\n" +
-          "6. Column 'Category' (optional): Main category.\n" +
-          "7. Column 'SubCategory' (optional): Subcategory.\n" +
-          "8. Column 'SubSubCategory' (optional): Sub-subcategory.\n" +
-          "9. Column 'Weight' (optional): Product weight/number.\n" +
-          "10. Column 'ShelfLife' (optional): Shelf life in days.\n" +
-          "11. Column 'Imported' (optional): 'Yes' or 'No'.\n" +
-          "12. Column 'Organic' (optional): 'Yes' or 'No'.\n" +
-          "13. Column 'Stock' (optional): 'Available' or 'Out of Stock'.");
-    document.getElementById('excel-file-input').click();
+    alert(
+      "Please make sure the Excel file follows this format:\n\n" +
+        "1. Column 'Name' (required): The name of the product.\n" +
+        "2. Column 'Brand' (optional): The brand of the product.\n" +
+        "3. Column 'OriginalPrice' (required): The original price.\n" +
+        "4. Column 'Offer' (optional): The discount percentage.\n" +
+        "5. Column 'Description' (optional): Product description.\n" +
+        "6. Column 'Category' (optional): Main category.\n" +
+        "7. Column 'SubCategory' (optional): Subcategory.\n" +
+        "8. Column 'SubSubCategory' (optional): Sub-subcategory.\n" +
+        "9. Column 'Weight' (optional): Product weight/number.\n" +
+        "10. Column 'ShelfLife' (optional): Shelf life in days.\n" +
+        "11. Column 'Imported' (optional): 'Yes' or 'No'.\n" +
+        "12. Column 'Organic' (optional): 'Yes' or 'No'.\n" +
+        "13. Column 'Stock' (optional): 'Available' or 'Out of Stock'."
+    );
+    document.getElementById("excel-file-input").click();
   };
 
   const handleFileUpload = (e) => {
@@ -104,7 +111,9 @@ const ViewProduct = () => {
       }
 
       setExcelData(parsedData);
-      alert(`Successfully imported ${parsedData.length} products from Excel. Click "Upload to Database" to save them.`);
+      alert(
+        `Successfully imported ${parsedData.length} products from Excel. Click "Upload to Database" to save them.`
+      );
       e.target.value = "";
     };
 
@@ -217,7 +226,6 @@ const ViewProduct = () => {
     }
   };
 
-
   const handleCancelExcelImport = () => {
     setExcelData([]);
     setFileInputKey(Date.now());
@@ -230,22 +238,46 @@ const ViewProduct = () => {
     setupUnreadOrdersListener();
   }, []);
 
+  // Add this useEffect to close the dropdown when clicking outside:
+  useEffect(() => {
+    const handleClickOutside = () => {
+      const dropdown = document.getElementById("filterDropdown");
+      if (dropdown && !dropdown.classList.contains("hidden")) {
+        dropdown.classList.add("hidden");
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   const fetchCategories = async () => {
     try {
-      const mainQuery = query(collection(db, 'categories'), where('type', '==', 'main'));
-      const subQuery = query(collection(db, 'categories'), where('type', '==', 'sub'));
-      const subSubQuery = query(collection(db, 'categories'), where('type', '==', 'subsub'));
-      
+      const mainQuery = query(
+        collection(db, "categories"),
+        where("type", "==", "main")
+      );
+      const subQuery = query(
+        collection(db, "categories"),
+        where("type", "==", "sub")
+      );
+      const subSubQuery = query(
+        collection(db, "categories"),
+        where("type", "==", "subsub")
+      );
+
       const [mainSnapshot, subSnapshot, subSubSnapshot] = await Promise.all([
         getDocs(mainQuery),
         getDocs(subQuery),
-        getDocs(subSubQuery)
+        getDocs(subSubQuery),
       ]);
 
       setCategories({
-        main: mainSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        sub: subSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })),
-        subsub: subSubSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        main: mainSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        sub: subSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })),
+        subsub: subSubSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })),
       });
     } catch (err) {
       console.error("Error fetching categories:", err);
@@ -255,10 +287,10 @@ const ViewProduct = () => {
   // Real-time listener for unread orders
   const setupUnreadOrdersListener = () => {
     const unreadQuery = query(
-      collection(db, 'orders'),
-      where('isRead', '==', false)
+      collection(db, "orders"),
+      where("isRead", "==", false)
     );
-    
+
     return onSnapshot(unreadQuery, (snapshot) => {
       setUnreadOrderCount(snapshot.docs.length);
     });
@@ -267,10 +299,10 @@ const ViewProduct = () => {
   const fetchProducts = async () => {
     try {
       setIsRefreshing(true);
-      const querySnapshot = await getDocs(collection(db, 'products'));
-      const productData = querySnapshot.docs.map(doc => {
+      const querySnapshot = await getDocs(collection(db, "products"));
+      const productData = querySnapshot.docs.map((doc) => {
         const data = doc.data();
-        const offer = data.offer || '';
+        const offer = data.offer || "";
         const salePrice = offer ? data.salePrice : data.originalPrice;
 
         return {
@@ -281,9 +313,9 @@ const ViewProduct = () => {
         };
       });
       setProducts(productData);
-      setError('');
+      setError("");
     } catch (err) {
-      setError('Failed to fetch products: ' + err.message);
+      setError("Failed to fetch products: " + err.message);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -291,12 +323,12 @@ const ViewProduct = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
+    if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        await deleteDoc(doc(db, 'products', id));
-        setProducts(prev => prev.filter(product => product.id !== id));
+        await deleteDoc(doc(db, "products", id));
+        setProducts((prev) => prev.filter((product) => product.id !== id));
       } catch (err) {
-        setError('Failed to delete product: ' + err.message);
+        setError("Failed to delete product: " + err.message);
       }
     }
   };
@@ -306,17 +338,115 @@ const ViewProduct = () => {
   };
 
   const handleNotificationClick = () => {
-    navigate('/dashboard/orderdetails');
+    navigate("/dashboard/orderdetails");
+  };
+
+  const handleExportExcel = () => {
+    // Prepare data for export including image info (not full base64)
+    const exportData = products.map((product) => {
+      // Create image info objects that won't exceed cell limits
+      const mainImageInfo = product.imageBase64
+        ? `[Image: ${product.imageBase64.substring(0, 50)}... (truncated)]`
+        : "No main image";
+
+      const subImagesInfo =
+        Array.isArray(product.subImagesBase64) &&
+        product.subImagesBase64.length > 0
+          ? `${product.subImagesBase64.length} sub images`
+          : "No sub images";
+
+      return {
+        Name: product.name || "",
+        Brand: product.brand || "",
+        OriginalPrice: product.originalPrice || 0,
+        Offer: product.offer || 0,
+        SalePrice: product.salePrice || product.originalPrice || 0,
+        Description: product.description || "",
+        Category: product.categoryHierarchy?.main || product.category || "",
+        SubCategory:
+          product.categoryHierarchy?.sub || product.subCategory || "",
+        SubSubCategory:
+          product.categoryHierarchy?.subsub || product.subSubCategory || "",
+        Weight: product.weight || "",
+        ShelfLife: product.shelfLife || "",
+        PackedDate: product.packedDate || "",
+        ExpiryDate: product.expiryDate || "",
+        Imported: product.imported || "No",
+        Organic: product.organic || "No",
+        Stock: product.stock || "Available",
+        CreatedAt: product.createdAt || new Date().toISOString(),
+        "Has Main Image": product.imageBase64 ? "Yes" : "No",
+        "Number of Sub Images": Array.isArray(product.subImagesBase64)
+          ? product.subImagesBase64.length
+          : 0,
+        "Main Image Info": mainImageInfo,
+        "Sub Images Info": subImagesInfo,
+      };
+    });
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(exportData);
+
+    // Set column widths
+    ws["!cols"] = [
+      { wch: 20 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 8 },
+      { wch: 12 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 12 },
+      { wch: 20 },
+      { wch: 12 },
+      { wch: 12 },
+      { wch: 30 },
+      { wch: 20 },
+    ];
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Products");
+
+    // Generate file and download
+    XLSX.writeFile(
+      wb,
+      `products_export_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
   };
 
   const menuItems = [
     { label: "Dashboard", path: "/dashboard", icon: <FiGrid /> },
-    { label: "Categories", path: "/dashboard/view-category", icon: <FiLayers /> },
-    { label: "Products", path: "/dashboard/view-product", icon: <FiShoppingBag /> },
+    {
+      label: "Categories",
+      path: "/dashboard/view-category",
+      icon: <FiLayers />,
+    },
+    {
+      label: "Products",
+      path: "/dashboard/view-product",
+      icon: <FiShoppingBag />,
+    },
     { label: "Banners", path: "/dashboard/view-banner", icon: <FiImage /> },
-    { label: "Orders", path: "/dashboard/orderdetails", icon: <FiShoppingCart /> },
+    {
+      label: "Orders",
+      path: "/dashboard/orderdetails",
+      icon: <FiShoppingCart />,
+    },
     { label: "Users", path: "/dashboard/users", icon: <FiUsers /> },
-    { label: "Delivery Boys", path: "/dashboard/delivery-boys", icon: <MdDeliveryDining /> },
+    {
+      label: "Delivery Boys",
+      path: "/dashboard/delivery-boys",
+      icon: <MdDeliveryDining />,
+    },
     { label: "Reviews", path: "/dashboard/reviewmanagement", icon: <FiStar /> },
   ];
 
@@ -324,28 +454,71 @@ const ViewProduct = () => {
     return location.pathname === path;
   };
 
-  const filteredProducts = products.filter(product => 
-    (product.name || product.productName || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Update the filteredProducts logic:
+  const filteredProducts = products
+    .filter((product) =>
+      (product.name || product.productName || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    )
+    .filter((product) => {
+      if (filterType === "all") return true;
+      if (filterType === "category") {
+        return (
+          product.categoryHierarchy?.main === filterValue ||
+          product.category === filterValue
+        );
+      }
+      if (filterType === "subCategory") {
+        return (
+          product.categoryHierarchy?.sub === filterValue ||
+          product.subCategory === filterValue
+        );
+      }
+      if (filterType === "subSubCategory") {
+        return (
+          product.categoryHierarchy?.subsub === filterValue ||
+          product.subSubCategory === filterValue
+        );
+      }
+      return true;
+    })
+    .filter((product) => {
+      if (brandFilter === "all") return true;
+      return (product.brand || "").toLowerCase() === brandFilter.toLowerCase();
+    })
+    .filter((product) => {
+      if (discountFilter === "all") return true;
+      if (discountFilter === "withDiscount") return product.offer > 0;
+      if (discountFilter === "withoutDiscount")
+        return !product.offer || product.offer === 0;
+      return true;
+    });
 
   // Helper function to get full category hierarchy
   const getCategoryHierarchy = (product) => {
     let hierarchy = [];
-    
+
     // Find main category
-    const mainCategory = categories.main.find(cat => cat.id === product.category);
+    const mainCategory = categories.main.find(
+      (cat) => cat.id === product.category
+    );
     if (mainCategory) {
       hierarchy.push(mainCategory.name);
     }
 
     // Find subcategory
-    const subCategory = categories.sub.find(cat => cat.id === product.subCategory);
+    const subCategory = categories.sub.find(
+      (cat) => cat.id === product.subCategory
+    );
     if (subCategory) {
       hierarchy.push(subCategory.name);
     }
 
     // Find sub-subcategory
-    const subSubCategory = categories.subsub.find(cat => cat.id === product.subSubCategory);
+    const subSubCategory = categories.subsub.find(
+      (cat) => cat.id === product.subSubCategory
+    );
     if (subSubCategory) {
       hierarchy.push(subSubCategory.name);
     }
@@ -562,7 +735,16 @@ const ViewProduct = () => {
                       </button>
                     </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={handleExportExcel}
+                    className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
+                  >
+                    <PiMicrosoftExcelLogoBold size={16} />
+                    Export to Excel
+                  </button>
                 </div>
+
                 <div className="flex items-center gap-2">
                   <button
                     className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
@@ -575,14 +757,124 @@ const ViewProduct = () => {
                     />
                     Refresh
                   </button>
-                  <button className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none">
-                    <FiFilter size={16} className="mr-2" />
-                    Filter
-                  </button>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 focus:outline-none"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        document
+                          .getElementById("filterDropdown")
+                          .classList.toggle("hidden");
+                      }}
+                    >
+                      <FiFilter size={16} className="mr-2" />
+                      Filter
+                    </button>
+                    <div
+                      id="filterDropdown"
+                      className="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10 border border-gray-200"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="p-2">
+                        <div className="mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Category
+                          </label>
+                          <select
+                            className="w-full p-1 border border-gray-300 rounded text-sm"
+                            onChange={(e) => {
+                              setFilterType("category");
+                              setFilterValue(e.target.value);
+                            }}
+                          >
+                            <option value="">All Categories</option>
+                            {categories.main.map((cat) => (
+                              <option key={cat.id} value={cat.name}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Sub Category
+                          </label>
+                          <select
+                            className="w-full p-1 border border-gray-300 rounded text-sm"
+                            onChange={(e) => {
+                              setFilterType("subCategory");
+                              setFilterValue(e.target.value);
+                            }}
+                          >
+                            <option value="">All Sub Categories</option>
+                            {categories.sub.map((sub) => (
+                              <option key={sub.id} value={sub.name}>
+                                {sub.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Sub Sub Category
+                          </label>
+                          <select
+                            className="w-full p-1 border border-gray-300 rounded text-sm"
+                            onChange={(e) => {
+                              setFilterType("subSubCategory");
+                              setFilterValue(e.target.value);
+                            }}
+                          >
+                            <option value="">All Sub Sub Categories</option>
+                            {categories.subsub.map((subsub) => (
+                              <option key={subsub.id} value={subsub.name}>
+                                {subsub.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="mb-2">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Brand
+                          </label>
+                          <select
+                            className="w-full p-1 border border-gray-300 rounded text-sm"
+                            onChange={(e) => setBrandFilter(e.target.value)}
+                          >
+                            <option value="all">All Brands</option>
+                            {[
+                              ...new Set(
+                                products.map((p) => p.brand).filter(Boolean)
+                              ),
+                            ].map((brand) => (
+                              <option key={brand} value={brand}>
+                                {brand}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Discount
+                          </label>
+                          <select
+                            className="w-full p-1 border border-gray-300 rounded text-sm"
+                            onChange={(e) => setDiscountFilter(e.target.value)}
+                          >
+                            <option value="all">All Products</option>
+                            <option value="withDiscount">With Discount</option>
+                            <option value="withoutDiscount">
+                              Without Discount
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
             {loading ? (
               <div className="flex items-center justify-center p-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
@@ -610,6 +902,12 @@ const ViewProduct = () => {
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Category
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sub Category
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Sub Sub Category
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Brand
@@ -681,6 +979,16 @@ const ViewProduct = () => {
                           {getCategoryHierarchy(product)}
                         </td>
                         <td className="px-4 py-4 text-sm text-gray-700">
+                          {product.categoryHierarchy?.sub ||
+                            product.subCategory ||
+                            "—"}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-700">
+                          {product.categoryHierarchy?.subsub ||
+                            product.subSubCategory ||
+                            "—"}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-700">
                           {product.brand || "—"}
                         </td>
                         <td className="px-4 py-4">
@@ -708,13 +1016,17 @@ const ViewProduct = () => {
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 mr-1">
                                 Organic
                               </span>
-                            ) : "-"}
+                            ) : (
+                              "-"
+                            )}
                             {product.imported === "Yes" ||
                             product.imported === true ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                 Imported
                               </span>
-                            ) : "-"}
+                            ) : (
+                              "-"
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
