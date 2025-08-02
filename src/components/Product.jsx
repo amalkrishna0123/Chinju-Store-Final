@@ -1267,36 +1267,48 @@ const ProductDetail = () => {
                           {product.stock}
                         </span>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Storage</span>
-                        <span className="font-medium">
-                          {product.storage || "Keep refrigerated"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Brand</span>
-                        <span className="font-medium">
-                          {product.brand || "null"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Imported</span>
-                        <span className="font-medium">
-                          {product.imported || "null"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Organic</span>
-                        <span className="font-medium">
-                          {product.organic || "null"}
-                        </span>
-                      </div>
+                      {product.storage && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Storage</span>
+                          <span className="font-medium">
+                            {product.storage || "Keep refrigerated"}
+                          </span>
+                        </div>
+                      )}
+
+                      {product.brand && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Brand</span>
+                          <span className="font-medium">{product.brand}</span>
+                        </div>
+                      )}
+
+                      {product.imported && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Imported</span>
+                          <span className="font-medium">
+                            {product.imported}
+                          </span>
+                        </div>
+                      )}
+
+                      {product.organic && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Organic</span>
+                          <span className="font-medium">
+                            {product.organic || "null"}
+                          </span>
+                        </div>
+                      )}
+
+                      {product.shelfLife && (
                         <div className="flex justify-between">
                           <span className="text-gray-500">Shelf Life</span>
                           <span className="font-medium">
                             {product.shelfLife || "null"}
                           </span>
                         </div>
+                      )}
                     </div>
                   </div>
 
