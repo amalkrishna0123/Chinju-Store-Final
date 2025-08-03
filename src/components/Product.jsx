@@ -1327,12 +1327,12 @@ const ProductDetail = () => {
                         <span className="text-gray-500">Delivery Fee</span>
                         <span className="font-medium">₹40</span>
                       </div> */}
-                      <div className="flex justify-between">
+                      {/* <div className="flex justify-between">
                         <span className="text-gray-500">Free Delivery</span>
                         <span className="font-medium">
                           On orders above ₹200
                         </span>
-                      </div>
+                      </div> */}
                       <div className="flex justify-between w-full">
                         <span className="text-gray-500">Return Policy</span>
                         <span className="font-medium flex justify-end items-start w-full">
