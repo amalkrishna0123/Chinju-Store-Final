@@ -136,31 +136,59 @@ const OrderConfirm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!cartItems?.length) {
-      alert('Your cart is empty!');
+      alert("Your cart is empty!");
       return;
     }
 
     if (!selectedAddress) {
-      alert('Please select a delivery address!');
+      alert("Please select a delivery address!");
       return;
     }
 
-    // Calculate total amount
-    const total = cartItems.reduce((sum, item) => {
-      return sum + (item.salePrice * item.quantity);
-    }, 0);
+    setLoading(true);
 
-    // Navigate to payment page with order details
-    navigate('/payment', {
-      state: {
-        orderDetails: {
-          items: cartItems,
-          shippingDetails: selectedAddress,
-          total: total
-        }
-      }
-    });
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject);
+      });
+
+      const { latitude, longitude } = position.coords;
+      const googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+
+      const total =
+        cartItems.reduce((sum, item) => {
+          return sum + item.salePrice * item.quantity;
+        }, 0) + deliveryCharge;
+
+      const newOrder = {
+        userId: currentUser.uid,
+        items: cartItems,
+        shippingDetails: selectedAddress,
+        total: total,
+        createdAt: serverTimestamp(),
+        status: "pending",
+        deliveryStatus: "pending",
+        locationLink: googleMapsLink,
+      };
+
+      const docRef = await addDoc(collection(db, "orders"), newOrder);
+
+      navigate("/payment", {
+        state: {
+          orderId: docRef.id,
+          orderDetails: {
+            ...newOrder,
+          },
+        },
+      });
+    } catch (error) {
+      console.error("Error submitting order:", error);
+      alert("Failed to get location or submit order.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   useEffect(() => {
     if (location.state?.selectedAddress) {
