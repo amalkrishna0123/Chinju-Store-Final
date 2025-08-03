@@ -8,7 +8,7 @@ import AddressManager from './AddressManager';
 
 // Utility: Haversine Distance Calculation
 const getDistanceFromLatLonInKm = (lat1, lon1, lat2, lon2) => {
-  const R = 6371; // km
+  const R = 3000; // km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -29,7 +29,7 @@ const OrderConfirm = () => {
   const [cartItems, setCartItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [deliveryCharge, setDeliveryCharge] = useState(40);
+  const [deliveryCharge, setDeliveryCharge] = useState(30);
   // Add delivery charge constant at the top
   // const DELIVERY_CHARGE = 40;
 
