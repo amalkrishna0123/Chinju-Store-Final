@@ -32,6 +32,7 @@ import { db } from "../Firebase";
 import { optimizeProductData } from "../utils/imageCompression";
 import "swiper/css";
 import "swiper/css/pagination";
+import { VscAccount } from "react-icons/vsc";
 import "swiper/css/navigation";
 import { useParams } from "react-router-dom";
 import { IoIosArrowRoundForward } from "react-icons/io";
@@ -713,8 +714,8 @@ const removeFromCart = async (productId) => {
     if (!showLoginModal) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg w-full max-w-md shadow-xl p-6 transform transition-all">
+      <div className="fixed inset-0 bg-white bg-opacity-50 z-50 flex items-center justify-center">
+        <div className="bg-[#fff] bg-opacity-90 rounded-xl w-full max-w-md shadow-xl p-6 transform transition-all border border-[#00000019]">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">
               Sign in to Chinju Store
@@ -728,8 +729,8 @@ const removeFromCart = async (productId) => {
           </div>
 
           <div className="flex flex-col items-center">
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 mb-4">
-              <span className="text-2xl">👤</span>
+            <div className="w-16 h-16 rounded-full bg-[#65D2CD] flex items-center justify-center mb-4">
+              <VscAccount className="text-white text-3xl" />
             </div>
 
             <p className="text-center text-gray-600 mb-6">

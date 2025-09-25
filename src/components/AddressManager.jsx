@@ -231,7 +231,7 @@ const AddressManager = ({ onSelectAddress, selectedAddressId, hideAddressForm = 
             <div className="flex justify-between items-start">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <p className="font-medium">{address.fullName || 'No name'}</p>
+                  <p className="font-medium">{address.fullName || ''}</p>
                   {address.type === 'profile' && (
                     <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Profile</span>
                   )}
