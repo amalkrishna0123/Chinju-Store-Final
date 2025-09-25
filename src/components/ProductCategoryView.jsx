@@ -717,7 +717,7 @@ const removeFromCart = async (productId) => {
         <div className="bg-white rounded-lg w-full max-w-md shadow-xl p-6 transform transition-all">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-800">
-              Sign in to Zepto
+              Sign in to Chinju Store
             </h2>
             <button
               onClick={() => setShowLoginModal(false)}
