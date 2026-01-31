@@ -906,7 +906,7 @@ const removeFromCart = async (productId) => {
       {/* Gradient top bar */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 h-1"></div>
       {/* Header - Desktop View */}
-      <div className="hidden md:block bg-white py-4 shadow-sm">
+      <div className="hidden md:block bg-gradient-to-r from-[#65D2CD] to-[#1a7e74] py-4 shadow-sm">
         <div className="max-w-[1400px] mx-auto px-4 flex justify-between items-center">
           {/* Logo */}
           <div className="flex items-center space-x-3">
@@ -964,10 +964,10 @@ const removeFromCart = async (productId) => {
                 className="flex items-center space-x-2 cursor-pointer group"
                 onClick={() => setShowLoginModal(true)}
               >
-                <CgProfile className="text-2xl text-gray-700 group-hover:text-blue-600 transition-colors" />
+                <CgProfile className="text-2xl text-gray-50 group-hover:text-blue-600 transition-colors" />
                 <div className="flex flex-col">
-                  <span className="text-xs text-gray-500">Sign in</span>
-                  <span className="text-sm font-medium group-hover:text-blue-600 transition-colors">
+                  <span className="text-xs text-gray-100">Sign in</span>
+                  <span className="text-sm text-white font-medium group-hover:text-blue-600 transition-colors">
                     My Account
                   </span>
                 </div>
@@ -987,7 +987,7 @@ const removeFromCart = async (productId) => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-gray-500">Your</span>
-                <span className="text-sm font-medium group-hover:text-blue-600 transition-colors">
+                <span className="text-sm text-white font-medium group-hover:text-blue-600 transition-colors">
                   Cart
                 </span>
               </div>

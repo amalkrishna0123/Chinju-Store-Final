@@ -101,7 +101,7 @@ function AppRoutes() {
     location.pathname === "/dashboard/edit-category/:id"
   return (
     <>
-      <div className="min-h-screen pb-16 bg-[#f5f6fa]">
+      <div className="min-h-screen bg-[#f5f6fa]">
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Home />} />
