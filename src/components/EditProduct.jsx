@@ -106,8 +106,8 @@ const EditProduct = () => {
               grandparent && parent
                 ? `${grandparent.name} → ${parent.name} → ${subsub.name}`
                 : parent
-                ? `${parent.name} → ${subsub.name}`
-                : subsub.name,
+                  ? `${parent.name} → ${subsub.name}`
+                  : subsub.name,
             parentName: parent?.name || "",
             grandparentName: grandparent?.name || "",
           };
@@ -137,7 +137,7 @@ const EditProduct = () => {
             category: data.categoryHierarchy?.main || data.category || "",
             subCategory: data.categoryHierarchy?.sub || data.subCategory || "",
             subSubCategory: data.categoryHierarchy?.subsub || data.subSubCategory || "",
-            };
+          };
 
           // FIXED: Handle both categoryHierarchy and direct category fields
           if (data.categoryHierarchy || data.category) {
@@ -145,57 +145,72 @@ const EditProduct = () => {
             const subName = data.categoryHierarchy?.sub || data.subCategory;
             const subSubName = data.categoryHierarchy?.subsub || data.subSubCategory;
 
-            const mainCat = formattedMainCats.find(
-              (cat) => cat.name === mainName || cat.name.includes(mainName) || mainName.includes(cat.name)
-            );
+            // Helper to normalize strings (lowercase, trim, and replace all whitespace types with a single space)
+            const normalize = (str) =>
+              String(str || "")
+                .toLowerCase()
+                .replace(/\s+/g, " ")
+                .trim();
+
+            // Helper for robust category matching (ID or Name)
+            const findCategory = (cats, value) => {
+              if (!value) return null;
+              const normalizedValue = normalize(value);
+              const rawValue = String(value).trim();
+
+              return cats.find((cat) => {
+                // 1. Direct ID Match
+                if (cat.id === rawValue) return true;
+
+                // 2. Normalized Name Match (Handles Non-Breaking Spaces, etc.)
+                const normalizedCatName = normalize(cat.name);
+
+                return (
+                  normalizedCatName === normalizedValue ||
+                  normalizedCatName.includes(normalizedValue) ||
+                  normalizedValue.includes(normalizedCatName)
+                );
+              });
+            };
+
+            // 1. Find Main Category
+            const mainCat = mainName
+              ? findCategory(formattedMainCats, mainName)
+              : null;
             if (mainCat) {
               productData.category = mainCat.name;
             }
 
-            const subCat = formattedSubCats.find(
-              (sub) => sub.name === subName || sub.name.includes(subName) || subName.includes(sub.name)
-            );
+            // 2. Find Subcategory (Scoped to found Main)
+            let potentialSubCats = formattedSubCats;
+            if (mainCat) {
+              potentialSubCats = formattedSubCats.filter(
+                (sub) => sub.parentId === mainCat.id
+              );
+            }
+            // If main not found/selected, we search globally (fallback) or arguably shouldn't search at all.
+            // But to be safe for broken data, if mainCat is null, we traverse all.
+            // However, the issue is usually ambiguity, so scoping is key.
+
+            const subCat = subName
+              ? findCategory(potentialSubCats, subName)
+              : null;
             if (subCat) {
               productData.subCategory = subCat.name;
             }
 
-            const subSubCat = formattedSubSubCats.find(
-              (subsub) => subsub.name === subSubName || subsub.name.includes(subSubName) || subSubName.includes(subsub.name)
-            );
+            // 3. Find Sub-subcategory (Scoped to found Sub)
+            let potentialSubSubCats = formattedSubSubCats;
+            if (subCat) {
+              potentialSubSubCats = formattedSubSubCats.filter(
+                (ss) => ss.parentId === subCat.id
+              );
+            }
+            const subSubCat = subSubName
+              ? findCategory(potentialSubSubCats, subSubName)
+              : null;
             if (subSubCat) {
               productData.subSubCategory = subSubCat.name;
-            }
-          }
-          else {
-            // FIXED: Handle products imported from Excel with direct category fields
-            // Check if category field exists (from Excel import)
-            if (data.category) {
-              const mainCat = formattedMainCats.find(
-                (cat) => cat.name === data.category || cat.name.includes(data.category) || data.category.includes(cat.name)
-              );
-              if (mainCat) {
-                productData.category = mainCat.id;
-              }
-            }
-
-            // Check if subCategory field exists
-            if (data.subCategory) {
-              const subCat = formattedSubCats.find(
-                (sub) => sub.name === data.subCategory || sub.name.includes(data.subCategory) || data.subCategory.includes(sub.name)
-              );
-              if (subCat) {
-                productData.subCategory = subCat.id;
-              }
-            }
-
-            // Check if subSubCategory field exists
-            if (data.subSubCategory) {
-              const subSubCat = formattedSubSubCats.find(
-                (subsub) => subsub.name === data.subSubCategory || subsub.name.includes(data.subSubCategory) || data.subSubCategory.includes(subsub.name)
-              );
-              if (subSubCat) {
-                productData.subSubCategory = subSubCat.id;
-              }
             }
           }
 
@@ -347,10 +362,9 @@ const EditProduct = () => {
     return (
       <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
         {/* Sidebar */}
-        <div 
-          className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
-            sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
-          } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
+        <div
+          className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
+            } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
         >
           {/* Brand Logo */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
@@ -362,7 +376,7 @@ const EditProduct = () => {
               <FiX size={20} />
             </button>
           </div>
-      
+
           {/* Menu */}
           <nav className="flex-1 px-2 py-4 space-y-2 overflow-y-auto">
             {menuItems.map((item, index) => (
@@ -370,11 +384,10 @@ const EditProduct = () => {
                 key={index}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
-                  isActive(item.path)
-                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
+                className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${isActive(item.path)
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  }`}
               >
                 <div className={`text-lg ${isActive(item.path) ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}>
                   {item.icon}
@@ -383,7 +396,7 @@ const EditProduct = () => {
               </Link>
             ))}
           </nav>
-      
+
           {/* Logout */}
           <div className="p-3 border-t border-gray-100">
             <button
@@ -408,7 +421,7 @@ const EditProduct = () => {
               </button>
               <h2 className="text-base sm:text-xl font-bold text-gray-800 hidden sm:block">Products</h2>
             </div>
-      
+
             <div className="flex items-center gap-3 sm:gap-6">
               <div className="relative">
                 <button onClick={handleNotificationClick} className="p-2 rounded-xl hover:bg-gray-50 transition-colors">
@@ -420,7 +433,7 @@ const EditProduct = () => {
                   )}
                 </button>
               </div>
-      
+
               <div className="hidden sm:flex items-center gap-2 p-2 rounded-xl hover:bg-gray-50 transition">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
                   <FiUser size={16} />
@@ -449,9 +462,8 @@ const EditProduct = () => {
     <div className="flex h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${
-          sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
-        } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
+        className={`fixed top-0 left-0 h-[calc(100vh-4rem)] bg-white shadow-xl border-r border-slate-200 overflow-auto transition-all duration-300 ease-in-out z-20 ${sidebarOpen ? "translate-x-0 w-80 sm:w-80" : "-translate-x-full w-0"
+          } lg:translate-x-0 lg:w-80 lg:top-0 lg:h-screen lg:block`}
       >
         {/* Brand Logo */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100 bg-gradient-to-r from-blue-600 to-indigo-600">
@@ -471,18 +483,16 @@ const EditProduct = () => {
               key={index}
               to={item.path}
               onClick={() => setSidebarOpen(false)}
-              className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${
-                isActive(item.path)
-                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+              className={`flex items-center p-3 rounded-xl transition-all duration-200 group ${isActive(item.path)
+                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
+                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
             >
               <div
-                className={`text-lg ${
-                  isActive(item.path)
-                    ? "text-white"
-                    : "text-gray-500 group-hover:text-gray-700"
-                }`}
+                className={`text-lg ${isActive(item.path)
+                  ? "text-white"
+                  : "text-gray-500 group-hover:text-gray-700"
+                  }`}
               >
                 {item.icon}
               </div>
@@ -696,14 +706,7 @@ const EditProduct = () => {
                     >
                       <option value="">Select Subcategory</option>
                       {subCategories
-                        .filter((sub) => {
-                          const parentCat = categories.find(
-                            (cat) => cat.name === product.category
-                          );
-                          return parentCat
-                            ? sub.parentId === parentCat.id
-                            : false;
-                        })
+                        .filter((sub) => sub.parentName === product.category)
                         .map((sub) => (
                           <option key={sub.id} value={sub.name}>
                             {sub.name}
@@ -730,14 +733,7 @@ const EditProduct = () => {
                     >
                       <option value="">Select Sub-subcategory</option>
                       {subSubCategories
-                        .filter((subsub) => {
-                          const parentSub = subCategories.find(
-                            (sub) => sub.name === product.subCategory
-                          );
-                          return parentSub
-                            ? subsub.parentId === parentSub.id
-                            : false;
-                        })
+                        .filter((subsub) => subsub.parentName === product.subCategory)
                         .map((subsub) => (
                           <option key={subsub.id} value={subsub.name}>
                             {subsub.name}

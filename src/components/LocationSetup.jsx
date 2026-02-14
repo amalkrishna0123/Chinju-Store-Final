@@ -28,7 +28,8 @@ const LocationSetup = ({ onClose, onLocationSet }) => {
       setIsSearching(true);
       setShowResults(true);
 
-      const apiKey = "0f026c32f1ac42d58b4afc31e690a961";
+      // const apiKey = "0f026c32f1ac42d58b4afc31e690a961";
+      const apiKey = "7429a78b0775445e9589a66e4bd9d0ba";
       const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(
         searchQuery
       )}&key=${apiKey}&countrycode=in&limit=8`;
